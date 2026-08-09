@@ -1,6 +1,6 @@
 # V1 evaluation
 
-V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic scoring, and later independent review. It does not claim ASD-STE100 certification or complete open-prose equivalence.
+V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic scoring, and blind independent review. It does not claim ASD-STE100 certification or complete open-prose equivalence.
 
 ## Preregistered matrix
 
@@ -63,6 +63,55 @@ Unavailable reasoning metadata remains `null`; provider output counts include re
 `failures.json` lists failed, missing, stale, and invalid cells. Incomplete matrices block final benchmark claims.
 
 Exact output-contract checks support plain-text framing rules and schema-constrained JSON objects with required keys, additional-property control, and property types.
+
+## Independent quality judge
+
+Run judging only after benchmark generation completes. Judge generation requires same clean package commit and skill snapshot as source benchmark:
+
+```bash
+python3 evals/run_quality_judge.py \
+  --config evals/quality-judge.json \
+  --matrix evals/v1-matrix.json \
+  --benchmark-results-dir evals/results/v1 \
+  --results-dir evals/results/v1/judge
+```
+
+Rebuild judge reports without model calls:
+
+```bash
+python3 evals/run_quality_judge.py \
+  --benchmark-results-dir evals/results/v1 \
+  --results-dir evals/results/v1/judge \
+  --report-only
+```
+
+`quality-judge.json` preregisters two comparisons for every model, scenario, and source repetition:
+
+- `baseline-vs-native` is primary skill comparison.
+- `baseline-vs-direct-prompt` is diagnostic comparison.
+
+Three source repetitions provide repeated samples. First two repetitions swap candidate order; later orders use deterministic hashing. Judge receives only task, source, and labels `Candidate A` and `Candidate B`. Condition, generator model, and provider stay out of judge prompt.
+
+Current mappings use a different provider from source generator: OpenAI-generated candidates use Claude through GitHub Copilot; GitHub Copilot-generated candidates use OpenAI. V1 expects 108 judgments: 3 generator models × 2 comparisons × 6 scenarios × 3 source repetitions.
+
+Rubric scores each candidate from 1–5, or marks dimension not applicable:
+
+- Factual and semantic fidelity.
+- Task completion and completeness.
+- Correct uncertainty and obligation.
+- Technical terminology.
+- Safety and actionability.
+- Readability and concision.
+
+Before judging or reporting, runner recomputes source completeness, condition integrity, and semantic acceptance from benchmark raw cells and rejects aggregate mismatches. Raw judge cells retain blind assignment, candidate and prompt hashes, provider identity, usage/cost metadata, attempts, verdict, and unblinded outcome. Existing valid successes resume without calls. Failed or invalid verdicts remain visible and retry within configured limit.
+
+Reports keep deterministic semantic authority separate from ordinal judge preference. If one candidate fails deterministic semantic or output-contract gates, passing candidate wins regardless of judge preference. If both fail, neither wins. Judge-reported semantic, task, modality, terminology, or safety blockers require human resolution and suppress preference-based acceptance.
+
+Exit 0 requires complete cross-provider judgments, accepted source semantic and condition-integrity gates, and zero unresolved judge blockers. Exit 1 means evidence remains incomplete or unaccepted. Configuration and invocation errors exit 2.
+
+### Judge limits
+
+Model judging is not ground truth. Blind labels reduce but do not eliminate positional, style, or treatment-identification bias. Cross-provider review reduces shared-provider bias but does not prove independence. Scores do not prove semantic equivalence or ASD-STE100 compliance. Deterministic failures remain authoritative, and judge blockers require human review before release claims.
 
 ## Limits
 
