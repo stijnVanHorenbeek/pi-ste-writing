@@ -150,6 +150,54 @@ class SentenceParsingTest(unittest.TestCase):
         )
         self.assertNotIn("owner's", {finding["text"] for finding in contractions})
 
+    def test_sentence_limits_follow_passage_classification(self):
+        text = (
+            "Verify the backup status before migration and record the snapshot identifier "
+            "in the change request for operators to review during recovery. "
+            "The backup status and snapshot identifier remain available in the change "
+            "request for operators to review during recovery after the migration completes."
+        )
+
+        for mode in ("procedure", "strict"):
+            with self.subTest(mode=mode):
+                report = run_json(text, mode)
+                findings = [
+                    finding
+                    for finding in report["findings"]
+                    if finding["rule"] == "sentence-length"
+                ]
+
+                self.assertEqual(len(findings), 1)
+                self.assertTrue(findings[0]["text"].startswith("Verify the backup"))
+
+    def test_heading_does_not_extend_following_sentence_length(self):
+        text = (
+            "# Retry behavior for failed uploads and delayed network responses\n\n"
+            "The worker records each failed upload and retries it after the configured "
+            "delay without changing stored request data."
+        )
+
+        report = run_json(text, "strict")
+
+        self.assertNotIn(
+            "sentence-length",
+            {finding["rule"] for finding in report["findings"]},
+        )
+
+    def test_closing_quote_after_period_preserves_sentence_boundary(self):
+        text = (
+            'The guide states "The service retries every failed upload after the configured '
+            'delay." The worker records each result for later incident analysis and '
+            "operator review during scheduled recovery work."
+        )
+
+        report = run_json(text, "strict")
+
+        self.assertNotIn(
+            "sentence-length",
+            {finding["rule"] for finding in report["findings"]},
+        )
+
 
 class ModalSafetyTest(unittest.TestCase):
     def test_warns_about_strict_modals_without_replacement_advice(self):
@@ -218,6 +266,34 @@ class ProcedureClassificationTest(unittest.TestCase):
         self.assertEqual(findings[0]["category"], "procedure")
         assert_finding_contract(self, findings[0])
 
+    def test_common_imperative_verbs_use_procedural_limits(self):
+        tail = (
+            "the backup status before migration and record the snapshot identifier in the "
+            "change request for operators to review during recovery"
+        )
+
+        for verb in ("Ensure", "Press", "Copy", "Save", "Click"):
+            with self.subTest(verb=verb):
+                report = run_json(f"{verb} {tail}.", "strict")
+                findings = [
+                    finding
+                    for finding in report["findings"]
+                    if finding["rule"] == "sentence-length"
+                ]
+                self.assertEqual(len(findings), 1)
+
+                condition_report = run_json(
+                    f"{verb} the item if the status is ready.", "procedure"
+                )
+                self.assertEqual(
+                    [
+                        finding["rule"]
+                        for finding in condition_report["findings"]
+                        if finding["rule"] == "condition-order"
+                    ],
+                    ["condition-order"],
+                )
+
 
 class ProtectedSpanComparisonTest(unittest.TestCase):
     SOURCE = """Call `ApplyPolicy`.
@@ -283,6 +359,8 @@ policyctl apply --file /etc/policy.yaml --force
                     "fenced-code": 1,
                     "link-destination": 1,
                     "quoted-diagnostic": 1,
+                    "bare-url": 1,
+                    "numeric-token": 1,
                 }
             ),
         )
@@ -301,6 +379,163 @@ policyctl apply --file /etc/policy.yaml --force
         ]
 
         self.assertEqual(protected_kinds, ["inline-code"])
+
+    def test_extended_markdown_and_literal_protection(self):
+        source = """Version v3.8.2 processed 48,120 requests on 2026-07-14 at 2.4% in 100-500 ms.
+Read https://docs.example.test/retry?v=3 and use ``Apply`Policy``.
+
+~~~bash
+retryctl apply --file /etc/retry.yaml
+~~~
+
+    retryctl verify --file /etc/retry.yaml
+"""
+        rewrite = """Version v3.8.3 processed 48,121 requests on 2026-07-15 at 2.5% in 100-600 ms.
+Read https://docs.example.test/retry?v=4 and use ``Apply`Policies``.
+
+~~~bash
+retryctl apply --file /etc/retry.yaml --force
+~~~
+
+    retryctl verify --file /etc/other.yaml
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "source.md"
+            rewrite_path = Path(directory) / "rewrite.md"
+            source_path.write_text(source)
+            rewrite_path.write_text(rewrite)
+            result = run_cli(
+                "--mode",
+                "clear",
+                "--format",
+                "json",
+                "--source",
+                str(source_path),
+                str(rewrite_path),
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        findings = [
+            finding
+            for finding in json.loads(result.stdout)["findings"]
+            if finding["rule"] == "protected-span"
+        ]
+        self.assertEqual(
+            Counter(finding["protected_kind"] for finding in findings),
+            Counter(
+                {
+                    "inline-code": 1,
+                    "fenced-code": 1,
+                    "bare-url": 1,
+                    "numeric-token": 1,
+                    "path": 1,
+                }
+            ),
+        )
+
+    def test_markdown_edge_containers_and_literals_are_protected(self):
+        source = """Use ```Apply`Policy``` at 12:30 with `/tmp`.
+Read [function docs](https://docs.example.test/fn(a(b))).
+
+```text
+protected value
+````
+"""
+        rewrite = """Use ```Apply`Policies``` at 30:12 with `/var`.
+Read [function docs](https://docs.example.test/fn(a(c))).
+
+```text
+changed value
+````
+"""
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "source.md"
+            rewrite_path = Path(directory) / "rewrite.md"
+            source_path.write_text(source)
+            rewrite_path.write_text(rewrite)
+            result = run_cli(
+                "--mode",
+                "clear",
+                "--format",
+                "json",
+                "--source",
+                str(source_path),
+                str(rewrite_path),
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        protected_kinds = [
+            finding["protected_kind"]
+            for finding in json.loads(result.stdout)["findings"]
+            if finding["rule"] == "protected-span"
+        ]
+        self.assertEqual(
+            Counter(protected_kinds),
+            Counter(
+                {
+                    "inline-code": 1,
+                    "fenced-code": 1,
+                    "link-destination": 1,
+                    "numeric-token": 1,
+                    "path": 1,
+                }
+            ),
+        )
+
+    def test_fenced_trailing_blank_line_is_protected(self):
+        source = "```text\nvalue\n\n````\n"
+        rewrite = "```text\nvalue\n````\n"
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "source.md"
+            rewrite_path = Path(directory) / "rewrite.md"
+            source_path.write_text(source)
+            rewrite_path.write_text(rewrite)
+            result = run_cli(
+                "--mode",
+                "clear",
+                "--format",
+                "json",
+                "--source",
+                str(source_path),
+                str(rewrite_path),
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        protected_kinds = [
+            finding["protected_kind"]
+            for finding in json.loads(result.stdout)["findings"]
+            if finding["rule"] == "protected-span"
+        ]
+        self.assertEqual(protected_kinds, ["fenced-code"])
+
+    def test_changed_span_location_uses_protected_occurrence(self):
+        source = "Earlier word appears here. Use `old`."
+        rewrite = "Earlier word appears here. Use `word`."
+
+        with tempfile.TemporaryDirectory() as directory:
+            source_path = Path(directory) / "source.md"
+            rewrite_path = Path(directory) / "rewrite.md"
+            source_path.write_text(source)
+            rewrite_path.write_text(rewrite)
+            result = run_cli(
+                "--mode",
+                "clear",
+                "--format",
+                "json",
+                "--source",
+                str(source_path),
+                str(rewrite_path),
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        finding = next(
+            item
+            for item in json.loads(result.stdout)["findings"]
+            if item.get("protected_kind") == "inline-code"
+        )
+        self.assertEqual(finding["line"], 1)
+        self.assertEqual(finding["column"], rewrite.index("`word`") + 2)
+        self.assertEqual(finding["text"], "word")
 
 
 class ExitBehaviorTest(unittest.TestCase):
