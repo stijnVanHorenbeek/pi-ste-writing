@@ -200,19 +200,3 @@ For every compliance-oriented audit, include this disclaimer:
 
 > This audit is advisory and cannot certify ASD-STE100 compliance. Final approval rests
 > with the writer using the official standard and dictionary.
-
-## Provenance
-
-This reference adapts the rule map in
-[`AminBlg/SimpleEnglish`](https://github.com/AminBlg/SimpleEnglish), file
-`skills/simple-english/SKILL.md`, at commit
-`59bf6702197a5aadc96d197ea17f290d8d50dcd3`. The upstream file states that its mapping
-paraphrases ASD-STE100 Issue 9 dated 2025-01-15. Verify authoritative wording and
-vocabulary against the official standard.
-
-Adapted portions: Copyright (c) 2026 AminBlg. Licensed under the MIT License in this
-repository's `LICENSE` file.
-
-ASD-STE100 is a registered trademark of ASD.
-This package is not affiliated with ASD, STEMG, or AminBlg. None of those organizations
-endorses it.

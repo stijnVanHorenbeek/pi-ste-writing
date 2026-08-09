@@ -263,11 +263,3 @@ compliance. For every compliance-oriented audit, include this disclaimer:
 Do not claim that linter success proves semantic correctness. Deterministic checks cover
 enumerated properties only; open prose requires source comparison and human or attested
 semantic review.
-
-## Provenance
-
-This reference is part of a semantic-first adaptation of
-[AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish) at commit
-`59bf6702197a5aadc96d197ea17f290d8d50dcd3`. The priority model, Pi-specific boundaries,
-and coding-agent examples are local adaptations. See the repository `LICENSE` for MIT
-terms.

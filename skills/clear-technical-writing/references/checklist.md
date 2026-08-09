@@ -317,12 +317,3 @@ For every compliance-oriented audit, include:
 
 > This audit is advisory and cannot certify ASD-STE100 compliance. Final approval rests
 > with the writer using the official standard and dictionary.
-
-## Provenance
-
-This checklist reverses and adapts the mechanical-first review in
-[`AminBlg/SimpleEnglish`](https://github.com/AminBlg/SimpleEnglish), file
-`skills/simple-english/references/checklist.md`, at commit
-`59bf6702197a5aadc96d197ea17f290d8d50dcd3`. Local changes make semantic preservation,
-protected content, output contracts, terminology, and procedure safety authoritative.
-Adapted portions are licensed under the repository MIT `LICENSE`.

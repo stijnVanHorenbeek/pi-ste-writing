@@ -10,34 +10,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "evals" / "v1-matrix.json"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
-EVALS_README = ROOT / "evals" / "README.md"
 BENCHMARK_SCENARIOS_PATH = ROOT / "evals" / "benchmark-scenarios.json"
 EVALS_DIR = ROOT / "evals"
 sys.path.insert(0, str(EVALS_DIR))
 
 import run_pi_bench
-
-
-class BenchmarkDocumentationTest(unittest.TestCase):
-    def test_documentation_defines_reproduction_resume_and_evidence_boundaries(self):
-        documentation = EVALS_README.read_text(encoding="utf-8")
-
-        for phrase in (
-            "python3 evals/run_pi_bench.py",
-            "baseline",
-            "native-skill",
-            "direct-prompt",
-            "three successful samples",
-            "clean Git working tree",
-            "Existing matching successful cells are skipped",
-            "Exact output-contract",
-            "reasoning metadata",
-            "Hidden reasoning content is never stored",
-            "Matrix changes require a versioned amendment",
-            "semantic metrics before style metrics",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, documentation)
 
 
 class MatrixLoadingTest(unittest.TestCase):

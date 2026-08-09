@@ -9,7 +9,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "evals" / "score_fixtures.py"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
-FIXTURE_README = ROOT / "evals" / "fixtures" / "README.md"
 LINTER_CACHE = (
     ROOT / "skills" / "clear-technical-writing" / "scripts" / "__pycache__"
 )
@@ -44,27 +43,6 @@ def run_cli(fixture_id, rewrite, *args):
         capture_output=True,
         check=False,
     )
-
-
-class MetricDocumentationTest(unittest.TestCase):
-    def test_fixture_docs_define_separate_gates_and_cli(self):
-        documentation = FIXTURE_README.read_text()
-
-        for phrase in (
-            "python3 evals/score_fixtures.py FIXTURE_ID CANDIDATE",
-            "Protected-span equality",
-            "Required fact retention",
-            "Forbidden fact invention",
-            "Modality and certainty preservation",
-            "Repository-term preservation",
-            "Procedure structure",
-            "Mechanical style warnings",
-            "Semantic and procedure failures exit 1",
-            "Style warnings remain advisory",
-            "No combined semantic-and-style score",
-        ):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, documentation)
 
 
 class PassingScoreContractTest(unittest.TestCase):

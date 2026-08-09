@@ -286,12 +286,3 @@ Strict STE mode activates only after an explicit request for STE, ASD-STE100, or
 compliance-oriented audit.
 
 This package provides writing guidance, not certification. It cannot certify ASD-STE100 compliance.
-
-## Provenance
-
-This reference adapts the use-case organization in
-[`AminBlg/SimpleEnglish`](https://github.com/AminBlg/SimpleEnglish), file
-`skills/simple-english/references/use-cases.md`, at commit
-`59bf6702197a5aadc96d197ea17f290d8d50dcd3`. Coding-agent cases, semantic ledgers,
-activation boundaries, safe examples, and Pi invocation guidance are local adaptations.
-Adapted portions are licensed under the repository MIT `LICENSE`.
