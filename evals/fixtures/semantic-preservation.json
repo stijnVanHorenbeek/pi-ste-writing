@@ -108,7 +108,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?is)(after|following).{0,80}(cache TTL|TTL).{0,50}(changed|increased).{0,20}5( minutes)?.{0,20}15 minutes"
+              "pattern": "(?is)((after|following).{0,40}((changed|changing|increased|increasing).{0,20})?(cache TTL|TTL).{0,30}((changed|increased).{0,20})?5( minutes)?.{0,20}15 minutes|(changed|increased).{0,20}(cache TTL|TTL).{0,20}5( minutes)?.{0,20}15 minutes.{0,80}after (this|the) change)"
             }
           ]
         },
@@ -119,7 +119,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?is)(trace data|traces).{0,40}(confirmed|established)( that)?.{0,80}stale cache entries.{0,40}(caused|cause for).{0,20}73% of (the )?860 failed requests"
+              "pattern": "(?is)((trace data|traces).{0,40}(confirmed|established)( that)?.{0,80}stale cache entries.{0,40}(caused|cause for).{0,20}73% of (the )?860 failed requests|of the 860 failed requests.{0,40}(trace data|traces).{0,40}(confirmed|established)( that)?.{0,80}stale cache entries.{0,40}(caused|cause for).{0,20}73%)"
             }
           ]
         },
@@ -130,7 +130,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(cause of the remaining failures is unknown|remaining failures have no confirmed cause|no cause is confirmed for (the )?(other|remaining) failures)"
+              "pattern": "(?i)(cause of the remaining (failed requests|failures) is unknown|remaining failures have no confirmed cause|no cause is confirmed for (the )?(other|remaining) failures)"
             }
           ]
         },
@@ -435,15 +435,15 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(`config` (means|refers to) file-backed service values|file-backed service values are called `config`|This repository (uses `config` for|defines `config` as) file-backed service values)"
+              "pattern": "(?i)(`config` (means|refers to|defines) file-backed service values|file-backed service values are called `config`|This repository (uses `config` for|defines `config` as) file-backed service values)"
             },
             {
               "type": "regex",
-              "pattern": "(?i)(`settings` (means|refers to) UI preferences|UI preferences are called `settings`|This repository defines.{0,100}`settings` as UI preferences|This repository uses.{0,100}`settings` for UI preferences)"
+              "pattern": "(?i)(`settings` (means|refers to|defines) UI preferences|UI preferences are called `settings`|This repository defines.{0,100}`settings` as UI preferences|This repository uses.{0,100}`settings` for UI preferences)"
             },
             {
               "type": "regex",
-              "pattern": "(?i)(`options` (means|refers to) request-scoped overrides|request-scoped overrides are called `options`|This repository defines.{0,180}`options` as request-scoped overrides|This repository uses.{0,180}`options` for request-scoped overrides)"
+              "pattern": "(?i)(`options` (means|refers to|defines) request-scoped overrides|request-scoped overrides are called `options`|This repository defines.{0,180}`options` as request-scoped overrides|This repository uses.{0,180}`options` for request-scoped overrides)"
             }
           ]
         },
@@ -709,7 +709,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?is)(correlation only|correlat.{0,60}(does not|doesn't|not).{0,40}(caus|cause)|no evidence.{0,50}deployment caused)"
+              "pattern": "(?is)(correlation only|correlat.{0,60}(does not|doesn't|not).{0,40}(caus|cause)|no evidence.{0,50}(deployment caused|establishes causation))"
             }
           ]
         },

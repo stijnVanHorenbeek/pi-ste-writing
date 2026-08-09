@@ -384,11 +384,11 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
         cases = {
             "release-facts-and-causes": (
                 "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. "
-                "After the cache TTL changed from 5 to 15 minutes, the error rate "
-                "fell from 2.4% to 0.7%. Trace data confirmed that stale cache "
-                "entries caused 73% of the 860 failed requests. The cause of the "
-                "remaining failures is unknown. The supported retry-delay range is "
-                "100-500 ms."
+                "The team changed the cache TTL from 5 to 15 minutes. After this "
+                "change, the error rate fell from 2.4% to 0.7%. Of the 860 failed "
+                "requests, trace data confirmed that stale cache entries caused 73%. "
+                "The cause of the remaining failed requests is unknown. The supported "
+                "retry-delay range is 100-500 ms."
             ),
             "modal-policy-distinctions": (
                 "Operators must keep backups for 30 days. Operators should test "
@@ -401,14 +401,14 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
                 "In this repository, `config` means file-backed service values, "
                 "`settings` means UI preferences, and `options` means request-scoped "
                 "overrides.",
-                "This repository defines `config` as file-backed service values, "
-                "`settings` as UI preferences, and `options` as request-scoped "
-                "overrides.",
+                "In this repository, `config` defines file-backed service values, "
+                "`settings` defines UI preferences, and `options` defines "
+                "request-scoped overrides.",
             ),
             "correlation-with-unknown-root-cause": (
                 "During the 12-minute deployment window, p95 latency rose from 180 ms "
-                "to 260 ms. This correlates with the deployment, but no evidence shows "
-                "that the deployment caused the increase. The root cause is unknown. "
+                "to 260 ms, but no evidence establishes causation. The root cause is "
+                "unknown. "
                 "Packet loss was ruled out."
             ),
             "mixed-destructive-procedure": (

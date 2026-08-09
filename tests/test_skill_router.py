@@ -53,6 +53,7 @@ class SkillRouterTest(unittest.TestCase):
         for routing_term in (
             "documentation",
             "runbooks",
+            "incident findings",
             "code review",
             "schema-constrained output",
             "source or generated code",
@@ -89,6 +90,7 @@ class SkillRouterTest(unittest.TestCase):
             "link",
             "schemas",
             "semantic role",
+            "add formatting",
         ):
             with self.subTest(boundary=boundary):
                 self.assertIn(boundary, protected.lower())

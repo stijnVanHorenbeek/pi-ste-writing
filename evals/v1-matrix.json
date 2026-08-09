@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "matrix_id": "v1",
-  "version": 3,
+  "version": 4,
   "description": "Preregistered V1 semantic benchmark matrix for baseline, native Pi skill, and direct-prompt diagnostic conditions.",
   "amendments": [
     {
@@ -15,6 +15,10 @@
     {
       "version": 3,
       "reason": "Tune from the first completed run: admit observed safe paraphrases, expose structured output types and values, protect source modal verbs, and gate release on native skill behavior while controls remain diagnostic."
+    },
+    {
+      "version": 4,
+      "reason": "Tune from the second completed run: admit additional safe paraphrases, improve incident routing, prohibit added formatting, and apply the preregistered two-of-three positive activation threshold."
     }
   ],
   "scenario_ids": [

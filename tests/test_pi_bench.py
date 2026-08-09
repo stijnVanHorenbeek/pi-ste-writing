@@ -980,6 +980,69 @@ class ResumableCellTest(unittest.TestCase):
 
 
 class AggregationTest(unittest.TestCase):
+    def test_activation_acceptance_uses_two_of_three_positive_threshold(self):
+        matrix = run_pi_bench.load_matrix(MATRIX_PATH) | {
+            "models": [run_pi_bench.load_matrix(MATRIX_PATH)["models"][0]],
+            "scenario_ids": ["positive"],
+            "repetitions": 3,
+        }
+        fixtures = {"positive": {"expect_skill_loaded": True}}
+
+        def rows(values):
+            return [
+                {
+                    "cell": {
+                        "provider": matrix["models"][0]["provider"],
+                        "model": matrix["models"][0]["model"],
+                        "thinking": matrix["models"][0]["thinking"],
+                        "condition": "native-skill",
+                        "scenario_id": "positive",
+                        "repetition": index,
+                    },
+                    "response": {"routing": {"skill_loaded": loaded}},
+                }
+                for index, loaded in enumerate(values, 1)
+            ]
+
+        accepted = run_pi_bench.aggregate_activation(
+            matrix, fixtures, rows([True, True, False])
+        )
+        rejected = run_pi_bench.aggregate_activation(
+            matrix, fixtures, rows([True, False, False])
+        )
+
+        self.assertTrue(accepted["accepted"])
+        self.assertEqual(accepted["groups_passed"], 1)
+        self.assertFalse(rejected["accepted"])
+        self.assertEqual(rejected["groups_passed"], 0)
+
+    def test_activation_acceptance_rejects_any_negative_fixture_load(self):
+        matrix = run_pi_bench.load_matrix(MATRIX_PATH) | {
+            "models": [run_pi_bench.load_matrix(MATRIX_PATH)["models"][0]],
+            "scenario_ids": ["negative"],
+            "repetitions": 3,
+        }
+        fixtures = {"negative": {"expect_skill_loaded": False}}
+        rows = [
+            {
+                "cell": {
+                    "provider": matrix["models"][0]["provider"],
+                    "model": matrix["models"][0]["model"],
+                    "thinking": matrix["models"][0]["thinking"],
+                    "condition": "native-skill",
+                    "scenario_id": "negative",
+                    "repetition": index,
+                },
+                "response": {"routing": {"skill_loaded": loaded}},
+            }
+            for index, loaded in enumerate([False, False, True], 1)
+        ]
+
+        result = run_pi_bench.aggregate_activation(matrix, fixtures, rows)
+
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["groups_passed"], 0)
+
     def test_partial_completed_outputs_are_included_as_failure_evidence(self):
         matrix = run_pi_bench.load_matrix(MATRIX_PATH)
         matrix = matrix | {
@@ -1291,6 +1354,9 @@ class AggregationTest(unittest.TestCase):
                 "successful_samples": 5,
                 "integrity_passed_samples": 5,
                 "model_identity_passed_samples": 5,
+                "routing_safety_passed_samples": 5,
+                "activation_groups_expected": 1,
+                "activation_groups_passed": 1,
                 "expected_native_samples": 2,
                 "successful_native_samples": 2,
                 "expected_skill_loaded_samples": 2,
@@ -1510,6 +1576,9 @@ class ReportWritingTest(unittest.TestCase):
                 "successful_samples": 1,
                 "integrity_passed_samples": 1,
                 "model_identity_passed_samples": 1,
+                "routing_safety_passed_samples": 1,
+                "activation_groups_expected": 1,
+                "activation_groups_passed": 0,
                 "expected_native_samples": 1,
                 "successful_native_samples": 0,
                 "expected_skill_loaded_samples": 1,
@@ -1868,7 +1937,8 @@ class V1MatrixContractTest(unittest.TestCase):
 
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
-        self.assertEqual(matrix["version"], 3)
+        self.assertEqual(matrix["version"], 4)
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "2")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -1926,6 +1996,15 @@ class V1MatrixContractTest(unittest.TestCase):
                         "paraphrases, expose structured output types and values, "
                         "protect source modal verbs, and gate release on native skill "
                         "behavior while controls remain diagnostic."
+                    ),
+                },
+                {
+                    "version": 4,
+                    "reason": (
+                        "Tune from the second completed run: admit additional safe "
+                        "paraphrases, improve incident routing, prohibit added "
+                        "formatting, and apply the preregistered two-of-three positive "
+                        "activation threshold."
                     ),
                 },
             ],

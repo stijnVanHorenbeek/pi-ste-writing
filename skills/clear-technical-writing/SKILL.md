@@ -3,7 +3,7 @@ name: clear-technical-writing
 description: >-
   Write, rewrite, or audit semantic-safe technical prose. Use for
   documentation and READMEs, API guides, setup procedures and runbooks,
-  user-facing error messages and CLI help, incident reports and postmortems,
+  user-facing error messages and CLI help, incident findings and postmortems,
   release notes and changelogs, translation-ready prose, or explicit STE,
   ASD-STE100, or STE-compliance audits.
   Do not auto-use for code review, debugging, architecture analysis or design tradeoffs,
@@ -62,8 +62,8 @@ Preserve these unless the user targets them:
 - Markdown link destinations, reference IDs, and anchors.
 - Machine-readable structures and schemas.
 
-Preserve value count, container, and semantic role. Do not rewrite raw
-output. Only the explicitly targeted item becomes editable.
+Keep count, container, and semantic role. Never add formatting or rewrite raw output.
+Only targeted items become editable.
 
 ## Workflow
 

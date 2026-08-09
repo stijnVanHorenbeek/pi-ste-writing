@@ -31,7 +31,7 @@ DEFAULT_MATRIX_PATH = HERE / "v1-matrix.json"
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "v1"
-RUNNER_VERSION = "1"
+RUNNER_VERSION = "2"
 CONDITIONS = ("baseline", "native-skill", "direct-prompt")
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -1020,6 +1020,29 @@ def attempt_error(attempt, index):
     return None
 
 
+def routing_safety_passed(cell, response):
+    routing = response.get("routing", {})
+    if cell["condition"] == "native-skill":
+        return (
+            routing.get("non_read_tool_calls") == 0
+            and routing.get("failed_read_calls") == 0
+            and routing.get("outside_skill_read_calls") == 0
+            and routing.get("successful_read_calls")
+            == routing.get("skill_tree_read_calls")
+        )
+    return (
+        routing.get("tool_calls") == 0
+        and routing.get("non_read_tool_calls") == 0
+        and routing.get("read_calls") == 0
+        and routing.get("successful_read_calls") == 0
+        and routing.get("failed_read_calls") == 0
+        and routing.get("skill_entrypoint_read_calls") == 0
+        and routing.get("skill_tree_read_calls") == 0
+        and routing.get("outside_skill_read_calls") == 0
+        and routing.get("skill_loaded") is False
+    )
+
+
 def expected_condition_integrity(cell, scenario, response):
     expected_skill_loaded = (
         cell["condition"] == "native-skill"
@@ -1032,27 +1055,10 @@ def expected_condition_integrity(cell, scenario, response):
         and (response_model is None or response_model == cell["model"])
     )
     routing = response.get("routing", {})
-    skill_loading_passed = (
-        (
-            routing.get("non_read_tool_calls") == 0
-            and routing.get("failed_read_calls") == 0
-            and routing.get("outside_skill_read_calls") == 0
-            and routing.get("successful_read_calls")
-            == routing.get("skill_tree_read_calls")
-            and routing.get("skill_loaded") == expected_skill_loaded
-        )
+    skill_loading_passed = routing_safety_passed(cell, response) and (
+        routing.get("skill_loaded") == expected_skill_loaded
         if cell["condition"] == "native-skill"
-        else (
-            routing.get("tool_calls") == 0
-            and routing.get("non_read_tool_calls") == 0
-            and routing.get("read_calls") == 0
-            and routing.get("successful_read_calls") == 0
-            and routing.get("failed_read_calls") == 0
-            and routing.get("skill_entrypoint_read_calls") == 0
-            and routing.get("skill_tree_read_calls") == 0
-            and routing.get("outside_skill_read_calls") == 0
-            and routing.get("skill_loaded") is False
-        )
+        else True
     )
     return {
         "model_identity_passed": model_identity_passed,
@@ -1537,6 +1543,55 @@ def aggregate_operations(rows):
     return operations
 
 
+def aggregate_activation(matrix, fixtures, successes):
+    groups = []
+    for model in matrix["models"]:
+        for scenario_id in matrix["scenario_ids"]:
+            rows = [
+                row
+                for row in successes
+                if row["cell"]["provider"] == model["provider"]
+                and row["cell"]["model"] == model["model"]
+                and row["cell"]["thinking"] == model["thinking"]
+                and row["cell"]["condition"] == "native-skill"
+                and row["cell"]["scenario_id"] == scenario_id
+            ]
+            expected_loaded = fixtures[scenario_id].get(
+                "expect_skill_loaded", True
+            )
+            loaded = sum(
+                row["response"]["routing"]["skill_loaded"] for row in rows
+            )
+            required = (
+                math.ceil(2 * matrix["repetitions"] / 3)
+                if expected_loaded
+                else 0
+            )
+            passed = len(rows) == matrix["repetitions"] and (
+                loaded >= required if expected_loaded else loaded == 0
+            )
+            groups.append(
+                {
+                    "provider": model["provider"],
+                    "model": model["model"],
+                    "thinking": model["thinking"],
+                    "scenario_id": scenario_id,
+                    "expected_skill_loaded": expected_loaded,
+                    "successful_samples": len(rows),
+                    "loaded_samples": loaded,
+                    "required_loaded_samples": required,
+                    "passed": passed,
+                }
+            )
+    passed = sum(group["passed"] for group in groups)
+    return {
+        "groups_expected": len(groups),
+        "groups_passed": passed,
+        "accepted": passed == len(groups),
+        "groups": groups,
+    }
+
+
 def aggregate_results(
     matrix,
     fixtures,
@@ -1710,18 +1765,28 @@ def aggregate_results(
     integrity_passed_samples = sum(
         row["condition_integrity"]["passed"] for row in successes
     )
+    routing_safety_passed_samples = sum(
+        routing_safety_passed(row["cell"], row["response"])
+        for row in successes
+    )
+    activation = aggregate_activation(matrix, fixtures, successes)
     condition_integrity = {
         "expected_samples": expected,
         "successful_samples": len(successes),
         "integrity_passed_samples": integrity_passed_samples,
         "model_identity_passed_samples": model_identity_passed_samples,
+        "routing_safety_passed_samples": routing_safety_passed_samples,
+        "activation_groups_expected": activation["groups_expected"],
+        "activation_groups_passed": activation["groups_passed"],
         "expected_native_samples": expected_native_samples,
         "successful_native_samples": len(native_rows),
         "expected_skill_loaded_samples": expected_skill_loaded_samples,
         "skill_loaded_samples": skill_loaded_samples,
         "accepted": (
             len(successes) == expected
-            and integrity_passed_samples == expected
+            and model_identity_passed_samples == expected
+            and routing_safety_passed_samples == expected
+            and activation["accepted"]
         ),
     }
     return {
@@ -1799,9 +1864,19 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
             f"{results['condition_integrity']['expected_samples']}."
         ),
         (
+            "Routing safety passes: "
+            f"{results['condition_integrity']['routing_safety_passed_samples']}/"
+            f"{results['condition_integrity']['expected_samples']}."
+        ),
+        (
             "Native skill loads: "
             f"{results['condition_integrity']['skill_loaded_samples']}/"
             f"{results['condition_integrity']['expected_skill_loaded_samples']}."
+        ),
+        (
+            "Activation groups passing threshold: "
+            f"{results['condition_integrity']['activation_groups_passed']}/"
+            f"{results['condition_integrity']['activation_groups_expected']}."
         ),
         "",
         (

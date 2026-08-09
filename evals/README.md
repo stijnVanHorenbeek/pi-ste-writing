@@ -4,7 +4,7 @@ V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic
 
 ## Preregistered matrix
 
-`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Version 3 records evidence-driven fixture, output-contract, and modal-preservation corrections after first completed run.
+`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Versions 3 and 4 record evidence-driven fixture, routing, output-contract, and semantic-preservation corrections from completed runs.
 
 Conditions:
 
@@ -12,7 +12,7 @@ Conditions:
 - `native-skill`: Pi loads only `clear-technical-writing`; model can use only `read` so progressive skill loading works.
 - `direct-prompt`: complete `SKILL.md` text is injected with skills and tools disabled. This condition is diagnostic, not a substitute for native loading.
 
-Version 3 makes `native-skill` the package acceptance gate. Baseline and direct-prompt remain complete diagnostic controls: their failures stay authoritative for those outputs and visible in reports, but expected control failures do not veto package release.
+Version 3 makes `native-skill` the package acceptance gate. Baseline and direct-prompt remain complete diagnostic controls: their failures stay authoritative for those outputs and visible in reports, but expected control failures do not veto package release. Positive native activation passes at two or more loads across three repetitions per model and scenario; negative structured-output activation requires zero loads.
 
 Matrix changes require a versioned amendment with a recorded reason. Raw results store the matrix SHA-256, so results from changed matrices cannot be silently reused.
 
