@@ -66,7 +66,7 @@ Exact output-contract checks support plain-text framing rules and schema-constra
 
 ## Independent quality judge
 
-Run judging only after benchmark generation completes. Judge generation requires same clean package commit and skill snapshot as source benchmark:
+Run judging only after benchmark generation completes. Source benchmark must come from a clean package commit, and judge generation must use same matrix and skill snapshot. Evaluator-only fixes can use a newer clean commit; reports record both commits:
 
 ```bash
 python3 evals/run_quality_judge.py \
@@ -103,7 +103,7 @@ Rubric scores each candidate from 1–5, or marks dimension not applicable:
 - Safety and actionability.
 - Readability and concision.
 
-Before judging or reporting, runner recomputes source completeness, condition integrity, and semantic acceptance from benchmark raw cells and rejects aggregate mismatches. Raw judge cells retain blind assignment, candidate and prompt hashes, provider identity, usage/cost metadata, attempts, verdict, and unblinded outcome. Existing valid successes resume without calls. Failed or invalid verdicts remain visible and retry within configured limit.
+Before judging or reporting, runner recomputes source completeness, condition integrity, and semantic acceptance from benchmark raw cells and rejects aggregate mismatches. Judge verdict transport accepts raw JSON or one enclosing `json` code fence, then enforces exact object schema. Raw judge cells retain blind assignment, candidate and prompt hashes, provider identity, usage/cost metadata, attempts, verdict, and unblinded outcome. Existing valid successes resume without calls. Failed or invalid verdicts remain visible and retry within configured limit.
 
 Reports keep deterministic semantic authority separate from ordinal judge preference. If one candidate fails deterministic semantic or output-contract gates, passing candidate wins regardless of judge preference. If both fail, neither wins. Judge-reported semantic, task, modality, terminology, or safety blockers require human resolution and suppress preference-based acceptance.
 

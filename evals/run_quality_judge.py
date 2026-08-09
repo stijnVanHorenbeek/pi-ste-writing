@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import re
 import statistics
 import subprocess
 import time
@@ -18,7 +19,7 @@ DEFAULT_CONFIG_PATH = HERE / "quality-judge.json"
 DEFAULT_MATRIX_PATH = HERE / "v1-matrix.json"
 DEFAULT_BENCHMARK_RESULTS_DIR = HERE / "results" / "v1"
 DEFAULT_JUDGE_RESULTS_DIR = DEFAULT_BENCHMARK_RESULTS_DIR / "judge"
-JUDGE_RUNNER_VERSION = "1"
+JUDGE_RUNNER_VERSION = "2"
 REQUIRED_DIMENSIONS = (
     "factual_semantic_fidelity",
     "task_completion",
@@ -53,6 +54,18 @@ def collect_judge_provenance(
         "skill_sha256": current["skill_sha256"],
         "pi_version": current["pi_version"],
     }
+
+
+def source_compatibility_error(source_provenance, judge_provenance):
+    if source_provenance.get("package_dirty") is not False:
+        return "benchmark evidence must come from a clean git working tree"
+    if judge_provenance.get("package_dirty") is not False:
+        return "judge generation requires a clean git working tree"
+    if judge_provenance.get("skill_sha256") != source_provenance.get(
+        "skill_sha256"
+    ):
+        return "judge generation requires the benchmark skill snapshot"
+    return None
 
 
 def validate_judge_config(config):
@@ -493,7 +506,11 @@ def judge_output_error(verdict, config):
 
 
 def parse_judge_output(text, config):
-    verdict = run_pi_bench.strict_json_loads(text)
+    stripped = text.strip()
+    fence = re.fullmatch(r"```(?:json)?\s*\n(.*)\n```", stripped, re.DOTALL | re.IGNORECASE)
+    if fence is not None:
+        stripped = fence.group(1)
+    verdict = run_pi_bench.strict_json_loads(stripped)
     if error := judge_output_error(verdict, config):
         raise ValueError(error)
     return verdict
@@ -1297,15 +1314,9 @@ def execute_judging(
     raw_directory.mkdir(parents=True, exist_ok=True)
 
     if not report_only:
-        if provenance.get("package_dirty") is True:
-            raise RuntimeError("judge generation requires a clean git working tree")
-        if "package_commit" in provenance and (
-            provenance["package_commit"] != source_provenance["package_commit"]
-            or provenance.get("skill_sha256") != source_provenance["skill_sha256"]
-        ):
-            raise RuntimeError(
-                "judge generation requires the benchmark package commit and skill snapshot"
-            )
+        if "skill_sha256" in provenance:
+            if error := source_compatibility_error(source_provenance, provenance):
+                raise RuntimeError(error)
         skill_text = source_skill_text
         if run_pi_bench.tree_sha256(run_pi_bench.SKILL_DIR) != source_provenance[
             "skill_sha256"

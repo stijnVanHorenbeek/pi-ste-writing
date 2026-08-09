@@ -36,6 +36,7 @@ class JudgeConfigTest(unittest.TestCase):
             ],
         )
         self.assertEqual(config["version"], 2)
+        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "2")
         self.assertEqual(config["source_repetitions_minimum"], 3)
         self.assertEqual(
             [comparison["id"] for comparison in config["comparisons"]],
@@ -238,6 +239,14 @@ class JudgePromptAndVerdictTest(unittest.TestCase):
         verdict = valid_verdict(config)
         parsed = run_quality_judge.parse_judge_output(json.dumps(verdict), config)
         self.assertEqual(parsed, verdict)
+        fenced = run_quality_judge.parse_judge_output(
+            f"```json\n{json.dumps(verdict)}\n```", config
+        )
+        self.assertEqual(fenced, verdict)
+        with self.assertRaises((ValueError, json.JSONDecodeError)):
+            run_quality_judge.parse_judge_output(
+                f"Result:\n```json\n{json.dumps(verdict)}\n```", config
+            )
 
         invalid_score = copy.deepcopy(verdict)
         invalid_score["candidates"]["A"]["scores"][
@@ -725,6 +734,27 @@ class JudgeReportingTest(unittest.TestCase):
 
 
 class JudgeOrchestrationTest(unittest.TestCase):
+    def test_evaluator_commit_can_change_when_source_skill_snapshot_is_unchanged(self):
+        source = {
+            "package_commit": "a" * 40,
+            "package_dirty": False,
+            "skill_sha256": "c" * 64,
+        }
+        current = {
+            "package_commit": "b" * 40,
+            "package_dirty": False,
+            "skill_sha256": "c" * 64,
+        }
+
+        self.assertIsNone(
+            run_quality_judge.source_compatibility_error(source, current)
+        )
+        current["skill_sha256"] = "d" * 64
+        self.assertIn(
+            "skill snapshot",
+            run_quality_judge.source_compatibility_error(source, current),
+        )
+
     def source_results(self, package_dirty=False):
         return {
             "schema_version": 1,
