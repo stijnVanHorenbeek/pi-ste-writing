@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "matrix_id": "v1",
+  "version": 1,
+  "description": "Preregistered V1 semantic benchmark matrix for baseline, native Pi skill, and direct-prompt diagnostic conditions.",
+  "amendments": [
+    {
+      "version": 1,
+      "reason": "Initial V1 preregistration before benchmark prompt tuning."
+    }
+  ],
+  "scenario_ids": [
+    "release-facts-and-causes",
+    "modal-policy-distinctions",
+    "repository-terms-and-protected-spans",
+    "correlation-with-unknown-root-cause",
+    "mixed-destructive-procedure",
+    "schema-constrained-incident-status"
+  ],
+  "conditions": [
+    "baseline",
+    "native-skill",
+    "direct-prompt"
+  ],
+  "models": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "medium"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "low"
+    }
+  ],
+  "repetitions": 3,
+  "retry_limit": 2,
+  "timeout_seconds": 300,
+  "inter_call_delay_seconds": 2,
+  "system_prompt": "Return only the final text requested by the user. Do not include analysis, rule commentary, or a preface.",
+  "semantic_gate_conditions": [
+    "baseline",
+    "native-skill",
+    "direct-prompt"
+  ],
+  "isolation": {
+    "tools_by_condition": {
+      "baseline": [],
+      "native-skill": [
+        "read"
+      ],
+      "direct-prompt": []
+    },
+    "extensions": false,
+    "skills": "explicit-only",
+    "prompt_templates": false,
+    "themes": false,
+    "context_files": false,
+    "session_persistence": false,
+    "project_trust": false,
+    "startup_network": false
+  },
+  "output_contract": {
+    "type": "text",
+    "forbidden_patterns": [
+      "(?is)^\\s*here(?:'s| is| are)\\b",
+      "(?is)^\\s*(?:rewritten|revised) (?:text|version)\\s*:"
+    ]
+  }
+}

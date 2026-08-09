@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "description": "Benchmark-only scenarios for output contracts not declared by semantic rewrite fixtures.",
+  "scenarios": [
+    {
+      "id": "schema-constrained-incident-status",
+      "mode": "structured",
+      "task": "Return one JSON object with exactly the keys status, incidentId, and affectedPercent. Use the source values without commentary.",
+      "source": "Status is degraded. The incident identifier is INC-4821. Affected requests are 12%.",
+      "expect_skill_loaded": false,
+      "output_contract": {
+        "type": "json_object",
+        "required_keys": [
+          "status",
+          "incidentId",
+          "affectedPercent"
+        ],
+        "additional_properties": false,
+        "property_types": {
+          "status": "string",
+          "incidentId": "string",
+          "affectedPercent": "integer"
+        },
+        "property_values": {
+          "status": "degraded",
+          "incidentId": "INC-4821",
+          "affectedPercent": 12
+        }
+      }
+    }
+  ]
+}

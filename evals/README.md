@@ -1,0 +1,69 @@
+# V1 evaluation
+
+V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic scoring, and later independent review. It does not claim ASD-STE100 certification or complete open-prose equivalence.
+
+## Preregistered matrix
+
+`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples.
+
+Conditions:
+
+- `baseline`: no writing skill and no model-callable tools.
+- `native-skill`: Pi loads only `clear-technical-writing`; model can use only `read` so progressive skill loading works.
+- `direct-prompt`: complete `SKILL.md` text is injected with skills and tools disabled. This condition is diagnostic, not a substitute for native loading.
+
+Matrix changes require a versioned amendment with a recorded reason. Raw results store the matrix SHA-256, so results from changed matrices cannot be silently reused.
+
+## Run
+
+Commit all source changes first. Generation requires a clean Git working tree because each raw cell records exact package commit and Pi version.
+
+```bash
+python3 evals/run_pi_bench.py \
+  --matrix evals/v1-matrix.json \
+  --results-dir evals/results/v1
+```
+
+Rebuild reports without model calls:
+
+```bash
+python3 evals/run_pi_bench.py \
+  --matrix evals/v1-matrix.json \
+  --results-dir evals/results/v1 \
+  --report-only
+```
+
+Exit 0 means matrix complete with accepted condition-integrity and semantic gates. Exit 1 means evidence is incomplete or a required gate failed. Invocation or configuration errors exit 2.
+
+## Isolation
+
+Matrix controls tools, extensions, skills, prompt templates, themes, context files, sessions, project trust, and Pi startup networking. V1 disables ambient resources, persistent sessions, project trust, and startup network checks. Provider requests still run. Native condition explicitly loads package skill and allows only `read`.
+
+Each call uses an empty temporary working directory. Baseline and adapted conditions receive same task input and system prompt.
+
+## Resume and raw evidence
+
+Existing matching successful cells are skipped. Failed cells keep attempt history and retry on next run. Raw reuse requires identical cell identity, runner version, matrix hash, package commit, dirty state, and Pi version. Stale results remain visible and are not overwritten.
+
+Each successful raw cell records:
+
+- Requested and returned provider/model identity.
+- Thinking level.
+- Input, provider output, reasoning, visible-output, cache, and total token metadata with explicit availability.
+- Cost and duration.
+- Native skill-read evidence.
+- Deterministic semantic, procedure, Exact output-contract, and advisory style results.
+
+Unavailable reasoning metadata remains `null`; provider output counts include reasoning where Pi reports that relationship. Hidden reasoning content is never stored. Non-stop partial outputs remain in failed-attempt records and receive separate aggregate failure evidence.
+
+## Reports
+
+`results.json` and `RESULTS.md` report semantic metrics before style metrics. Semantic and exact output-contract failures remain authoritative. Style findings cannot override them. Usage, cost, duration, population standard deviation, routing evidence, and unresolved cells follow.
+
+`failures.json` lists failed, missing, stale, and invalid cells. Incomplete matrices block final benchmark claims.
+
+Exact output-contract checks support plain-text framing rules and schema-constrained JSON objects with required keys, additional-property control, and property types.
+
+## Limits
+
+Deterministic patterns cover declared fixture properties only. New claims and open prose still need attested source review. Provider costs are metadata, not billing records. Runner never requests or stores hidden reasoning content.
