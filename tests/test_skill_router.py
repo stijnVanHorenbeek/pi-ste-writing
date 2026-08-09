@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "clear-technical-writing" / "SKILL.md"
+README = ROOT / "README.md"
 DECISION_HIERARCHY = [
     "1. Technical correctness.",
     "2. Source facts and meaning.",
@@ -48,9 +49,9 @@ class SkillRouterTest(unittest.TestCase):
         self.assertIn("license: MIT", frontmatter)
         self.assertIn("compatibility:", frontmatter)
         self.assertIn("Pi", frontmatter)
-        self.assertIn("metadata:", frontmatter)
-        self.assertIn("AminBlg/SimpleEnglish", frontmatter)
-        self.assertIn("59bf6702197a5aadc96d197ea17f290d8d50dcd3", frontmatter)
+        self.assertNotIn("metadata:", frontmatter)
+        self.assertNotIn("AminBlg/SimpleEnglish", frontmatter)
+        self.assertNotIn("59bf6702197a5aadc96d197ea17f290d8d50dcd3", frontmatter)
         self.assertLessEqual(len(description), 1_024)
 
         included = [
@@ -196,8 +197,9 @@ class SkillRouterTest(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, normalized)
 
-    def test_strict_disclaimer_provenance_and_target_size_are_explicit(self):
+    def test_strict_disclaimer_and_package_attribution_are_explicit(self):
         text = SKILL.read_text()
+        readme = README.read_text()
         normalized = normalized_text(text)
         size = len(text.encode())
 
@@ -209,10 +211,12 @@ class SkillRouterTest(unittest.TestCase):
         )
         self.assertIn("ASD-STE100 is a registered trademark of ASD", normalized)
         self.assertIn("not affiliated with ASD, STEMG, or the upstream project", normalized)
-        self.assertIn("AminBlg/SimpleEnglish", text)
-        self.assertIn("skills/simple-english/SKILL.md", text)
-        self.assertIn("59bf6702197a5aadc96d197ea17f290d8d50dcd3", text)
-        self.assertIn("MIT", text)
+        self.assertNotIn("AminBlg/SimpleEnglish", text)
+        self.assertNotIn("skills/simple-english/SKILL.md", text)
+        self.assertNotIn("59bf6702197a5aadc96d197ea17f290d8d50dcd3", text)
+        self.assertIn("AminBlg/SimpleEnglish", readme)
+        self.assertIn("59bf6702197a5aadc96d197ea17f290d8d50dcd3", readme)
+        self.assertIn("MIT", readme)
 
         positive_claims = [
             r"\bis ASD-STE100 compliant\b",

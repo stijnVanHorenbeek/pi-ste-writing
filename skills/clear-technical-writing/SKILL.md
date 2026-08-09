@@ -12,9 +12,6 @@ description: >-
   output, source or generated code, marketing, brand, or editorial voice.
 license: MIT
 compatibility: Pi; Python 3 optional for linter.
-metadata:
-  upstream: AminBlg/SimpleEnglish@59bf6702197a5aadc96d197ea17f290d8d50dcd3
-  standard: ASD-STE100 Issue 9
 ---
 
 # Clear writing
@@ -119,10 +116,3 @@ STE-compliance audits must include:
 
 ASD-STE100 is a registered trademark of ASD. This package is not affiliated with ASD,
 STEMG, or the upstream project.
-
-## Provenance
-
-MIT adaptation of
-[`AminBlg/SimpleEnglish`](https://github.com/AminBlg/SimpleEnglish)
-`skills/simple-english/SKILL.md` at commit
-`59bf6702197a5aadc96d197ea17f290d8d50dcd3`.
