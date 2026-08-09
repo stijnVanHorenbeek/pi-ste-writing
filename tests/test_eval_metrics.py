@@ -387,14 +387,14 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
                 "The team changed the cache TTL from 5 to 15 minutes. After this "
                 "change, the error rate fell from 2.4% to 0.7%. Of the 860 failed "
                 "requests, trace data confirmed that stale cache entries caused 73%. "
-                "The cause of the remaining failed requests is unknown. The supported "
+                "The cause of the remaining failed requests remains unknown. The supported "
                 "retry-delay range is 100-500 ms."
             ),
             "modal-policy-distinctions": (
                 "Operators must keep backups for 30 days. Operators should test "
                 "restoration each month. Administrators can rotate keys in Security "
                 "settings. A key rotation may interrupt active sessions. Propagation "
-                "might take up to 10 minutes. If you use --force, older clients could "
+                "might take up to 10 minutes. If you use `--force`, older clients could "
                 "reconnect without cached credentials."
             ),
             "repository-terms-and-protected-spans": terms_source.replace(

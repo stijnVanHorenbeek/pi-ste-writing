@@ -63,14 +63,14 @@ Preserve these unless the user targets them:
 - Machine-readable structures and schemas.
 
 Keep count, container, and semantic role. Never add formatting or rewrite raw output.
-Only targeted items become editable.
+Only targets become editable.
 
 ## Workflow
 
 1. Identify audience, mode, and exact output contract.
 2. Inventory protected content and claims.
 3. Classify each passage.
-4. Rewrite eligible prose without inventing facts, causes, approval, success, or safety.
+4. Rewrite without inventing facts, causes, approval, success, or safety; sequence does not prove cause.
 5. Compare source and draft for negation, qualifiers, conditions, relationships, modal
    force, protected values, containers, and roles.
 6. Run the advisory linter only when useful; inspect findings in context.

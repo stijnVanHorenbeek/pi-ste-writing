@@ -16,7 +16,7 @@
         "causal_chain",
         "unknown_vs_confirmed_cause"
       ],
-      "task": "Rewrite the release analysis for clarity. Preserve every fact and degree of certainty.",
+      "task": "Rewrite the release analysis for clarity. Preserve every fact, degree of certainty, number, and range exactly.",
       "source": "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. The error rate fell from 2.4% to 0.7% after the cache TTL changed from 5 to 15 minutes. Trace data confirmed that stale cache entries caused 73% of 860 failed requests. The cause of the remaining failures is unknown. The supported retry-delay range is 100-500 ms.",
       "allowed_claims": [
         {
@@ -130,7 +130,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(cause of the remaining (failed requests|failures) is unknown|remaining failures have no confirmed cause|no cause is confirmed for (the )?(other|remaining) failures)"
+              "pattern": "(?i)(cause of the remaining (failed requests|failures) (is|remains) unknown|remaining failures have no confirmed cause|no cause is confirmed for (the )?(other|remaining) failures)"
             }
           ]
         },
@@ -196,7 +196,7 @@
         "recommendation_vs_requirement"
       ],
       "task": "Rewrite this policy in strict STE mode without changing requirements, recommendations, capabilities, or possibilities.",
-      "source": "Operators must retain backups for 30 days. They should test restoration monthly. Administrators can rotate keys from Security settings. A rotation may interrupt active sessions. Propagation might take up to 10 minutes. With --force, older clients could reconnect without cached credentials.",
+      "source": "Operators must retain backups for 30 days. They should test restoration monthly. Administrators can rotate keys from Security settings. A rotation may interrupt active sessions. Propagation might take up to 10 minutes. With `--force`, older clients could reconnect without cached credentials.",
       "allowed_claims": [
         {
           "id": "modal-retention",
@@ -330,7 +330,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?is)((with|if you use) --force.{0,40}older clients could reconnect without cached credentials|when --force is used.{0,80}reconnection without cached credentials could occur for older clients)"
+              "pattern": "(?is)((with (the )?|if you use )`?--force`?( flag)?.{0,40}older clients could reconnect without cached credentials|when `?--force`? is used.{0,80}reconnection without cached credentials could occur for older clients)"
             }
           ]
         }
@@ -338,7 +338,7 @@
       "passing_rewrites": [
         {
           "id": "modal-valid-active-passive-mix",
-          "rewrite": "Backups must be retained by operators for 30 days. Monthly restoration testing is recommended for operators. Key rotation from Security settings is available to administrators. Active sessions may be interrupted by a rotation. Up to 10 minutes might be needed for propagation. When --force is used, reconnection without cached credentials could occur for older clients."
+          "rewrite": "Backups must be retained by operators for 30 days. Monthly restoration testing is recommended for operators. Key rotation from Security settings is available to administrators. Active sessions may be interrupted by a rotation. Up to 10 minutes might be needed for propagation. When `--force` is used, reconnection without cached credentials could occur for older clients."
         }
       ],
       "failing_baselines": [

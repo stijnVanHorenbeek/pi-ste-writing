@@ -95,6 +95,11 @@ class SkillRouterTest(unittest.TestCase):
             with self.subTest(boundary=boundary):
                 self.assertIn(boundary, protected.lower())
 
+    def test_workflow_does_not_convert_sequence_into_causation(self):
+        workflow = section(SKILL.read_text(), "Workflow").lower()
+
+        self.assertIn("sequence does not prove cause", workflow)
+
     def test_progressive_references_exist_and_have_narrow_loading_rules(self):
         text = SKILL.read_text()
         references = set(re.findall(r"`(references/[^`]+\.md)`", text))
