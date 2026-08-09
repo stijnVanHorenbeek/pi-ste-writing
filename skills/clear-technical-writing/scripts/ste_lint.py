@@ -29,7 +29,8 @@ INLINE_CODE_RE = re.compile(
     r"(?<!`)(?P<ticks>`+)(?!`)(?P<value>[^\n]*?)(?P=ticks)(?!`)"
 )
 FENCE_OPEN_RE = re.compile(
-    r"^[ \t]{0,3}(?P<marker>`{3,}|~{3,})[^\n]*(?:\n|$)", re.MULTILINE
+    r"^(?P<indent>[ \t]{0,3})(?P<marker>`{3,}|~{3,})[^\n]*(?:\n|$)",
+    re.MULTILINE,
 )
 INDENTED_CODE_RE = re.compile(r"(?:^(?: {4}|\t).*(?:\n|$))+", re.MULTILINE)
 LINK_OPEN_RE = re.compile(r"\[[^\]\n]*\]\(")
@@ -135,13 +136,23 @@ def fenced_code_spans(text):
             re.MULTILINE,
         )
         closer = closer_re.search(text, opener.end())
+        indent = opener.group("indent")
+
+        def value_without_container_indent(value):
+            if not indent:
+                return value
+            return "".join(
+                line[len(indent) :] if line.startswith(indent) else line
+                for line in value.splitlines(keepends=True)
+            )
+
         if closer is None:
             spans.append(
                 {
                     "start": opener.start(),
                     "end": len(text),
                     "value_start": opener.end(),
-                    "value": text[opener.end() :],
+                    "value": value_without_container_indent(text[opener.end() :]),
                 }
             )
             break
@@ -150,7 +161,9 @@ def fenced_code_spans(text):
                 "start": opener.start(),
                 "end": closer.end(),
                 "value_start": opener.end(),
-                "value": text[opener.end() : closer.start()],
+                "value": value_without_container_indent(
+                    text[opener.end() : closer.start()]
+                ),
             }
         )
         position = closer.end()

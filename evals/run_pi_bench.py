@@ -31,7 +31,7 @@ DEFAULT_MATRIX_PATH = HERE / "v1-matrix.json"
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "v1"
-RUNNER_VERSION = "2"
+RUNNER_VERSION = "3"
 CONDITIONS = ("baseline", "native-skill", "direct-prompt")
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -1299,25 +1299,48 @@ def run_cell(
             continue
 
         response = call["response"]
-        attempt["status"] = "success"
-        document["attempts"].append(attempt)
         condition_integrity = expected_condition_integrity(
             cell,
             fixture,
             response,
         )
+        evaluation = evaluate_scenario(
+            fixture,
+            response["text"],
+            matrix["output_contract"],
+            raw_result_name(cell),
+        )
+        if (
+            not condition_integrity["model_identity_passed"]
+            or not routing_safety_passed(cell, response)
+        ):
+            error = {
+                "kind": "condition-integrity",
+                "message": "Model identity or routing safety did not pass.",
+            }
+            attempt.update(
+                status="failure",
+                error=error,
+                partial_response=response,
+                partial_evaluation=evaluation,
+            )
+            document["attempts"].append(attempt)
+            document["last_error"] = error
+            document["updated_at"] = now()
+            write_json_atomic(raw_path, document)
+            if attempt_in_run < matrix["retry_limit"]:
+                pause(matrix["inter_call_delay_seconds"])
+            continue
+
+        attempt["status"] = "success"
+        document["attempts"].append(attempt)
         document.update(
             status="success",
             updated_at=now(),
             duration_ms=call["duration_ms"],
             response=response,
             condition_integrity=condition_integrity,
-            evaluation=evaluate_scenario(
-                fixture,
-                response["text"],
-                matrix["output_contract"],
-                raw_result_name(cell),
-            ),
+            evaluation=evaluation,
         )
         document.pop("last_error", None)
         write_json_atomic(raw_path, document)

@@ -27,7 +27,20 @@ def extracted_values(text, check_type):
     if check_type == "inline_code":
         return re.findall(r"(?<!`)`([^`\n]+)`(?!`)", text)
     if check_type == "fenced_code":
-        return re.findall(r"```[^\n]*\n(.*?)\n```", text, flags=re.DOTALL)
+        values = []
+        pattern = re.compile(
+            r"^(?P<indent>[ \t]{0,3})```[^\n]*\n(?P<value>.*?)"
+            r"^[ \t]{0,3}```[ \t]*$",
+            re.DOTALL | re.MULTILINE,
+        )
+        for match in pattern.finditer(text):
+            indent = match.group("indent")
+            value = "\n".join(
+                line[len(indent) :] if indent and line.startswith(indent) else line
+                for line in match.group("value").splitlines()
+            )
+            values.append(value)
+        return values
     if check_type == "markdown_link":
         return re.findall(r"\[([^\]]+)\]\(([^)]+)\)", text)
     if check_type == "bold_text":

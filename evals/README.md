@@ -4,7 +4,7 @@ V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic
 
 ## Preregistered matrix
 
-`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Versions 3 and 4 record evidence-driven fixture, routing, output-contract, and semantic-preservation corrections from completed runs.
+`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Versions 3–5 record evidence-driven fixture, routing, output-contract, and semantic-preservation corrections from completed runs.
 
 Conditions:
 
@@ -45,7 +45,7 @@ Each call uses an empty temporary working directory. Baseline and adapted condit
 
 ## Resume and raw evidence
 
-Existing matching successful cells are skipped. Failed cells keep attempt history and retry on next run. Raw reuse requires identical cell identity, runner version, matrix hash, package commit, dirty state, and Pi version. Stale results remain visible and are not overwritten.
+Existing matching successful cells are skipped. Failed cells keep attempt history and retry on next run. Model-identity or routing-safety failures retain completed output as partial evidence and retry; ordinary automatic-activation misses remain samples for two-of-three routing acceptance. Raw reuse requires identical cell identity, runner version, matrix hash, package commit, dirty state, and Pi version. Stale results remain visible and are not overwritten.
 
 Each successful raw cell records:
 

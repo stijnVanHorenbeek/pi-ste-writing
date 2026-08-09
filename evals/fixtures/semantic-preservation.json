@@ -16,7 +16,7 @@
         "causal_chain",
         "unknown_vs_confirmed_cause"
       ],
-      "task": "Rewrite the release analysis for clarity. Preserve every fact, degree of certainty, number, and range exactly.",
+      "task": "Rewrite the release analysis for clarity. Preserve every fact and degree of certainty. Keep 100-500 ms exactly, including the hyphen.",
       "source": "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. The error rate fell from 2.4% to 0.7% after the cache TTL changed from 5 to 15 minutes. Trace data confirmed that stale cache entries caused 73% of 860 failed requests. The cause of the remaining failures is unknown. The supported retry-delay range is 100-500 ms.",
       "allowed_claims": [
         {
@@ -286,7 +286,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)((they|operators) should test restoration (monthly|each month)|monthly restoration testing is recommended( for operators)?)"
+              "pattern": "(?i)((they|operators) should test restoration (monthly|each month|every month)|monthly restoration testing is recommended( for operators)?)"
             }
           ]
         },
@@ -319,7 +319,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(propagation might take up to 10 minutes|up to 10 minutes might be needed for propagation)"
+              "pattern": "(?i)(propagation might (take|require) up to 10 minutes|up to 10 minutes might be needed for propagation)"
             }
           ]
         },
@@ -649,7 +649,7 @@
         "correlation_not_causation",
         "unknown_vs_confirmed_cause"
       ],
-      "task": "Condense this incident finding without inventing a root cause or strengthening the evidence.",
+      "task": "Condense this incident finding. Preserve that timing shows correlation only and no evidence of causation. Do not claim that there is no link. Do not invent a root cause.",
       "source": "During the 12-minute deployment window, p95 latency rose from 180 ms to 260 ms. The timing shows correlation only; there is no evidence that the deployment caused the increase. The root cause remains unknown. Packet loss was ruled out.",
       "allowed_claims": [
         {
@@ -731,7 +731,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)packet loss (was ruled out|has been excluded)"
+              "pattern": "(?i)packet loss (was ruled out|has been ruled out|has been excluded)"
             }
           ]
         }
@@ -768,7 +768,7 @@
         "mixed_passage",
         "destructive_warning"
       ],
-      "task": "Rewrite this runbook section as a safe procedure. Keep descriptive scope, identifiers, commands, conditions, and warning consequences.",
+      "task": "Rewrite this runbook section as a safe procedure. Keep descriptive scope, identifiers, commands, conditions, and warning consequences. Keep source fenced code fenced and source inline code inline.",
       "source": "The cleanup job removes expired preview data. It does not delete production records.\n\nBefore you continue, confirm that snapshot `snap-2026-07-14` is complete.\n\nWARNING: The next command permanently deletes namespace `payments`. Recovery requires restoring the snapshot.\n\nIf change request `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\nThen verify the status with `kubectl get namespace payments`.",
       "allowed_claims": [
         {

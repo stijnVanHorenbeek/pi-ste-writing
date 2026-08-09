@@ -392,9 +392,9 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
             ),
             "modal-policy-distinctions": (
                 "Operators must keep backups for 30 days. Operators should test "
-                "restoration each month. Administrators can rotate keys in Security "
+                "restoration every month. Administrators can rotate keys in Security "
                 "settings. A key rotation may interrupt active sessions. Propagation "
-                "might take up to 10 minutes. If you use `--force`, older clients could "
+                "might require up to 10 minutes. If you use `--force`, older clients could "
                 "reconnect without cached credentials."
             ),
             "repository-terms-and-protected-spans": terms_source.replace(
@@ -409,7 +409,7 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
                 "During the 12-minute deployment window, p95 latency rose from 180 ms "
                 "to 260 ms, but no evidence establishes causation. The root cause is "
                 "unknown. "
-                "Packet loss was ruled out."
+                "Packet loss has been ruled out."
             ),
             "mixed-destructive-procedure": (
                 "The cleanup job removes expired preview data. It does not delete "
@@ -418,7 +418,7 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
                 "> **WARNING:** The next command permanently deletes namespace "
                 "`payments`. Recovery requires restoring the snapshot.\n\n"
                 "2. Confirm that change request `CHG-4821` is approved.\n\n"
-                "3. Run:\n\n```bash\nkubectl delete namespace payments\n```\n\n"
+                "3. Run:\n\n   ```bash\n   kubectl delete namespace payments\n   ```\n\n"
                 "4. Verify the status with `kubectl get namespace payments`."
             ),
         }

@@ -175,6 +175,22 @@ class SemanticFixtureCorpusTest(unittest.TestCase):
                     for pattern in claim["patterns"]:
                         re.compile(pattern)
 
+    def test_high_risk_tasks_state_exact_preservation_boundaries(self):
+        fixtures = {
+            fixture["id"]: fixture for fixture in self.load_corpus()["fixtures"]
+        }
+
+        release_task = fixtures["release-facts-and-causes"]["task"]
+        self.assertIn("100-500 ms", release_task)
+        self.assertIn("hyphen", release_task)
+        self.assertIn(
+            "correlation only",
+            fixtures["correlation-with-unknown-root-cause"]["task"].lower(),
+        )
+        procedure_task = fixtures["mixed-destructive-procedure"]["task"].lower()
+        self.assertIn("fenced", procedure_task)
+        self.assertIn("inline", procedure_task)
+
     def test_invariants_define_machine_readable_checks(self):
         corpus = self.load_corpus()
 

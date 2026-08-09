@@ -670,15 +670,70 @@ class ResumableCellTest(unittest.TestCase):
                 (Path(directory) / "cell.json").read_text(encoding="utf-8")
             )
 
+        self.assertEqual(saved["status"], "failure")
+        self.assertEqual(saved["last_error"]["kind"], "condition-integrity")
         self.assertEqual(
-            saved["condition_integrity"],
-            {
-                "model_identity_passed": False,
-                "expected_skill_loaded": False,
-                "skill_loading_passed": True,
-                "passed": False,
-            },
+            saved["attempts"][0]["partial_response"]["provider"],
+            "unexpected-provider",
         )
+        self.assertNotIn("condition_integrity", saved)
+
+    def test_routing_safety_failure_is_preserved_and_retried(self):
+        self.cell = next(
+            cell
+            for cell in run_pi_bench.iter_cells(self.matrix, self.scenarios)
+            if cell["condition"] == "native-skill"
+        )
+        unsafe = self.successful_call()
+        unsafe["response"]["routing"] = {
+            "tool_calls": 3,
+            "non_read_tool_calls": 0,
+            "read_calls": 3,
+            "successful_read_calls": 1,
+            "failed_read_calls": 2,
+            "skill_entrypoint_read_calls": 1,
+            "skill_tree_read_calls": 1,
+            "outside_skill_read_calls": 0,
+            "skill_loaded": True,
+        }
+        safe = self.successful_call()
+        safe["response"]["routing"] = {
+            "tool_calls": 2,
+            "non_read_tool_calls": 0,
+            "read_calls": 2,
+            "successful_read_calls": 2,
+            "failed_read_calls": 0,
+            "skill_entrypoint_read_calls": 1,
+            "skill_tree_read_calls": 2,
+            "outside_skill_read_calls": 0,
+            "skill_loaded": True,
+        }
+        calls = iter([unsafe, safe])
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cell.json"
+            result = run_pi_bench.run_cell(
+                self.cell,
+                self.matrix,
+                self.fixture,
+                "SKILL CONTENT",
+                self.provenance,
+                path,
+                invoke=lambda *_args: next(calls),
+                pause=lambda _seconds: None,
+            )
+            document = json.loads(path.read_text())
+
+        self.assertEqual(result["action"], "completed")
+        self.assertEqual(
+            [attempt["status"] for attempt in document["attempts"]],
+            ["failure", "success"],
+        )
+        self.assertEqual(
+            document["attempts"][0]["error"]["kind"], "condition-integrity"
+        )
+        self.assertIn("partial_response", document["attempts"][0])
+        self.assertTrue(document["condition_integrity"]["passed"])
 
     def test_failure_is_saved_before_retry_then_success_completes_cell(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1937,8 +1992,8 @@ class V1MatrixContractTest(unittest.TestCase):
 
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
-        self.assertEqual(matrix["version"], 4)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "2")
+        self.assertEqual(matrix["version"], 5)
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "3")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -2005,6 +2060,14 @@ class V1MatrixContractTest(unittest.TestCase):
                         "paraphrases, improve incident routing, prohibit added "
                         "formatting, and apply the preregistered two-of-three positive "
                         "activation threshold."
+                    ),
+                },
+                {
+                    "version": 5,
+                    "reason": (
+                        "Tune from the third completed run: state exact task "
+                        "boundaries, normalize list-nested fence indentation, and "
+                        "retry transient routing-safety failures."
                     ),
                 },
             ],
