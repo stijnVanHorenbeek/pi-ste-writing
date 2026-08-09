@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "thinking": "low",
+    "condition": "native-skill",
+    "scenario_id": "mixed-destructive-procedure",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "3",
+    "matrix_sha256": "79d5bf8714f725b1c25694689027efbfb7e75e01daacaf0f62e6323b276be5dd",
+    "package_commit": "61700956572775e85a0d79def70eff40505bf858",
+    "package_dirty": false,
+    "skill_sha256": "072f9a0178034f55b1b81e9d95b715366759c6b85db9dab0a278e2239459475b",
+    "pi_version": "0.84.1"
+  },
+  "prompt_sha256": "e45f13e836ceb746300d5288e100dee06aae8926e3283f3f9be6e3724694b97f",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-09T22:10:44.737373+00:00",
+      "status": "success",
+      "duration_ms": 6293
+    }
+  ],
+  "updated_at": "2026-08-09T22:10:51.031934+00:00",
+  "duration_ms": 6293,
+  "response": {
+    "text": "The cleanup job removes expired preview data. It does not delete production records.\n\n1. Confirm that snapshot `snap-2026-07-14` is complete before you continue.\n\nWARNING: The next command permanently deletes namespace `payments`. Recovery requires restoring the snapshot.\n\n2. Confirm that change request `CHG-4821` is approved.\n3. If `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\n4. Verify the status with `kubectl get namespace payments`.",
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 4,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 348,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 57,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 291,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 1399,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 2999,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 4750,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.0112653,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 1,
+      "non_read_tool_calls": 0,
+      "read_calls": 1,
+      "successful_read_calls": 1,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 1,
+      "skill_tree_read_calls": 1,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": true,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": false,
+      "failed_rule_ids": [
+        "procedure.approval",
+        "protected.source-equality"
+      ],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 3,
+          "rules_passed": 2,
+          "rules_failed": 1,
+          "pass_rate": 0.666667,
+          "failures": [
+            {
+              "rule_id": "protected.source-equality",
+              "description": "Preserve nonnumeric protected values and occurrence counts by container.",
+              "changed_kinds": [
+                "inline-code"
+              ],
+              "findings": [
+                {
+                  "rule": "protected-span",
+                  "category": "semantic",
+                  "severity": "warning",
+                  "source": "github-copilot_claude-sonnet-5_low__native-skill__mixed-destructive-procedure__r01.json",
+                  "line": 8,
+                  "column": 8,
+                  "text": "CHG-4821",
+                  "message": "Protected inline-code values differ from source.",
+                  "protected_kind": "inline-code"
+                }
+              ]
+            }
+          ]
+        },
+        "required_fact_retention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 1,
+          "rules_passed": 1,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 4,
+          "rules_passed": 4,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "repository_term_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": true,
+      "passed": false,
+      "required_rules": {
+        "applicable": true,
+        "passed": false,
+        "rules_total": 3,
+        "rules_passed": 2,
+        "rules_failed": 1,
+        "pass_rate": 0.666667,
+        "failures": [
+          {
+            "rule_id": "procedure.approval",
+            "description": "Place the CHG-4821 approval condition before the destructive command.",
+            "failed_checks": [
+              {
+                "type": "inline_code",
+                "value": "CHG-4821",
+                "count": 1
+              }
+            ]
+          }
+        ]
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": false,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

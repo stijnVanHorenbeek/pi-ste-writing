@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "thinking": "low",
+    "condition": "baseline",
+    "scenario_id": "repository-terms-and-protected-spans",
+    "repetition": 2
+  },
+  "provenance": {
+    "runner_version": "3",
+    "matrix_sha256": "79d5bf8714f725b1c25694689027efbfb7e75e01daacaf0f62e6323b276be5dd",
+    "package_commit": "61700956572775e85a0d79def70eff40505bf858",
+    "package_dirty": false,
+    "skill_sha256": "072f9a0178034f55b1b81e9d95b715366759c6b85db9dab0a278e2239459475b",
+    "pi_version": "0.84.1"
+  },
+  "prompt_sha256": "e98fff5386b03931e5fe69f3da31a0e8f40c16eb4974b7542ae7427066a82fc4",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-09T22:07:42.778866+00:00",
+      "status": "success",
+      "duration_ms": 5161
+    }
+  ],
+  "updated_at": "2026-08-09T22:07:47.940815+00:00",
+  "duration_ms": 5161,
+  "response": {
+    "text": "# Setup Notes: Retry Policy Configuration\n\nIn this repository, `config` refers to file-backed service values, `settings` refers to UI preferences, and `options` refers to request-scoped overrides. Understanding this distinction is important before configuring retry behavior.\n\nTo apply a retry policy, call `ApplyRetryPolicy` with the API field `retryPolicy.maxAttempts`. For additional context, open the [retry documentation](https://docs.example.com/retries?v=3) and select **Advanced Settings**.\n\nThe relevant configuration file is located at `/etc/acme/app.yaml`.\n\n## Setting the Retry Count\n\nRun the following command to set the retry count:\n\n```bash\nacmectl config set retry_count 3 --file /etc/acme/app.yaml\n```\n\n## Code Usage\n\nUse this code without modification:\n\n```ts\nconst retry = ApplyRetryPolicy(config, options);\n```\n\n## Diagnostics Reference\n\nThe following diagnostics should be preserved exactly as shown, for troubleshooting purposes:\n\n- Error: `invalid value for \"retry_count\"`\n- Log: `level=warn component=retry request_id=7f3a`\n- Test: `--- FAIL: TestApplyRetryPolicy (0.04s)`",
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 449,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 417,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 417,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 866,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.005068,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": true,
+      "failed_rule_ids": [],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 11,
+          "rules_passed": 11,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "required_fact_retention": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 2,
+          "rules_passed": 2,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "repository_term_preservation": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 1,
+          "rules_passed": 1,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

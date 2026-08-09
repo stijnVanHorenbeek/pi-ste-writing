@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "baseline",
+    "scenario_id": "modal-policy-distinctions",
+    "repetition": 3
+  },
+  "provenance": {
+    "runner_version": "3",
+    "matrix_sha256": "79d5bf8714f725b1c25694689027efbfb7e75e01daacaf0f62e6323b276be5dd",
+    "package_commit": "61700956572775e85a0d79def70eff40505bf858",
+    "package_dirty": false,
+    "skill_sha256": "072f9a0178034f55b1b81e9d95b715366759c6b85db9dab0a278e2239459475b",
+    "pi_version": "0.84.1"
+  },
+  "prompt_sha256": "a9d9ef1778612bd8a48e3390513ab6e4980647145ad32ef29485ab0f313480e8",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-09T21:54:27.300097+00:00",
+      "status": "success",
+      "duration_ms": 16426
+    }
+  ],
+  "updated_at": "2026-08-09T21:54:43.727599+00:00",
+  "duration_ms": 16426,
+  "response": {
+    "text": "Operators must retain backups for 30 days. It is recommended that operators test backup restoration each month. Administrators can rotate keys in Security settings. It is possible that key rotation interrupts active sessions. It is possible that propagation takes up to 10 minutes. If administrators use `--force`, older clients could reconnect without cached credentials.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 157,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 446,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 374,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 72,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 603,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.014165,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": false,
+      "failed_rule_ids": [
+        "modal.could",
+        "modal.may",
+        "modal.might",
+        "modal.should"
+      ],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 1,
+          "rules_passed": 1,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "required_fact_retention": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 6,
+          "rules_passed": 6,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 6,
+          "rules_passed": 2,
+          "rules_failed": 4,
+          "pass_rate": 0.333333,
+          "failures": [
+            {
+              "rule_id": "modal.should",
+              "description": "Monthly restoration testing remains a recommendation.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?i)((they|operators) should test restoration (monthly|each month|every month)|monthly restoration testing is recommended( for operators)?)"
+                }
+              ]
+            },
+            {
+              "rule_id": "modal.may",
+              "description": "Session interruption remains possible, not certain.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?i)((a )?rotation may interrupt active sessions|active sessions may be interrupted by a rotation)"
+                }
+              ]
+            },
+            {
+              "rule_id": "modal.might",
+              "description": "The propagation duration retains might-level uncertainty.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?i)(propagation might (take|require) up to 10 minutes|up to 10 minutes might be needed for propagation)"
+                }
+              ]
+            },
+            {
+              "rule_id": "modal.could",
+              "description": "The --force reconnection outcome remains conditional and possible.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?is)((with (the )?|if you use )`?--force`?( flag)?.{0,40}older clients could reconnect without cached credentials|when `?--force`? is used.{0,80}reconnection without cached credentials could occur for older clients)"
+                }
+              ]
+            }
+          ]
+        },
+        "repository_term_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": false,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}
