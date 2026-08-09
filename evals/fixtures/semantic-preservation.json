@@ -1,0 +1,977 @@
+{
+  "schema_version": 1,
+  "description": "Closed-world semantic-preservation fixtures for clear, procedure, and strict STE writing modes.",
+  "fixtures": [
+    {
+      "id": "release-facts-and-causes",
+      "title": "Release measurements with confirmed and unknown causes",
+      "mode": "clear",
+      "tags": [
+        "fact",
+        "number",
+        "date",
+        "version",
+        "percentage",
+        "range",
+        "causal_chain",
+        "unknown_vs_confirmed_cause"
+      ],
+      "task": "Rewrite the release analysis for clarity. Preserve every fact and degree of certainty.",
+      "source": "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. The error rate fell from 2.4% to 0.7% after the cache TTL changed from 5 to 15 minutes. Trace data confirmed that stale cache entries caused 73% of 860 failed requests. The cause of the remaining failures is unknown. The supported retry-delay range is 100-500 ms.",
+      "allowed_claims": [
+        {
+          "id": "release-sample",
+          "description": "Acme API v3.8.2 processed 48,120 requests on 2026-07-14."
+        },
+        {
+          "id": "release-error-rate",
+          "description": "The error rate fell from 2.4% to 0.7%."
+        },
+        {
+          "id": "release-ttl-sequence",
+          "description": "The error-rate change followed a cache TTL change from 5 to 15 minutes; timing alone does not establish cause."
+        },
+        {
+          "id": "release-confirmed-cause",
+          "description": "Trace data confirmed that stale cache entries caused 73% of 860 failed requests."
+        },
+        {
+          "id": "release-unknown-cause",
+          "description": "The remaining failures have no confirmed cause."
+        },
+        {
+          "id": "release-retry-range",
+          "description": "The supported retry-delay range is 100-500 ms."
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "id": "release.forbidden-ttl-cause",
+          "description": "The TTL change is a confirmed cause of the lower error rate.",
+          "patterns": [
+            "(?im)(^|[.!?]\\s+)(the )?(cache )?TTL change (caused|reduced)"
+          ]
+        },
+        {
+          "id": "release.forbidden-all-stale",
+          "description": "Stale cache entries caused every failed request.",
+          "patterns": [
+            "(?i)stale cache entries caused (all|100%)"
+          ]
+        },
+        {
+          "id": "release.forbidden-remaining-cause",
+          "description": "A cause is asserted for the remaining failures.",
+          "patterns": [
+            "(?i)remaining failures (were|are) caused by"
+          ]
+        }
+      ],
+      "invariants": [
+        {
+          "id": "release.date-version-volume",
+          "category": "fact",
+          "description": "Preserve the date, version, and request volume.",
+          "checks": [
+            {
+              "type": "contains",
+              "value": "2026-07-14",
+              "count": 1
+            },
+            {
+              "type": "contains",
+              "value": "v3.8.2",
+              "count": 1
+            },
+            {
+              "type": "contains",
+              "value": "48,120",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "release.error-rate",
+          "category": "fact",
+          "description": "Preserve both error-rate percentages and their downward direction.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(fell|decreased|dropped) from 2\\.4% to 0\\.7%"
+            }
+          ]
+        },
+        {
+          "id": "release.ttl-sequence",
+          "category": "causality",
+          "description": "Preserve the 5-to-15-minute TTL change as sequence, not confirmed cause.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?is)(after|following).{0,80}(cache TTL|TTL).{0,50}(changed|increased).{0,20}5( minutes)?.{0,20}15 minutes"
+            }
+          ]
+        },
+        {
+          "id": "release.confirmed-cause",
+          "category": "causality",
+          "description": "Keep the confirmed stale-cache causal chain and its 73%-of-860 scope.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?is)(trace data|traces).{0,40}(confirmed|established).{0,80}stale cache entries.{0,40}(caused|cause for).{0,20}73% of 860 failed requests"
+            }
+          ]
+        },
+        {
+          "id": "release.unknown-cause",
+          "category": "causality",
+          "description": "Keep the cause of the remaining failures unknown.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(cause of the remaining failures is unknown|remaining failures have no confirmed cause|no cause is confirmed for (the )?(other|remaining) failures)"
+            }
+          ]
+        },
+        {
+          "id": "release.retry-range",
+          "category": "fact",
+          "description": "Preserve the supported 100-500 ms range.",
+          "checks": [
+            {
+              "type": "contains",
+              "value": "100-500 ms",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "passing_rewrites": [
+        {
+          "id": "release-valid-paraphrase",
+          "rewrite": "Acme API v3.8.2 handled 48,120 requests on 2026-07-14. After the cache TTL increased from 5 minutes to 15 minutes, the error rate decreased from 2.4% to 0.7%. Traces established stale cache entries as the cause for 73% of 860 failed requests. No cause is confirmed for the other failures. The supported retry delay is 100-500 ms."
+        }
+      ],
+      "failing_baselines": [
+        {
+          "id": "release-numbers-drift",
+          "rewrite": "On 2026-07-15, Acme API v3.8.3 processed 48,210 requests. The error rate fell from 2.4% to 0.07%. The supported retry-delay range is 100-600 ms.",
+          "expected_violations": [
+            "release.date-version-volume",
+            "release.error-rate",
+            "release.ttl-sequence",
+            "release.confirmed-cause",
+            "release.unknown-cause",
+            "release.retry-range"
+          ]
+        },
+        {
+          "id": "release-causality-invention",
+          "rewrite": "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. The error rate fell from 2.4% to 0.7%. The TTL change caused the error rate to fall. Trace data showed that stale cache entries caused all 860 failed requests. The remaining failures were caused by database contention. The supported retry-delay range is 100-500 ms.",
+          "expected_violations": [
+            "release.ttl-sequence",
+            "release.confirmed-cause",
+            "release.unknown-cause",
+            "release.forbidden-ttl-cause",
+            "release.forbidden-all-stale",
+            "release.forbidden-remaining-cause"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "modal-policy-distinctions",
+      "title": "Operational policy with six distinct modal verbs",
+      "mode": "strict",
+      "tags": [
+        "fact",
+        "number",
+        "modality_must",
+        "modality_should",
+        "modality_can",
+        "modality_may",
+        "modality_might",
+        "modality_could",
+        "recommendation_vs_requirement"
+      ],
+      "task": "Rewrite this policy in strict STE mode without changing requirements, recommendations, capabilities, or possibilities.",
+      "source": "Operators must retain backups for 30 days. They should test restoration monthly. Administrators can rotate keys from Security settings. A rotation may interrupt active sessions. Propagation might take up to 10 minutes. With --force, older clients could reconnect without cached credentials.",
+      "allowed_claims": [
+        {
+          "id": "modal-retention",
+          "description": "Backup retention for 30 days is mandatory."
+        },
+        {
+          "id": "modal-restoration",
+          "description": "Monthly restoration testing is recommended, not mandatory."
+        },
+        {
+          "id": "modal-capability",
+          "description": "Administrators have the capability to rotate keys from Security settings."
+        },
+        {
+          "id": "modal-interruption",
+          "description": "Session interruption is possible during rotation."
+        },
+        {
+          "id": "modal-propagation",
+          "description": "Propagation possibly takes up to 10 minutes, with uncertainty retained."
+        },
+        {
+          "id": "modal-reconnect",
+          "description": "Using --force creates a conditional possibility that older clients reconnect without cached credentials."
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "id": "modal.forbidden-retention-optional",
+          "description": "Mandatory backup retention is weakened to optional or recommended.",
+          "patterns": [
+            "(?i)(operators (should|may) retain backups|backup retention (is|becomes) optional|backups are optional)"
+          ]
+        },
+        {
+          "id": "modal.forbidden-restoration-required",
+          "description": "Recommended restoration testing is strengthened to mandatory.",
+          "patterns": [
+            "(?i)(operators must test restoration monthly|monthly restoration testing is (mandatory|required))"
+          ]
+        },
+        {
+          "id": "modal.forbidden-rotation-required",
+          "description": "Administrator key-rotation capability is changed to a requirement.",
+          "patterns": [
+            "(?i)administrators must rotate keys"
+          ]
+        },
+        {
+          "id": "modal.forbidden-session-certain",
+          "description": "Possible session interruption is made certain.",
+          "patterns": [
+            "(?i)(a )?(key )?rotation will interrupt active sessions"
+          ]
+        },
+        {
+          "id": "modal.forbidden-propagation-certain",
+          "description": "Uncertain propagation duration is made certain.",
+          "patterns": [
+            "(?i)propagation will take"
+          ]
+        },
+        {
+          "id": "modal.forbidden-reconnect-certain",
+          "description": "Conditional reconnection possibility is made certain.",
+          "patterns": [
+            "(?i)older clients will reconnect"
+          ]
+        }
+      ],
+      "invariants": [
+        {
+          "id": "modal.must",
+          "category": "modality",
+          "description": "Retaining backups for 30 days remains mandatory.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(operators must retain backups for 30 days|backups must be retained by operators for 30 days)"
+            }
+          ]
+        },
+        {
+          "id": "modal.should",
+          "category": "modality",
+          "description": "Monthly restoration testing remains a recommendation.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)((they|operators) should test restoration monthly|monthly restoration testing is recommended( for operators)?)"
+            }
+          ]
+        },
+        {
+          "id": "modal.can",
+          "category": "modality",
+          "description": "Key rotation remains an administrator capability.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(administrators can rotate keys from Security settings|key rotation from Security settings is available to administrators)"
+            }
+          ]
+        },
+        {
+          "id": "modal.may",
+          "category": "modality",
+          "description": "Session interruption remains possible, not certain.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)((a )?rotation may interrupt active sessions|active sessions may be interrupted by a rotation)"
+            }
+          ]
+        },
+        {
+          "id": "modal.might",
+          "category": "modality",
+          "description": "The propagation duration retains might-level uncertainty.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(propagation might take up to 10 minutes|up to 10 minutes might be needed for propagation)"
+            }
+          ]
+        },
+        {
+          "id": "modal.could",
+          "category": "modality",
+          "description": "The --force reconnection outcome remains conditional and possible.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?is)(with --force.{0,40}older clients could reconnect without cached credentials|when --force is used.{0,80}reconnection without cached credentials could occur for older clients)"
+            }
+          ]
+        }
+      ],
+      "passing_rewrites": [
+        {
+          "id": "modal-valid-active-passive-mix",
+          "rewrite": "Backups must be retained by operators for 30 days. Monthly restoration testing is recommended for operators. Key rotation from Security settings is available to administrators. Active sessions may be interrupted by a rotation. Up to 10 minutes might be needed for propagation. When --force is used, reconnection without cached credentials could occur for older clients."
+        }
+      ],
+      "failing_baselines": [
+        {
+          "id": "modal-collapse",
+          "rewrite": "Operators should retain backups for 30 days. Operators must test restoration monthly. Administrators must rotate keys. Rotation will interrupt active sessions. Propagation will take 10 minutes. With --force, older clients will reconnect without cached credentials.",
+          "expected_violations": [
+            "modal.must",
+            "modal.should",
+            "modal.can",
+            "modal.may",
+            "modal.might",
+            "modal.could",
+            "modal.forbidden-retention-optional",
+            "modal.forbidden-restoration-required",
+            "modal.forbidden-rotation-required",
+            "modal.forbidden-session-certain",
+            "modal.forbidden-propagation-certain",
+            "modal.forbidden-reconnect-certain"
+          ]
+        },
+        {
+          "id": "modal-appended-contradiction",
+          "rewrite": "Operators must retain backups for 30 days. They should test restoration monthly. Administrators can rotate keys from Security settings. A rotation may interrupt active sessions. Propagation might take up to 10 minutes. With --force, older clients could reconnect without cached credentials. Backup retention is optional.",
+          "expected_violations": [
+            "modal.forbidden-retention-optional"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "repository-terms-and-protected-spans",
+      "title": "Repository terminology, code, command, API, UI, and diagnostics",
+      "mode": "clear",
+      "tags": [
+        "fact",
+        "repository_term",
+        "protected_code",
+        "protected_command",
+        "protected_path",
+        "protected_url",
+        "protected_identifier",
+        "protected_api_field",
+        "protected_ui_label",
+        "protected_error",
+        "protected_log",
+        "protected_test_output"
+      ],
+      "task": "Improve this setup note. Preserve repository terms, machine-readable text, UI labels, and diagnostics exactly.",
+      "source": "In this repository, `config` means file-backed service values, `settings` means UI preferences, and `options` means request-scoped overrides.\n\nCall `ApplyRetryPolicy` with API field `retryPolicy.maxAttempts`. Open [retry documentation](https://docs.example.com/retries?v=3) and select **Advanced Settings**. The file path is `/etc/acme/app.yaml`.\n\nRun:\n\n```bash\nacmectl config set retry_count 3 --file /etc/acme/app.yaml\n```\n\nUse this code without modification:\n\n```ts\nconst retry = ApplyRetryPolicy(config, options);\n```\n\nPreserve these diagnostics:\n\n- Error: `invalid value for \"retry_count\"`\n- Log: `level=warn component=retry request_id=7f3a`\n- Test: `--- FAIL: TestApplyRetryPolicy (0.04s)`",
+      "allowed_claims": [
+        {
+          "id": "terms-definitions",
+          "description": "config, settings, and options have three distinct repository meanings."
+        },
+        {
+          "id": "retry-api",
+          "description": "ApplyRetryPolicy uses the retryPolicy.maxAttempts API field."
+        },
+        {
+          "id": "retry-docs-ui",
+          "description": "The supplied retry documentation and Advanced Settings label are navigation targets."
+        },
+        {
+          "id": "retry-command-code",
+          "description": "The supplied command, path, and TypeScript code are exact."
+        },
+        {
+          "id": "retry-diagnostics",
+          "description": "The quoted error, log, and test output are exact diagnostics."
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "id": "terms.forbidden-interchangeable",
+          "description": "config, settings, and options are interchangeable names.",
+          "patterns": [
+            "(?i)(config, settings, and options are interchangeable|config, settings, and options all mean configuration)"
+          ]
+        },
+        {
+          "id": "terms.forbidden-field-ignored",
+          "description": "ApplyRetryPolicy ignores retryPolicy.maxAttempts.",
+          "patterns": [
+            "(?i)ApplyRetryPolicy ignores retryPolicy\\.maxAttempts"
+          ]
+        }
+      ],
+      "invariants": [
+        {
+          "id": "terms.distinct",
+          "category": "repository_term",
+          "description": "Keep config, settings, and options distinct and attached to their original meanings.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(`config` means file-backed service values|file-backed service values are called `config`)"
+            },
+            {
+              "type": "regex",
+              "pattern": "(?i)(`settings` means UI preferences|UI preferences are called `settings`)"
+            },
+            {
+              "type": "regex",
+              "pattern": "(?i)(`options` means request-scoped overrides|request-scoped overrides are called `options`)"
+            }
+          ]
+        },
+        {
+          "id": "protected.identifier",
+          "category": "protected_span",
+          "description": "Preserve the ApplyRetryPolicy identifier as inline code.",
+          "covers": [
+            "protected_identifier"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "ApplyRetryPolicy",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.api-field",
+          "category": "protected_span",
+          "description": "Preserve the retryPolicy.maxAttempts API field as inline code.",
+          "covers": [
+            "protected_api_field"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "retryPolicy.maxAttempts",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.url",
+          "category": "protected_span",
+          "description": "Preserve the complete Markdown link.",
+          "covers": [
+            "protected_url"
+          ],
+          "checks": [
+            {
+              "type": "markdown_link",
+              "label": "retry documentation",
+              "destination": "https://docs.example.com/retries?v=3",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.ui-label",
+          "category": "protected_span",
+          "description": "Preserve the Advanced Settings UI label and emphasis.",
+          "covers": [
+            "protected_ui_label"
+          ],
+          "checks": [
+            {
+              "type": "bold_text",
+              "value": "Advanced Settings",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.path",
+          "category": "protected_span",
+          "description": "Preserve the file path as inline code.",
+          "covers": [
+            "protected_path"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "/etc/acme/app.yaml",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.command",
+          "category": "protected_span",
+          "description": "Preserve the complete fenced shell command without appended flags.",
+          "covers": [
+            "protected_command"
+          ],
+          "checks": [
+            {
+              "type": "fenced_code",
+              "value": "acmectl config set retry_count 3 --file /etc/acme/app.yaml",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.code",
+          "category": "protected_span",
+          "description": "Preserve the complete fenced TypeScript statement.",
+          "covers": [
+            "protected_code"
+          ],
+          "checks": [
+            {
+              "type": "fenced_code",
+              "value": "const retry = ApplyRetryPolicy(config, options);",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.error",
+          "category": "protected_span",
+          "description": "Preserve quoted error output exactly.",
+          "covers": [
+            "protected_error"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "invalid value for \"retry_count\"",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.log",
+          "category": "protected_span",
+          "description": "Preserve log output exactly.",
+          "covers": [
+            "protected_log"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "level=warn component=retry request_id=7f3a",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "protected.test-output",
+          "category": "protected_span",
+          "description": "Preserve test output exactly.",
+          "covers": [
+            "protected_test_output"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "--- FAIL: TestApplyRetryPolicy (0.04s)",
+              "count": 1
+            }
+          ]
+        }
+      ],
+      "passing_rewrites": [
+        {
+          "id": "protected-valid-reordered-note",
+          "rewrite": "File-backed service values are called `config`, UI preferences are called `settings`, and request-scoped overrides are called `options`.\n\nSelect **Advanced Settings** after opening [retry documentation](https://docs.example.com/retries?v=3). Call `ApplyRetryPolicy` with API field `retryPolicy.maxAttempts`. The file path is `/etc/acme/app.yaml`.\n\nRun this command:\n\n```bash\nacmectl config set retry_count 3 --file /etc/acme/app.yaml\n```\n\nKeep this code unchanged:\n\n```ts\nconst retry = ApplyRetryPolicy(config, options);\n```\n\nKeep these diagnostics unchanged:\n\n- Error: `invalid value for \"retry_count\"`\n- Log: `level=warn component=retry request_id=7f3a`\n- Test: `--- FAIL: TestApplyRetryPolicy (0.04s)`"
+        }
+      ],
+      "failing_baselines": [
+        {
+          "id": "protected-normalization",
+          "rewrite": "Configuration stores file and UI preferences, while options configure requests. Call `ApplyRetrySettings` with `retry_policy.max_attempts`. Open https://docs.example.com/retries?v=4 and select **Advanced configuration**. Use `/etc/acme/settings.yaml`. Run `acmectl settings set retries 4 --file /etc/acme/settings.yaml`. Use `const retry = ApplyRetrySettings(settings);`. Error: `retry count is invalid`. Log: `level=error component=retry request_id=7f4a`. Test: `--- FAIL: TestApplyRetrySettings (0.4s)`.",
+          "expected_violations": [
+            "terms.distinct",
+            "protected.identifier",
+            "protected.api-field",
+            "protected.url",
+            "protected.ui-label",
+            "protected.path",
+            "protected.command",
+            "protected.code",
+            "protected.error",
+            "protected.log",
+            "protected.test-output"
+          ]
+        },
+        {
+          "id": "protected-container-mutation",
+          "rewrite": "In this repository, `config` means file-backed service values, `settings` means UI preferences, and `options` means request-scoped overrides. Call `ApplyRetryPolicy` with API field `retryPolicy.maxAttempts`. The file path is `/etc/acme/app.yaml`. Open [retry documentation](https://docs.example.com/retries?v=4). The old URL was https://docs.example.com/retries?v=3. Select **Advanced Settings**.\n\n```bash\nacmectl config set retry_count 3 --file /etc/acme/app.yaml --force\n```\n\n```ts\nconst retry = ApplyRetryPolicy(config, options); // changed\n```\n\nError: `invalid value for \"retry_count\"`. Log: `level=warn component=retry request_id=7f3a`. Test: `--- FAIL: TestApplyRetryPolicy (0.04s)`.",
+          "expected_violations": [
+            "protected.url",
+            "protected.command",
+            "protected.code"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "correlation-with-unknown-root-cause",
+      "title": "Deployment timing without causal evidence",
+      "mode": "clear",
+      "tags": [
+        "fact",
+        "number",
+        "range",
+        "correlation_not_causation",
+        "unknown_vs_confirmed_cause"
+      ],
+      "task": "Condense this incident finding without inventing a root cause or strengthening the evidence.",
+      "source": "During the 12-minute deployment window, p95 latency rose from 180 ms to 260 ms. The timing shows correlation only; there is no evidence that the deployment caused the increase. The root cause remains unknown. Packet loss was ruled out.",
+      "allowed_claims": [
+        {
+          "id": "latency-observation",
+          "description": "p95 latency rose from 180 ms to 260 ms during a 12-minute deployment window."
+        },
+        {
+          "id": "latency-correlation",
+          "description": "Deployment timing correlates with the latency increase, but evidence does not establish causation."
+        },
+        {
+          "id": "latency-unknown-cause",
+          "description": "The root cause is unknown."
+        },
+        {
+          "id": "latency-packet-loss",
+          "description": "Packet loss was ruled out."
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "id": "incident.forbidden-deployment-cause",
+          "description": "The deployment caused the latency increase.",
+          "patterns": [
+            "(?im)(^|[.!?]\\s+)(the )?deployment (caused|triggered|produced)"
+          ]
+        },
+        {
+          "id": "incident.forbidden-packet-cause",
+          "description": "Packet loss was the root cause.",
+          "patterns": [
+            "(?im)(^|[.!?]\\s+)packet loss was the root cause"
+          ]
+        }
+      ],
+      "invariants": [
+        {
+          "id": "incident.measurements",
+          "category": "fact",
+          "description": "Preserve the 12-minute window and the 180-to-260 ms rise.",
+          "checks": [
+            {
+              "type": "contains",
+              "value": "12-minute",
+              "count": 1
+            },
+            {
+              "type": "regex",
+              "pattern": "(?i)(rose|increased) from 180 ms to 260 ms"
+            }
+          ]
+        },
+        {
+          "id": "incident.correlation",
+          "category": "causality",
+          "description": "Do not convert deployment correlation into causation.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?is)(correlation only|correlat.{0,60}(does not|doesn't|not).{0,40}(caus|cause)|no evidence.{0,50}deployment caused)"
+            }
+          ]
+        },
+        {
+          "id": "incident.unknown-cause",
+          "category": "causality",
+          "description": "Keep the root cause unknown.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)root cause (remains|is still) unknown"
+            }
+          ]
+        },
+        {
+          "id": "incident.packet-loss",
+          "category": "fact",
+          "description": "Keep packet loss ruled out rather than implicated.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)packet loss (was ruled out|has been excluded)"
+            }
+          ]
+        }
+      ],
+      "passing_rewrites": [
+        {
+          "id": "incident-valid-paraphrase",
+          "rewrite": "p95 latency increased from 180 ms to 260 ms in the same 12-minute window as the deployment. This establishes correlation only, not that deployment caused the increase. The root cause is still unknown, and packet loss has been excluded."
+        }
+      ],
+      "failing_baselines": [
+        {
+          "id": "incident-invented-cause",
+          "rewrite": "Deployment caused the p95 latency increase. During the 12-minute window, p95 latency rose from 180 ms to 260 ms. Packet loss was the root cause.",
+          "expected_violations": [
+            "incident.correlation",
+            "incident.unknown-cause",
+            "incident.packet-loss",
+            "incident.forbidden-deployment-cause",
+            "incident.forbidden-packet-cause"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mixed-destructive-procedure",
+      "title": "Destructive namespace cleanup with required warning and approval",
+      "mode": "procedure",
+      "tags": [
+        "fact",
+        "date",
+        "protected_command",
+        "protected_identifier",
+        "mixed_passage",
+        "destructive_warning"
+      ],
+      "task": "Rewrite this runbook section as a safe procedure. Keep descriptive scope, identifiers, commands, conditions, and warning consequences.",
+      "source": "The cleanup job removes expired preview data. It does not delete production records.\n\nBefore you continue, confirm that snapshot `snap-2026-07-14` is complete.\n\nWARNING: The next command permanently deletes namespace `payments`. Recovery requires restoring the snapshot.\n\nIf change request `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\nThen verify the status with `kubectl get namespace payments`.",
+      "allowed_claims": [
+        {
+          "id": "cleanup-scope",
+          "description": "The cleanup job removes expired preview data and does not delete production records."
+        },
+        {
+          "id": "cleanup-snapshot",
+          "description": "The operator must confirm snap-2026-07-14 is complete before continuing."
+        },
+        {
+          "id": "cleanup-warning",
+          "description": "The deletion is permanent and recovery requires restoring the snapshot."
+        },
+        {
+          "id": "cleanup-approval",
+          "description": "The destructive command can run only after CHG-4821 is approved."
+        },
+        {
+          "id": "cleanup-verification",
+          "description": "The supplied kubectl get command verifies status after deletion."
+        }
+      ],
+      "forbidden_claims": [
+        {
+          "id": "procedure.forbidden-production-deletion",
+          "description": "The cleanup job deletes or can affect production records.",
+          "patterns": [
+            "(?i)(cleanup job|operation|command).{0,40}(deletes|can delete|affects) production records"
+          ]
+        },
+        {
+          "id": "procedure.forbidden-incomplete-snapshot",
+          "description": "The procedure can continue with an incomplete snapshot.",
+          "patterns": [
+            "(?i)snapshot `?snap-2026-07-14`? (is|was) incomplete"
+          ]
+        },
+        {
+          "id": "procedure.forbidden-before-approval",
+          "description": "The destructive command can run before or without approval.",
+          "patterns": [
+            "(?i)(run|execute).{0,60}(before|without).{0,40}(approval|CHG-4821)",
+            "(?i)(approval|CHG-4821 approval) is not required"
+          ]
+        },
+        {
+          "id": "procedure.forbidden-recovery-without-snapshot",
+          "description": "Recovery does not require restoring the snapshot.",
+          "patterns": [
+            "(?i)recovery (does not|doesn't) require restoring the snapshot"
+          ]
+        }
+      ],
+      "invariants": [
+        {
+          "id": "procedure.scope",
+          "category": "fact",
+          "description": "Keep preview-data scope and the production-record exclusion.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?i)(removes|deletes) expired preview data"
+            },
+            {
+              "type": "regex",
+              "pattern": "(?i)(does not|doesn't|never) delete production records"
+            }
+          ]
+        },
+        {
+          "id": "procedure.snapshot",
+          "category": "procedure",
+          "description": "Preserve the snapshot identifier and require confirmation that it is complete.",
+          "covers": [
+            "protected_identifier"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "snap-2026-07-14",
+              "count": 1
+            },
+            {
+              "type": "regex",
+              "pattern": "(?is)(confirm|verify).{0,70}(snapshot )?`snap-2026-07-14`.{0,40}(is complete|completed successfully)"
+            },
+            {
+              "type": "precedes_regex",
+              "before_pattern": "(?is)(confirm|verify).{0,70}(snapshot )?`snap-2026-07-14`.{0,40}(is complete|completed successfully)",
+              "after_pattern": "kubectl delete namespace payments"
+            }
+          ]
+        },
+        {
+          "id": "procedure.warning",
+          "category": "procedure",
+          "description": "Keep both warning consequences before the destructive command.",
+          "checks": [
+            {
+              "type": "regex",
+              "pattern": "(?is)WARNING:.{0,140}permanently (deletes|removes).{0,40}(namespace )?`payments`"
+            },
+            {
+              "type": "regex",
+              "pattern": "(?i)(recovery requires restoring the snapshot|restoring the snapshot is required for recovery)"
+            },
+            {
+              "type": "precedes_regex",
+              "before_pattern": "(?is)WARNING:.{0,140}permanently (deletes|removes).{0,40}(namespace )?`payments`",
+              "after_pattern": "kubectl delete namespace payments"
+            },
+            {
+              "type": "precedes_regex",
+              "before_pattern": "(?i)(recovery requires restoring the snapshot|restoring the snapshot is required for recovery)",
+              "after_pattern": "kubectl delete namespace payments"
+            }
+          ]
+        },
+        {
+          "id": "procedure.approval",
+          "category": "procedure",
+          "description": "Place the CHG-4821 approval condition before the destructive command.",
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "CHG-4821",
+              "count": 1
+            },
+            {
+              "type": "precedes_regex",
+              "before_pattern": "(?is)(if|after).{0,40}(change request )?`CHG-4821`.{0,30}(is approved|receives approval)",
+              "after_pattern": "kubectl delete namespace payments"
+            }
+          ]
+        },
+        {
+          "id": "procedure.delete-command",
+          "category": "protected_span",
+          "description": "Preserve the destructive command as an exact fenced block.",
+          "covers": [
+            "protected_command"
+          ],
+          "checks": [
+            {
+              "type": "fenced_code",
+              "value": "kubectl delete namespace payments",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "procedure.verify-command",
+          "category": "protected_span",
+          "description": "Preserve the verification command exactly and keep it after deletion.",
+          "covers": [
+            "protected_command"
+          ],
+          "checks": [
+            {
+              "type": "inline_code",
+              "value": "kubectl get namespace payments",
+              "count": 1
+            },
+            {
+              "type": "precedes_regex",
+              "before_pattern": "kubectl delete namespace payments",
+              "after_pattern": "kubectl get namespace payments"
+            }
+          ]
+        }
+      ],
+      "passing_rewrites": [
+        {
+          "id": "procedure-valid-rewrite",
+          "rewrite": "The cleanup job only removes expired preview data; it does not delete production records.\n\n1. Verify that snapshot `snap-2026-07-14` is complete.\n2. WARNING: Running the following command permanently deletes namespace `payments`. Restoring the snapshot is required for recovery.\n3. After change request `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\n4. Check the status with `kubectl get namespace payments`."
+        }
+      ],
+      "failing_baselines": [
+        {
+          "id": "procedure-unsafe-ordering",
+          "rewrite": "The cleanup job deletes production records. Snapshot `snap-2026-07-14` is incomplete, but continue.\n\n```bash\nkubectl delete namespace payments\n```\n\nThen request approval for `CHG-4821`. Recovery does not require restoring the snapshot. Verify with `kubectl get namespace payments`.",
+          "expected_violations": [
+            "procedure.scope",
+            "procedure.snapshot",
+            "procedure.warning",
+            "procedure.approval",
+            "procedure.forbidden-production-deletion",
+            "procedure.forbidden-incomplete-snapshot",
+            "procedure.forbidden-recovery-without-snapshot"
+          ]
+        },
+        {
+          "id": "procedure-snapshot-confirmed-too-late",
+          "rewrite": "The cleanup job removes expired preview data. It does not delete production records.\n\nWARNING: The next command permanently deletes namespace `payments`. Recovery requires restoring the snapshot.\n\nIf change request `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\nAfter deletion, verify that snapshot `snap-2026-07-14` is complete. Then verify the status with `kubectl get namespace payments`.",
+          "expected_violations": [
+            "procedure.snapshot"
+          ]
+        },
+        {
+          "id": "procedure-appended-approval-contradiction",
+          "rewrite": "The cleanup job removes expired preview data. It does not delete production records. Before you continue, confirm that snapshot `snap-2026-07-14` is complete. WARNING: The next command permanently deletes namespace `payments`. Recovery requires restoring the snapshot. If change request `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\nThen verify the status with `kubectl get namespace payments`. Approval is not required.",
+          "expected_violations": [
+            "procedure.forbidden-before-approval"
+          ]
+        }
+      ]
+    }
+  ]
+}
