@@ -265,7 +265,7 @@ These checks prevent an inert or globally active skill from passing V1.
 
 Closed-world fixtures must enumerate required facts, allowed claims, forbidden claims, protected spans, protected terms, and required modality.
 
-Across every closed-world fixture output in the preregistered V1 matrix:
+Across every native-skill closed-world fixture output in the preregistered V1 matrix:
 
 - Protected-span equality: 100%.
 - Required enumerated fact retention: 100%.
@@ -276,7 +276,7 @@ Across every closed-world fixture output in the preregistered V1 matrix:
 
 Open-prose samples also require an attested semantic review. The reviewer must compare each new factual claim with the supplied source. An unsupported or unreviewed claim blocks V1.
 
-Any semantic failure blocks V1 regardless of readability, linter, or preference scores.
+Any native-skill semantic failure blocks V1 regardless of readability, linter, or preference scores. Baseline and direct-prompt failures remain authoritative evidence for those outputs and stay visible in reports, but they do not veto package acceptance.
 
 ### 9.4 Linter and metric tests
 

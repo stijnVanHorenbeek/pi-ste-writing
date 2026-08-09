@@ -376,6 +376,83 @@ class ProcedureMetricTest(unittest.TestCase):
         )
 
 
+class ObservedParaphraseRegressionTest(unittest.TestCase):
+    def test_safe_observed_paraphrases_pass_closed_world_semantics(self):
+        terms_source = fixture_by_id(
+            "repository-terms-and-protected-spans"
+        )["source"]
+        cases = {
+            "release-facts-and-causes": (
+                "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. "
+                "After the cache TTL changed from 5 to 15 minutes, the error rate "
+                "fell from 2.4% to 0.7%. Trace data confirmed that stale cache "
+                "entries caused 73% of the 860 failed requests. The cause of the "
+                "remaining failures is unknown. The supported retry-delay range is "
+                "100-500 ms."
+            ),
+            "modal-policy-distinctions": (
+                "Operators must keep backups for 30 days. Operators should test "
+                "restoration each month. Administrators can rotate keys in Security "
+                "settings. A key rotation may interrupt active sessions. Propagation "
+                "might take up to 10 minutes. If you use --force, older clients could "
+                "reconnect without cached credentials."
+            ),
+            "repository-terms-and-protected-spans": terms_source.replace(
+                "In this repository, `config` means file-backed service values, "
+                "`settings` means UI preferences, and `options` means request-scoped "
+                "overrides.",
+                "This repository defines `config` as file-backed service values, "
+                "`settings` as UI preferences, and `options` as request-scoped "
+                "overrides.",
+            ),
+            "correlation-with-unknown-root-cause": (
+                "During the 12-minute deployment window, p95 latency rose from 180 ms "
+                "to 260 ms. This correlates with the deployment, but no evidence shows "
+                "that the deployment caused the increase. The root cause is unknown. "
+                "Packet loss was ruled out."
+            ),
+            "mixed-destructive-procedure": (
+                "The cleanup job removes expired preview data. It does not delete "
+                "production records.\n\n"
+                "1. Confirm that snapshot `snap-2026-07-14` is complete.\n\n"
+                "> **WARNING:** The next command permanently deletes namespace "
+                "`payments`. Recovery requires restoring the snapshot.\n\n"
+                "2. Confirm that change request `CHG-4821` is approved.\n\n"
+                "3. Run:\n\n```bash\nkubectl delete namespace payments\n```\n\n"
+                "4. Verify the status with `kubectl get namespace payments`."
+            ),
+        }
+
+        for fixture_id, rewrite in cases.items():
+            with self.subTest(fixture_id=fixture_id):
+                result = run_cli(fixture_id, rewrite)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                report = json.loads(result.stdout)
+                self.assertTrue(report["semantic"]["gate_passed"])
+                if report["procedure"]["applicable"]:
+                    self.assertIs(report["procedure"]["passed"], True)
+
+    def test_ttl_change_stated_as_cause_is_forbidden(self):
+        rewrite = (
+            "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. Changing "
+            "the cache TTL from 5 to 15 minutes dropped the error rate from 2.4% "
+            "to 0.7%. Trace data confirmed that stale cache entries caused 73% of "
+            "860 failed requests. The cause of the remaining failures is unknown. "
+            "The supported retry-delay range is 100-500 ms."
+        )
+
+        result = run_cli("release-facts-and-causes", rewrite)
+        report = json.loads(result.stdout)
+        failures = {
+            failure["rule_id"]
+            for failure in report["semantic"]["metrics"][
+                "forbidden_fact_invention"
+            ]["failures"]
+        }
+
+        self.assertIn("release.forbidden-ttl-cause", failures)
+
+
 class CorpusRegressionScoringTest(unittest.TestCase):
     def test_all_passing_rewrites_pass_semantic_and_procedure_gates(self):
         for fixture in load_corpus()["fixtures"]:

@@ -50,18 +50,19 @@ instructions.
 
 ## Protected content
 
-Unless the user requests a targeted change, preserve these exactly:
+Preserve these unless the user targets them:
 
 - Fenced and inline code.
 - Identifiers, API names, and schema fields.
 - Commands, flags, paths, URLs, and environment variables.
-- Product names, UI labels, protocol terms, and repository terminology.
-- Quoted errors, logs, diagnostics, and test output.
+- Product names, UI labels, protocols, and repository terms.
+- Quoted errors, logs, diagnostics, and tests.
 - Numbers, dates, versions, percentages, units, limits, and ranges.
+- Modals: `must`, `should`, `can`, `may`, `might`, and `could`.
 - Markdown link destinations, reference IDs, and anchors.
-- Machine-readable structures and exact output schemas.
+- Machine-readable structures and schemas.
 
-Preserve each value's occurrence count, container, and semantic role. Do not rewrite raw
+Preserve value count, container, and semantic role. Do not rewrite raw
 output. Only the explicitly targeted item becomes editable.
 
 ## Workflow

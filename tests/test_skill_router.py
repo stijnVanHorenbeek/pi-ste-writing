@@ -75,6 +75,10 @@ class SkillRouterTest(unittest.TestCase):
     def test_protected_content_covers_semantic_and_literal_boundaries(self):
         protected = section(SKILL.read_text(), "Protected content")
 
+        for modal in ("must", "should", "can", "may", "might", "could"):
+            with self.subTest(modal=modal):
+                self.assertIn(f"`{modal}`", protected)
+
         for boundary in (
             "code",
             "identifiers",

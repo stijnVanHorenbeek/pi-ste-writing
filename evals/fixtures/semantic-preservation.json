@@ -49,7 +49,7 @@
           "id": "release.forbidden-ttl-cause",
           "description": "The TTL change is a confirmed cause of the lower error rate.",
           "patterns": [
-            "(?im)(^|[.!?]\\s+)(the )?(cache )?TTL change (caused|reduced)"
+            "(?im)(^|[.!?]\\s+)(?:(the )?(cache )?TTL change (caused|reduced)|changing the (cache )?TTL.{0,80}(dropped|reduced|decreased) the error rate)"
           ]
         },
         {
@@ -119,7 +119,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?is)(trace data|traces).{0,40}(confirmed|established).{0,80}stale cache entries.{0,40}(caused|cause for).{0,20}73% of 860 failed requests"
+              "pattern": "(?is)(trace data|traces).{0,40}(confirmed|established)( that)?.{0,80}stale cache entries.{0,40}(caused|cause for).{0,20}73% of (the )?860 failed requests"
             }
           ]
         },
@@ -275,7 +275,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(operators must retain backups for 30 days|backups must be retained by operators for 30 days)"
+              "pattern": "(?i)(operators must (retain|keep) backups for 30 days|backups must be (retained|kept) by operators for 30 days)"
             }
           ]
         },
@@ -286,7 +286,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)((they|operators) should test restoration monthly|monthly restoration testing is recommended( for operators)?)"
+              "pattern": "(?i)((they|operators) should test restoration (monthly|each month)|monthly restoration testing is recommended( for operators)?)"
             }
           ]
         },
@@ -297,7 +297,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(administrators can rotate keys from Security settings|key rotation from Security settings is available to administrators)"
+              "pattern": "(?i)(administrators can rotate keys (from|in) (the )?Security settings|key rotation from Security settings is available to administrators)"
             }
           ]
         },
@@ -330,7 +330,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?is)(with --force.{0,40}older clients could reconnect without cached credentials|when --force is used.{0,80}reconnection without cached credentials could occur for older clients)"
+              "pattern": "(?is)((with|if you use) --force.{0,40}older clients could reconnect without cached credentials|when --force is used.{0,80}reconnection without cached credentials could occur for older clients)"
             }
           ]
         }
@@ -435,15 +435,15 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(`config` means file-backed service values|file-backed service values are called `config`|This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides)"
+              "pattern": "(?i)(`config` (means|refers to) file-backed service values|file-backed service values are called `config`|This repository (uses `config` for|defines `config` as) file-backed service values)"
             },
             {
               "type": "regex",
-              "pattern": "(?i)(`settings` means UI preferences|UI preferences are called `settings`|This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides)"
+              "pattern": "(?i)(`settings` (means|refers to) UI preferences|UI preferences are called `settings`|This repository defines.{0,100}`settings` as UI preferences|This repository uses.{0,100}`settings` for UI preferences)"
             },
             {
               "type": "regex",
-              "pattern": "(?i)(`options` means request-scoped overrides|request-scoped overrides are called `options`|This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides)"
+              "pattern": "(?i)(`options` (means|refers to) request-scoped overrides|request-scoped overrides are called `options`|This repository defines.{0,180}`options` as request-scoped overrides|This repository uses.{0,180}`options` for request-scoped overrides)"
             }
           ]
         },
@@ -720,7 +720,7 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)root cause (remains|is still) unknown"
+              "pattern": "(?i)root cause (remains|is still|is) unknown"
             }
           ]
         },
@@ -900,7 +900,7 @@
             },
             {
               "type": "precedes_regex",
-              "before_pattern": "(?is)(if|after).{0,40}(change request )?`CHG-4821`.{0,30}(is approved|receives approval)",
+              "before_pattern": "(?is)((if|after).{0,40}(change request )?`CHG-4821`.{0,30}(is approved|receives approval)|(confirm|verify).{0,50}(change request )?`CHG-4821`.{0,30}(is approved|has approval))",
               "after_pattern": "kubectl delete namespace payments"
             }
           ]

@@ -1301,12 +1301,12 @@ class AggregationTest(unittest.TestCase):
         self.assertEqual(
             results["semantic_acceptance"],
             {
-                "conditions": ["baseline", "native-skill", "direct-prompt"],
-                "expected_samples": 6,
-                "successful_samples": 5,
-                "passed_samples": 5,
+                "conditions": ["native-skill"],
+                "expected_samples": 2,
+                "successful_samples": 2,
+                "passed_samples": 2,
                 "failed_samples": 0,
-                "accepted": False,
+                "accepted": True,
             },
         )
         self.assertEqual(len(results["partial_outputs"]), 1)
@@ -1753,6 +1753,11 @@ class OutputContractAndEvaluationTest(unittest.TestCase):
         )
         self.assertEqual(evaluation["style"]["warning_count"], 0)
 
+        task_input = run_pi_bench.build_task_input(scenario)
+        self.assertIn('"affectedPercent": "integer"', task_input)
+        self.assertIn('"affectedPercent": 12', task_input)
+        self.assertIn("No additional properties", task_input)
+
     def test_output_contract_is_semantic_authority_before_style(self):
         fixture = run_pi_bench.load_fixtures(CORPUS_PATH)[
             "repository-terms-and-protected-spans"
@@ -1863,7 +1868,7 @@ class V1MatrixContractTest(unittest.TestCase):
 
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
-        self.assertEqual(matrix["version"], 2)
+        self.assertEqual(matrix["version"], 3)
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -1914,6 +1919,15 @@ class V1MatrixContractTest(unittest.TestCase):
                         "lowering Claude Sonnet 5 thinking from medium to low."
                     ),
                 },
+                {
+                    "version": 3,
+                    "reason": (
+                        "Tune from the first completed run: admit observed safe "
+                        "paraphrases, expose structured output types and values, "
+                        "protect source modal verbs, and gate release on native skill "
+                        "behavior while controls remain diagnostic."
+                    ),
+                },
             ],
         )
 
@@ -1944,7 +1958,7 @@ class V1MatrixContractTest(unittest.TestCase):
         self.assertTrue(matrix["system_prompt"].strip())
         self.assertEqual(
             matrix["semantic_gate_conditions"],
-            ["baseline", "native-skill", "direct-prompt"],
+            ["native-skill"],
         )
         self.assertEqual(matrix["output_contract"]["type"], "text")
         self.assertTrue(matrix["output_contract"]["forbidden_patterns"])

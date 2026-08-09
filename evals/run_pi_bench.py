@@ -1320,11 +1320,29 @@ def run_cell(
 
 
 def build_task_input(fixture):
+    contract = fixture.get("output_contract")
+    contract_text = ""
+    final_instruction = "Return only the requested rewritten text."
+    if isinstance(contract, dict) and contract.get("type") == "json_object":
+        contract_lines = [
+            "Output contract:",
+            "- Return one JSON object.",
+            "- Required keys: " + json.dumps(contract.get("required_keys", [])),
+            "- Property types: "
+            + json.dumps(contract.get("property_types", {}), sort_keys=True),
+            "- Exact property values: "
+            + json.dumps(contract.get("property_values", {}), sort_keys=True),
+        ]
+        if contract.get("additional_properties") is False:
+            contract_lines.append("- No additional properties.")
+        contract_text = "\n\n" + "\n".join(contract_lines)
+        final_instruction = "Return only the requested JSON object."
     return (
         f"{fixture['task']}\n\n"
         "Source:\n\n"
-        f"{fixture['source']}\n\n"
-        "Return only the requested rewritten text."
+        f"{fixture['source']}"
+        f"{contract_text}\n\n"
+        f"{final_instruction}"
     )
 
 
