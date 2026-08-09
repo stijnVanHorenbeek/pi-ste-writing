@@ -35,6 +35,7 @@ class JudgeConfigTest(unittest.TestCase):
                 "readability_concision",
             ],
         )
+        self.assertEqual(config["version"], 2)
         self.assertEqual(config["source_repetitions_minimum"], 3)
         self.assertEqual(
             [comparison["id"] for comparison in config["comparisons"]],
@@ -43,6 +44,14 @@ class JudgeConfigTest(unittest.TestCase):
         for model in matrix["models"]:
             judge = config["judges_by_source_provider"][model["provider"]]
             self.assertNotEqual(judge["provider"], model["provider"])
+        self.assertEqual(
+            config["judges_by_source_provider"]["openai-codex"],
+            {
+                "provider": "github-copilot",
+                "model": "gemini-3.6-flash",
+                "thinking": "low",
+            },
+        )
 
     def test_validation_rejects_missing_dimension_and_same_provider_mapping(self):
         config = run_quality_judge.load_judge_config(CONFIG_PATH)
@@ -266,7 +275,7 @@ class SourceBenchmarkTest(unittest.TestCase):
         matrix = run_quality_judge.run_pi_bench.load_matrix(MATRIX_PATH)
         results = {
             "schema_version": 1,
-            "matrix": {"id": "v1", "version": 1},
+            "matrix": {"id": "v1", "version": matrix["version"]},
             "completeness": {"complete": True},
             "condition_integrity": {"accepted": True},
             "semantic_acceptance": {"accepted": False},
@@ -719,7 +728,10 @@ class JudgeOrchestrationTest(unittest.TestCase):
     def source_results(self, package_dirty=False):
         return {
             "schema_version": 1,
-            "matrix": {"id": "v1", "version": 1},
+            "matrix": {
+                "id": "v1",
+                "version": json.loads(MATRIX_PATH.read_text())["version"],
+            },
             "completeness": {"complete": True},
             "condition_integrity": {"accepted": True},
             "semantic_acceptance": {"accepted": True},

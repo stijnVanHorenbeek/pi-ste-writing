@@ -49,7 +49,7 @@ class MatrixLoadingTest(unittest.TestCase):
         cases.append(("scenario", matrix))
 
         matrix = json.loads(json.dumps(original))
-        matrix["version"] = 2
+        matrix["version"] += 1
         cases.append(("amendment", matrix))
 
         matrix = json.loads(json.dumps(original))
@@ -1863,7 +1863,7 @@ class V1MatrixContractTest(unittest.TestCase):
 
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
-        self.assertEqual(matrix["version"], 1)
+        self.assertEqual(matrix["version"], 2)
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -1891,7 +1891,7 @@ class V1MatrixContractTest(unittest.TestCase):
                 {
                     "provider": "github-copilot",
                     "model": "claude-sonnet-5",
-                    "thinking": "medium",
+                    "thinking": "low",
                 },
                 {
                     "provider": "github-copilot",
@@ -1906,7 +1906,14 @@ class V1MatrixContractTest(unittest.TestCase):
                 {
                     "version": 1,
                     "reason": "Initial V1 preregistration before benchmark prompt tuning.",
-                }
+                },
+                {
+                    "version": 2,
+                    "reason": (
+                        "Reduce GitHub Copilot cost before the first benchmark run by "
+                        "lowering Claude Sonnet 5 thinking from medium to low."
+                    ),
+                },
             ],
         )
 

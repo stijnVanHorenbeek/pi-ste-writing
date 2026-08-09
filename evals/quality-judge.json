@@ -1,12 +1,16 @@
 {
   "schema_version": 1,
   "judge_id": "v1-quality",
-  "version": 1,
+  "version": 2,
   "description": "Preregistered blind pairwise quality review for completed V1 benchmark outputs.",
   "amendments": [
     {
       "version": 1,
       "reason": "Initial independent-review rubric before benchmark execution."
+    },
+    {
+      "version": 2,
+      "reason": "Reduce GitHub Copilot cost before the first judge run by using Gemini 3.6 Flash at low thinking for OpenAI-generated candidates."
     }
   ],
   "source_matrix_id": "v1",
@@ -28,8 +32,8 @@
   "judges_by_source_provider": {
     "openai-codex": {
       "provider": "github-copilot",
-      "model": "claude-sonnet-5",
-      "thinking": "medium"
+      "model": "gemini-3.6-flash",
+      "thinking": "low"
     },
     "github-copilot": {
       "provider": "openai-codex",

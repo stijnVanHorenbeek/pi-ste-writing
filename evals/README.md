@@ -4,7 +4,7 @@ V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic
 
 ## Preregistered matrix
 
-`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples.
+`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowers Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost before first run.
 
 Conditions:
 
@@ -92,7 +92,7 @@ python3 evals/run_quality_judge.py \
 
 Three source repetitions provide repeated samples. First two repetitions swap candidate order; later orders use deterministic hashing. Judge receives only task, source, and labels `Candidate A` and `Candidate B`. Condition, generator model, and provider stay out of judge prompt.
 
-Current mappings use a different provider from source generator: OpenAI-generated candidates use Claude through GitHub Copilot; GitHub Copilot-generated candidates use OpenAI. V1 expects 108 judgments: 3 generator models × 2 comparisons × 6 scenarios × 3 source repetitions.
+Current mappings use a different provider from source generator: OpenAI-generated candidates use Gemini 3.6 Flash at low thinking through GitHub Copilot; GitHub Copilot-generated candidates use OpenAI. Judge config version 2 made this change before first run to reduce GitHub Copilot cost. V1 expects 108 judgments: 3 generator models × 2 comparisons × 6 scenarios × 3 source repetitions.
 
 Rubric scores each candidate from 1–5, or marks dimension not applicable:
 
