@@ -416,7 +416,7 @@ class ObservedParaphraseRegressionTest(unittest.TestCase):
                 "production records.\n\n"
                 "1. Confirm that snapshot `snap-2026-07-14` is complete.\n\n"
                 "> **WARNING:** The next command permanently deletes namespace "
-                "`payments`. Recovery requires restoring the snapshot.\n\n"
+                "`payments`. Recovery requires restoring this snapshot.\n\n"
                 "2. Confirm that change request `CHG-4821` is approved.\n\n"
                 "3. Run:\n\n   ```bash\n   kubectl delete namespace payments\n   ```\n\n"
                 "4. Verify the status with `kubectl get namespace payments`."

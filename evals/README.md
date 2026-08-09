@@ -4,7 +4,7 @@ V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic
 
 ## Preregistered matrix
 
-`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Versions 3–5 record evidence-driven fixture, routing, output-contract, and semantic-preservation corrections from completed runs.
+`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Versions 3–6 record evidence-driven fixture, routing, output-contract, and semantic-preservation corrections from completed runs and targeted probes.
 
 Conditions:
 

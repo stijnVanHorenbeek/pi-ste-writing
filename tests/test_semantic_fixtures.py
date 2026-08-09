@@ -190,6 +190,8 @@ class SemanticFixtureCorpusTest(unittest.TestCase):
         procedure_task = fixtures["mixed-destructive-procedure"]["task"].lower()
         self.assertIn("fenced", procedure_task)
         self.assertIn("inline", procedure_task)
+        self.assertIn("warning", procedure_task)
+        self.assertIn("note", procedure_task)
 
     def test_invariants_define_machine_readable_checks(self):
         corpus = self.load_corpus()

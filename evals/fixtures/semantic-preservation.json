@@ -768,7 +768,7 @@
         "mixed_passage",
         "destructive_warning"
       ],
-      "task": "Rewrite this runbook section as a safe procedure. Keep descriptive scope, identifiers, commands, conditions, and warning consequences. Keep source fenced code fenced and source inline code inline.",
+      "task": "Rewrite this runbook section as a safe procedure. Keep descriptive scope, identifiers, commands, conditions, and warning consequences. Keep source fenced code fenced and source inline code inline. Keep the WARNING label; do not replace it with Note.",
       "source": "The cleanup job removes expired preview data. It does not delete production records.\n\nBefore you continue, confirm that snapshot `snap-2026-07-14` is complete.\n\nWARNING: The next command permanently deletes namespace `payments`. Recovery requires restoring the snapshot.\n\nIf change request `CHG-4821` is approved, run:\n\n```bash\nkubectl delete namespace payments\n```\n\nThen verify the status with `kubectl get namespace payments`.",
       "allowed_claims": [
         {
@@ -874,7 +874,7 @@
             },
             {
               "type": "regex",
-              "pattern": "(?i)(recovery requires restoring the snapshot|restoring the snapshot is required for recovery)"
+              "pattern": "(?i)(recovery requires restoring (the|this) snapshot|restoring (the|this) snapshot is required for recovery)"
             },
             {
               "type": "precedes_regex",
@@ -883,7 +883,7 @@
             },
             {
               "type": "precedes_regex",
-              "before_pattern": "(?i)(recovery requires restoring the snapshot|restoring the snapshot is required for recovery)",
+              "before_pattern": "(?i)(recovery requires restoring (the|this) snapshot|restoring (the|this) snapshot is required for recovery)",
               "after_pattern": "kubectl delete namespace payments"
             }
           ]

@@ -1992,7 +1992,7 @@ class V1MatrixContractTest(unittest.TestCase):
 
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
-        self.assertEqual(matrix["version"], 5)
+        self.assertEqual(matrix["version"], 6)
         self.assertEqual(run_pi_bench.RUNNER_VERSION, "3")
         self.assertEqual(
             matrix["conditions"],
@@ -2068,6 +2068,13 @@ class V1MatrixContractTest(unittest.TestCase):
                         "Tune from the third completed run: state exact task "
                         "boundaries, normalize list-nested fence indentation, and "
                         "retry transient routing-safety failures."
+                    ),
+                },
+                {
+                    "version": 6,
+                    "reason": (
+                        "Tune from the targeted version 5 probe: preserve the WARNING "
+                        "label and admit an equivalent demonstrative snapshot reference."
                     ),
                 },
             ],
