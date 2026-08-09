@@ -43,6 +43,45 @@ Deterministic patterns prove only enumerated properties. They cannot reject ever
 - A new factual claim still requires source comparison even when all deterministic checks pass.
 - Protected-container checks are deterministic and must pass exactly.
 
+## Deterministic scoring
+
+Score one candidate against one fixture:
+
+```bash
+python3 evals/score_fixtures.py FIXTURE_ID CANDIDATE --format json
+```
+
+Use `-` or omit `CANDIDATE` to read from standard input. Text output is the default.
+JSON output is stable input for the benchmark runner.
+
+The scorer reports each measurement separately:
+
+| Measurement | Executable source | Gate behavior |
+|---|---|---|
+| Protected-span equality | `protected_span` invariants plus nonnumeric linter source equality by count and container | Semantic gate |
+| Required fact retention | `fact` invariants | Semantic gate |
+| Forbidden fact invention | All `forbidden_claims` patterns | Semantic gate |
+| Modality and certainty preservation | `modality` and `causality` invariants | Semantic gate |
+| Repository-term preservation | `repository_term` invariants | Semantic gate |
+| Procedure structure | `procedure` invariants plus mechanical condition-order and step-numbering findings | Semantic gate |
+| Mechanical style warnings | Linter findings in the `style` category | Advisory only |
+
+Semantic and procedure failures exit 1. Style warnings remain advisory and exit 0
+when all semantic and procedure gates pass. Invocation and input errors exit 2.
+No combined semantic-and-style score exists. Reports place semantic metrics before
+procedure and style results.
+
+Nonnumeric linter source-comparison findings are protected-span failures, including
+added or removed protected values outside `protected_span` invariants. Numeric values
+remain gated by their declared fact, modality, or procedure invariants. Generic numeric
+token comparison is not a semantic gate because safe formatting can add list ordinals
+or repeat units without changing a declared value.
+
+The scorer measures enumerated rules only. `allowed_claims` still requires attested
+source review. Exact output contracts remain scenario-level benchmark gates; this scorer
+does not infer schemas that fixtures do not declare. A passing report does not prove full
+semantic equivalence or certify ASD-STE100 compliance.
+
 ## Adding a fixture
 
 1. Add or update a failing contract test in `tests/test_semantic_fixtures.py`.

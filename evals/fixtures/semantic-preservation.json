@@ -435,15 +435,15 @@
           "checks": [
             {
               "type": "regex",
-              "pattern": "(?i)(`config` means file-backed service values|file-backed service values are called `config`)"
+              "pattern": "(?i)(`config` means file-backed service values|file-backed service values are called `config`|This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides)"
             },
             {
               "type": "regex",
-              "pattern": "(?i)(`settings` means UI preferences|UI preferences are called `settings`)"
+              "pattern": "(?i)(`settings` means UI preferences|UI preferences are called `settings`|This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides)"
             },
             {
               "type": "regex",
-              "pattern": "(?i)(`options` means request-scoped overrides|request-scoped overrides are called `options`)"
+              "pattern": "(?i)(`options` means request-scoped overrides|request-scoped overrides are called `options`|This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides)"
             }
           ]
         },
@@ -603,6 +603,10 @@
         {
           "id": "protected-valid-reordered-note",
           "rewrite": "File-backed service values are called `config`, UI preferences are called `settings`, and request-scoped overrides are called `options`.\n\nSelect **Advanced Settings** after opening [retry documentation](https://docs.example.com/retries?v=3). Call `ApplyRetryPolicy` with API field `retryPolicy.maxAttempts`. The file path is `/etc/acme/app.yaml`.\n\nRun this command:\n\n```bash\nacmectl config set retry_count 3 --file /etc/acme/app.yaml\n```\n\nKeep this code unchanged:\n\n```ts\nconst retry = ApplyRetryPolicy(config, options);\n```\n\nKeep these diagnostics unchanged:\n\n- Error: `invalid value for \"retry_count\"`\n- Log: `level=warn component=retry request_id=7f3a`\n- Test: `--- FAIL: TestApplyRetryPolicy (0.04s)`"
+        },
+        {
+          "id": "protected-valid-relationship-paraphrase",
+          "rewrite": "This repository uses `config` for file-backed service values, `settings` for UI preferences, and `options` for request-scoped overrides.\n\nSelect **Advanced Settings** after opening [retry documentation](https://docs.example.com/retries?v=3). Call `ApplyRetryPolicy` with API field `retryPolicy.maxAttempts`. The file path is `/etc/acme/app.yaml`.\n\nRun this command:\n\n```bash\nacmectl config set retry_count 3 --file /etc/acme/app.yaml\n```\n\nKeep this code unchanged:\n\n```ts\nconst retry = ApplyRetryPolicy(config, options);\n```\n\nKeep these diagnostics unchanged:\n\n- Error: `invalid value for \"retry_count\"`\n- Log: `level=warn component=retry request_id=7f3a`\n- Test: `--- FAIL: TestApplyRetryPolicy (0.04s)`"
         }
       ],
       "failing_baselines": [
