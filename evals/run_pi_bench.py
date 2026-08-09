@@ -31,7 +31,7 @@ DEFAULT_MATRIX_PATH = HERE / "v1-matrix.json"
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "v1"
-RUNNER_VERSION = "3"
+RUNNER_VERSION = "4"
 CONDITIONS = ("baseline", "native-skill", "direct-prompt")
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -223,6 +223,14 @@ def validate_matrix(matrix):
         raise ValueError("matrix tools_by_condition values must be unique tool lists")
 
     validate_output_contract(matrix.get("output_contract"), context="matrix")
+    for key in ("corpus_path", "benchmark_scenarios_path"):
+        value = matrix.get(key)
+        if value is not None and (
+            not isinstance(value, str)
+            or not value.strip()
+            or Path(value).is_absolute()
+        ):
+            raise ValueError(f"matrix {key} must be a nonempty relative path")
 
 
 def load_matrix(path=DEFAULT_MATRIX_PATH):
@@ -234,6 +242,31 @@ def load_matrix(path=DEFAULT_MATRIX_PATH):
 def load_fixtures(path=DEFAULT_CORPUS_PATH):
     corpus = strict_json_loads(Path(path).read_text(encoding="utf-8"))
     return {fixture["id"]: fixture for fixture in corpus["fixtures"]}
+
+
+def matrix_data_path(matrix, key, default):
+    value = matrix.get(key)
+    if value is None:
+        return Path(default)
+    path = (HERE / value).resolve()
+    if not path.is_relative_to(HERE):
+        raise ValueError(f"matrix {key} must stay within evals")
+    return path
+
+
+def load_matrix_scenarios(matrix):
+    fixtures = load_fixtures(
+        matrix_data_path(matrix, "corpus_path", DEFAULT_CORPUS_PATH)
+    )
+    scenarios = load_scenarios(
+        fixtures,
+        matrix_data_path(
+            matrix,
+            "benchmark_scenarios_path",
+            DEFAULT_BENCHMARK_SCENARIOS_PATH,
+        ),
+    )
+    return fixtures, scenarios
 
 
 def load_scenarios(
@@ -2052,8 +2085,7 @@ def execute_benchmark(
     matrix_path = Path(matrix_path)
     results_directory = Path(results_directory)
     matrix = load_matrix(matrix_path)
-    fixtures = load_fixtures()
-    scenarios = load_scenarios(fixtures)
+    fixtures, scenarios = load_matrix_scenarios(matrix)
     if not report_only:
         score_fixtures.load_linter()
     provenance = provenance or collect_provenance(matrix_path)

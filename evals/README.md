@@ -16,6 +16,28 @@ Version 3 makes `native-skill` the package acceptance gate. Baseline and direct-
 
 Matrix changes require a versioned amendment with a recorded reason. Raw results store the matrix SHA-256, so results from changed matrices cannot be silently reused.
 
+## Independent follow-up
+
+`independent-review-matrix.json` preregisters six unseen sibling scenarios after the original V1 matrix failed. Fresh-context reviewers authored and audited scenario content before candidate generation. The follow-up keeps the same three conditions, models, repetitions, native-only semantic gate, and two-of-three positive activation threshold. It loads `fixtures/independent-review.json` and `independent-review-scenarios.json` through matrix-relative paths. No package or scoring changes are permitted after outputs exist; failures remain final evidence rather than tuning input.
+
+Run generation from a clean committed tree:
+
+```bash
+python3 evals/run_pi_bench.py \
+  --matrix evals/independent-review-matrix.json \
+  --results-dir evals/results/independent-review
+```
+
+If source gates pass, run its preregistered 108-cell judge:
+
+```bash
+python3 evals/run_quality_judge.py \
+  --config evals/independent-review-quality-judge.json \
+  --matrix evals/independent-review-matrix.json \
+  --benchmark-results-dir evals/results/independent-review \
+  --results-dir evals/results/independent-review/judge
+```
+
 ## Run
 
 Commit all source changes first. Generation requires a clean Git working tree because each raw cell records exact package commit and Pi version.

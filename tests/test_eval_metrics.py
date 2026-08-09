@@ -9,6 +9,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "evals" / "score_fixtures.py"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
+INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
+sys.path.insert(0, str(ROOT / "evals"))
+
+import score_fixtures
+
 LINTER_CACHE = (
     ROOT / "skills" / "clear-technical-writing" / "scripts" / "__pycache__"
 )
@@ -46,6 +51,93 @@ def run_cli(fixture_id, rewrite, *args):
 
 
 class PassingScoreContractTest(unittest.TestCase):
+    def test_independent_sources_and_passing_rewrites_clear_full_semantic_gate(self):
+        corpus = json.loads(INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8"))
+
+        for fixture in corpus["fixtures"]:
+            candidates = [
+                {"id": "source", "rewrite": fixture["source"]},
+                *fixture["passing_rewrites"],
+            ]
+            for candidate in candidates:
+                with self.subTest(fixture=fixture["id"], candidate=candidate["id"]):
+                    report = score_fixtures.score_rewrite(
+                        fixture,
+                        candidate["rewrite"],
+                        candidate=candidate["id"],
+                    )
+                    self.assertTrue(report["semantic"]["gate_passed"])
+                    if report["procedure"]["applicable"]:
+                        self.assertTrue(report["procedure"]["passed"])
+
+    def test_independent_failing_baselines_match_full_scorer_failures(self):
+        corpus = json.loads(INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8"))
+
+        for fixture in corpus["fixtures"]:
+            for baseline in fixture["failing_baselines"]:
+                with self.subTest(fixture=fixture["id"], baseline=baseline["id"]):
+                    report = score_fixtures.score_rewrite(
+                        fixture,
+                        baseline["rewrite"],
+                        candidate=baseline["id"],
+                    )
+                    self.assertEqual(
+                        set(report["semantic"]["failed_rule_ids"]),
+                        set(
+                            baseline.get(
+                                "expected_full_scorer_violations",
+                                baseline["expected_violations"],
+                            )
+                        ),
+                    )
+
+    def test_independent_forbidden_claims_catch_obvious_sibling_phrasings(self):
+        fixtures = {
+            fixture["id"]: fixture
+            for fixture in json.loads(
+                INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8")
+            )["fixtures"]
+        }
+        cases = [
+            (
+                "helios-transcoder-confirmed-and-unconfirmed-cause",
+                "helios.forbidden-worker-cause",
+                "The worker-pool resize caused the failure-rate drop.",
+            ),
+            (
+                "helios-transcoder-confirmed-and-unconfirmed-cause",
+                "helios.forbidden-all-leases",
+                "Expired GPU leases caused every failed segment.",
+            ),
+            (
+                "orbital-greenhouse-modal-policy",
+                "greenhouse.forbidden-calibration-required",
+                "Habitat stewards are required to calibrate nutrient pumps quarterly.",
+            ),
+            (
+                "orbital-greenhouse-modal-policy",
+                "greenhouse.forbidden-suspension-required",
+                "Flight horticulturists are required to suspend dosing.",
+            ),
+            (
+                "orbital-greenhouse-modal-policy",
+                "greenhouse.forbidden-sync-certain",
+                "Canopy sensor synchronization takes 17 minutes.",
+            ),
+            (
+                "orbital-greenhouse-modal-policy",
+                "greenhouse.forbidden-restart-certain",
+                "Dormant grow bays restart without a spectral scan during eclipse mode.",
+            ),
+        ]
+
+        for fixture_id, rule_id, contradiction in cases:
+            fixture = fixtures[fixture_id]
+            rewrite = fixture["passing_rewrites"][0]["rewrite"] + " " + contradiction
+            with self.subTest(fixture=fixture_id, rule=rule_id):
+                report = score_fixtures.score_rewrite(fixture, rewrite)
+                self.assertIn(rule_id, report["semantic"]["failed_rule_ids"])
+
     def test_passing_rewrite_reports_separate_semantic_procedure_and_style_results(self):
         fixture = fixture_by_id("repository-terms-and-protected-spans")
         candidate = candidate_by_id(fixture, "protected-valid-reordered-note")

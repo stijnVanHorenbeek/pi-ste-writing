@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 EVALS = ROOT / "evals"
 CONFIG_PATH = EVALS / "quality-judge.json"
 MATRIX_PATH = EVALS / "v1-matrix.json"
+INDEPENDENT_CONFIG_PATH = EVALS / "independent-review-quality-judge.json"
+INDEPENDENT_MATRIX_PATH = EVALS / "independent-review-matrix.json"
 sys.path.insert(0, str(EVALS))
 
 import run_quality_judge
@@ -53,6 +55,16 @@ class JudgeConfigTest(unittest.TestCase):
                 "thinking": "low",
             },
         )
+
+    def test_independent_review_config_preserves_blind_cross_provider_design(self):
+        config = run_quality_judge.load_judge_config(INDEPENDENT_CONFIG_PATH)
+        matrix = run_quality_judge.run_pi_bench.load_matrix(
+            INDEPENDENT_MATRIX_PATH
+        )
+
+        run_quality_judge.validate_judge_matrix(config, matrix)
+        self.assertEqual(config["source_matrix_id"], "v1-independent-review")
+        self.assertEqual(len(list(run_quality_judge.iter_judge_cells(matrix, config))), 108)
 
     def test_validation_rejects_missing_dimension_and_same_provider_mapping(self):
         config = run_quality_judge.load_judge_config(CONFIG_PATH)

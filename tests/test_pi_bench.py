@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "evals" / "v1-matrix.json"
+INDEPENDENT_MATRIX_PATH = ROOT / "evals" / "independent-review-matrix.json"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 BENCHMARK_SCENARIOS_PATH = ROOT / "evals" / "benchmark-scenarios.json"
 EVALS_DIR = ROOT / "evals"
@@ -77,6 +78,13 @@ class MatrixLoadingTest(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, phrase):
                         run_pi_bench.load_matrix(path)
 
+    def test_matrix_data_paths_cannot_escape_evals(self):
+        matrix = json.loads(INDEPENDENT_MATRIX_PATH.read_text(encoding="utf-8"))
+        matrix["corpus_path"] = "../outside.json"
+
+        with self.assertRaisesRegex(ValueError, "stay within evals"):
+            run_pi_bench.load_matrix_scenarios(matrix)
+
     def test_matrix_expands_to_unique_repeated_cells(self):
         matrix = run_pi_bench.load_matrix(MATRIX_PATH)
         fixtures = run_pi_bench.load_fixtures(CORPUS_PATH)
@@ -102,6 +110,43 @@ class MatrixLoadingTest(unittest.TestCase):
         names = [run_pi_bench.raw_result_name(cell) for cell in cells]
         self.assertEqual(len(names), len(set(names)))
         self.assertTrue(names[0].endswith("__r01.json"))
+
+
+class IndependentReviewMatrixTest(unittest.TestCase):
+    def test_preregisters_unseen_scenarios_before_generation(self):
+        matrix = run_pi_bench.load_matrix(INDEPENDENT_MATRIX_PATH)
+        fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
+
+        self.assertEqual(matrix["matrix_id"], "v1-independent-review")
+        self.assertEqual(matrix["version"], 1)
+        self.assertEqual(
+            matrix["scenario_ids"],
+            [
+                "helios-transcoder-confirmed-and-unconfirmed-cause",
+                "orbital-greenhouse-modal-policy",
+                "vesper-witness-repository-terms",
+                "broker-failover-correlation-unknown-cause",
+                "ledger-archive-purge-destructive-procedure",
+                "orbital-imager-structured-incident-status",
+            ],
+        )
+        self.assertEqual(matrix["semantic_gate_conditions"], ["native-skill"])
+        self.assertEqual(matrix["corpus_path"], "fixtures/independent-review.json")
+        self.assertEqual(
+            matrix["benchmark_scenarios_path"],
+            "independent-review-scenarios.json",
+        )
+        self.assertEqual(set(fixtures), set(matrix["scenario_ids"][:-1]))
+        self.assertEqual(matrix["repetitions"], 3)
+        self.assertEqual(len(list(run_pi_bench.iter_cells(matrix, scenarios))), 162)
+        self.assertTrue(
+            all(scenario_id in scenarios for scenario_id in matrix["scenario_ids"])
+        )
+        self.assertFalse(
+            scenarios["orbital-imager-structured-incident-status"][
+                "expect_skill_loaded"
+            ]
+        )
 
 
 class PiJsonEventParsingTest(unittest.TestCase):
@@ -1993,7 +2038,7 @@ class V1MatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "3")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "4")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -2004,8 +2049,21 @@ class V1MatrixContractTest(unittest.TestCase):
         )
         self.assertEqual(
             matrix["scenario_ids"],
-            [fixture["id"] for fixture in corpus["fixtures"]]
-            + [scenario["id"] for scenario in benchmark_scenarios["scenarios"]],
+            [
+                "release-facts-and-causes",
+                "modal-policy-distinctions",
+                "repository-terms-and-protected-spans",
+                "correlation-with-unknown-root-cause",
+                "mixed-destructive-procedure",
+                "schema-constrained-incident-status",
+            ],
+        )
+        self.assertTrue(
+            set(matrix["scenario_ids"])
+            <= {
+                fixture["id"] for fixture in corpus["fixtures"]
+            }
+            | {scenario["id"] for scenario in benchmark_scenarios["scenarios"]}
         )
         structured = benchmark_scenarios["scenarios"][0]
         self.assertEqual(structured["output_contract"]["type"], "json_object")

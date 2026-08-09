@@ -1282,8 +1282,7 @@ def execute_judging(
     config = load_judge_config(config_path)
     matrix = run_pi_bench.load_matrix(matrix_path)
     validate_judge_matrix(config, matrix)
-    fixtures = run_pi_bench.load_fixtures()
-    scenarios = run_pi_bench.load_scenarios(fixtures)
+    fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
     source_results_path = benchmark_results_directory / "results.json"
     source_results = run_pi_bench.strict_json_loads(
         source_results_path.read_text(encoding="utf-8")

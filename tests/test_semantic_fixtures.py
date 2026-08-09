@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
+INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
 
 REQUIRED_TAGS = {
     "fact",
@@ -174,6 +175,53 @@ class SemanticFixtureCorpusTest(unittest.TestCase):
                     self.assertTrue(claim["patterns"])
                     for pattern in claim["patterns"]:
                         re.compile(pattern)
+
+    def test_independent_review_fixtures_use_distinct_surface_structures(self):
+        corpus = json.loads(INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8"))
+        fixtures = {fixture["id"]: fixture for fixture in corpus["fixtures"]}
+        expected = {
+            "helios-transcoder-confirmed-and-unconfirmed-cause",
+            "orbital-greenhouse-modal-policy",
+            "vesper-witness-repository-terms",
+            "broker-failover-correlation-unknown-cause",
+            "ledger-archive-purge-destructive-procedure",
+        }
+
+        self.assertLessEqual(expected, set(fixtures))
+        self.assertNotIn(
+            "The cause of the remaining failures is unknown.",
+            fixtures["helios-transcoder-confirmed-and-unconfirmed-cause"]["source"],
+        )
+        self.assertNotIn(
+            "The timing shows correlation only",
+            fixtures["broker-failover-correlation-unknown-cause"]["source"],
+        )
+        self.assertNotIn(
+            "Before you continue",
+            fixtures["ledger-archive-purge-destructive-procedure"]["source"],
+        )
+        greenhouse = fixtures["orbital-greenhouse-modal-policy"]["source"]
+        self.assertLess(greenhouse.index("could"), greenhouse.index("might"))
+        self.assertLess(greenhouse.index("might"), greenhouse.index("may"))
+        self.assertNotIn(
+            "In this repository,",
+            fixtures["vesper-witness-repository-terms"]["source"],
+        )
+
+        for fixture in fixtures.values():
+            candidates = [
+                {"id": "source", "rewrite": fixture["source"]},
+                *fixture["passing_rewrites"],
+            ]
+            for candidate in candidates:
+                with self.subTest(fixture=fixture["id"], candidate=candidate["id"]):
+                    self.assertEqual(violated_rules(fixture, candidate["rewrite"]), set())
+            for baseline in fixture["failing_baselines"]:
+                with self.subTest(fixture=fixture["id"], baseline=baseline["id"]):
+                    self.assertEqual(
+                        violated_rules(fixture, baseline["rewrite"]),
+                        set(baseline["expected_violations"]),
+                    )
 
     def test_high_risk_tasks_state_exact_preservation_boundaries(self):
         fixtures = {

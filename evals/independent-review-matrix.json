@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "matrix_id": "v1-independent-review",
+  "version": 1,
+  "description": "Preregistered independent V1 follow-up using unseen scenarios and no post-output tuning.",
+  "amendments": [
+    {
+      "version": 1,
+      "reason": "Initial independent-review preregistration after the original V1 matrix failed its native acceptance gates."
+    }
+  ],
+  "corpus_path": "fixtures/independent-review.json",
+  "benchmark_scenarios_path": "independent-review-scenarios.json",
+  "scenario_ids": [
+    "helios-transcoder-confirmed-and-unconfirmed-cause",
+    "orbital-greenhouse-modal-policy",
+    "vesper-witness-repository-terms",
+    "broker-failover-correlation-unknown-cause",
+    "ledger-archive-purge-destructive-procedure",
+    "orbital-imager-structured-incident-status"
+  ],
+  "conditions": [
+    "baseline",
+    "native-skill",
+    "direct-prompt"
+  ],
+  "models": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "low"
+    }
+  ],
+  "repetitions": 3,
+  "retry_limit": 2,
+  "timeout_seconds": 300,
+  "inter_call_delay_seconds": 2,
+  "system_prompt": "Return only the final text requested by the user. Do not include analysis, rule commentary, or a preface.",
+  "semantic_gate_conditions": [
+    "native-skill"
+  ],
+  "isolation": {
+    "tools_by_condition": {
+      "baseline": [],
+      "native-skill": [
+        "read"
+      ],
+      "direct-prompt": []
+    },
+    "extensions": false,
+    "skills": "explicit-only",
+    "prompt_templates": false,
+    "themes": false,
+    "context_files": false,
+    "session_persistence": false,
+    "project_trust": false,
+    "startup_network": false
+  },
+  "output_contract": {
+    "type": "text",
+    "forbidden_patterns": [
+      "(?is)^\\s*here(?:'s| is| are)\\b",
+      "(?is)^\\s*(?:rewritten|revised) (?:text|version)\\s*:"
+    ]
+  }
+}
