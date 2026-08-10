@@ -52,7 +52,7 @@ Current inventory includes:
 
 Structural containers are flow text, heading level, and blockquote. Lists and tables count as flow so safe procedure restructuring can pass. Protected kind remains part of container identity, so inline-to-block and link-to-bare moves fail. Occurrence order and semantic role are not mechanically verified.
 
-Verifier permits up to three candidate submissions. Failed candidate text is not returned as accepted output. Third protected-content mismatch ends guarded job with blocked result.
+Verifier permits up to three candidate submissions. Failed candidate text is not returned as accepted output. Guard retains only SHA-256 of previous rejected draft for duplicate detection. An unchanged rejected draft receives explicit instruction to change draft before resubmission; duplicate detection does not reset or extend submission budget. Third protected-content mismatch ends guarded job with blocked result.
 
 Python 3 is required. Verifier imports bundled `ste_lint.py`; no third-party Python package is required. Missing interpreter, timeout, malformed report, unexpected exit, and status/report disagreement fail closed.
 

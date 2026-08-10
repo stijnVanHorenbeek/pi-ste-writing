@@ -5,6 +5,7 @@ import {
 	applyVerification,
 	classifySubmissionMessage,
 	parseClearWriteArgs,
+	repairInstruction,
 	startGuard,
 } from "../extensions/guard-session.ts";
 import { verifyWithPython } from "../extensions/protected-verifier.ts";
@@ -87,6 +88,38 @@ test("guard permits bounded repair then blocks without returning invalid draft",
 	assert.equal(blocked.status, "blocked");
 	assert.equal(blocked.draft, undefined);
 	assert.equal(blocked.nextState, undefined);
+});
+
+test("guard marks unchanged rejected drafts without retaining draft text", () => {
+	let state = startGuard("job-duplicate", "Source", "clear", 4);
+
+	const first = applyVerification(state, "unchanged rejected draft", rejected);
+	assert.equal(first.status, "retry");
+	assert.equal(first.unchangedDraft, false);
+	assert.ok(first.nextState);
+	assert.doesNotMatch(JSON.stringify(first.nextState), /unchanged rejected draft/);
+
+	state = first.nextState!;
+	const duplicate = applyVerification(state, "unchanged rejected draft", rejected);
+	assert.equal(duplicate.status, "retry");
+	assert.equal(duplicate.unchangedDraft, true);
+	assert.ok(duplicate.nextState);
+
+	state = duplicate.nextState!;
+	const revised = applyVerification(state, "revised rejected draft", rejected);
+	assert.equal(revised.status, "retry");
+	assert.equal(revised.unchangedDraft, false);
+});
+
+test("duplicate retry feedback requires changing rejected draft", () => {
+	assert.equal(
+		repairInstruction("submit_clear_rewrite", false),
+		"Protected content verification failed. Repair draft and call submit_clear_rewrite again.",
+	);
+	assert.match(
+		repairInstruction("submit_clear_rewrite", true),
+		/Draft is unchanged.*Change draft.*submit_clear_rewrite again/,
+	);
 });
 
 test("Python verifier receives extension-owned source and candidate files", async () => {

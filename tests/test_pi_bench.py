@@ -59,7 +59,11 @@ def schema_v3_matrix():
     return matrix
 
 
-def guarded_event_stream(statuses=("accepted",), final_text="accepted draft"):
+def guarded_event_stream(
+    statuses=("accepted",),
+    final_text="accepted draft",
+    unchanged_attempts=None,
+):
     usage = {
         "input": 1,
         "output": 1,
@@ -70,8 +74,18 @@ def guarded_event_stream(statuses=("accepted",), final_text="accepted draft"):
         "cost": {"total": 0},
     }
     events = []
+    previous_rejected_draft = None
     for attempt, status in enumerate(statuses, 1):
         draft = final_text if status == "accepted" else f"rejected draft {attempt}"
+        if (
+            status != "accepted"
+            and unchanged_attempts is not None
+            and attempt in unchanged_attempts
+            and previous_rejected_draft is not None
+        ):
+            draft = previous_rejected_draft
+        if status != "accepted":
+            previous_rejected_draft = draft
         call_id = f"submit-{attempt}"
         events.extend(
             [
@@ -115,6 +129,14 @@ def guarded_event_stream(statuses=("accepted",), final_text="accepted draft"):
                             "status": status,
                             "attempt": attempt,
                             **({"draft": draft} if status == "accepted" else {}),
+                            **(
+                                {
+                                    "unchangedDraft": attempt in unchanged_attempts
+                                }
+                                if status != "accepted"
+                                and unchanged_attempts is not None
+                                else {}
+                            ),
                         },
                     },
                     "isError": False,
@@ -914,6 +936,44 @@ class PiJsonEventParsingTest(unittest.TestCase):
         self.assertNotIn("secret-job", serialized)
         self.assertNotIn("rejected secret draft", serialized)
 
+    def test_records_unchanged_guarded_resubmissions_without_draft_text(self):
+        events = guarded_event_stream(
+            ("retry", "retry", "accepted"),
+            unchanged_attempts={2},
+        )
+
+        response = run_pi_bench.parse_pi_json_events(
+            "\n".join(json.dumps(event) for event in events),
+            expect_guard=True,
+        )
+
+        self.assertEqual(
+            [
+                submission.get("unchanged_draft")
+                for submission in response["guard"]["submissions"]
+            ],
+            [False, True, None],
+        )
+        self.assertEqual(response["guard"]["unchanged_draft_submissions"], 1)
+        serialized = json.dumps(response["guard"])
+        self.assertNotIn("rejected draft", serialized)
+        self.assertIsNone(run_pi_bench.response_error(response, "response"))
+
+        tampered = json.loads(json.dumps(response))
+        tampered["guard"]["unchanged_draft_submissions"] = 2
+        self.assertIn(
+            "guard evidence is inconsistent",
+            run_pi_bench.response_error(tampered, "response"),
+        )
+
+        tampered = json.loads(json.dumps(response))
+        tampered["guard"]["submissions"][1]["unchanged_draft"] = False
+        tampered["guard"]["unchanged_draft_submissions"] = 0
+        self.assertIn(
+            "guard evidence is inconsistent",
+            run_pi_bench.response_error(tampered, "response"),
+        )
+
     def test_guarded_integrity_requires_accepted_matching_submit_artifact(self):
         draft = "Preserve `NODE-918` exactly."
         messages = []
@@ -1298,7 +1358,96 @@ class PiJsonEventParsingTest(unittest.TestCase):
                 "skill_tree_read_calls": 0,
                 "outside_skill_read_calls": 0,
                 "skill_loaded": False,
+                "failed_reads": [
+                    {
+                        "path_sha256": hashlib.sha256(
+                            str(run_pi_bench.SKILL_PATH).encode()
+                        ).hexdigest(),
+                        "scope": "inside-skill",
+                    }
+                ],
             },
+        )
+
+    def test_failed_reads_retain_only_hashed_path_and_scope(self):
+        inside_path = str(run_pi_bench.SKILL_PATH.parent / "references" / "missing.md")
+        outside_path = str(ROOT / "missing.md")
+        events = []
+        for call_id, args in (
+            ("inside", {"path": inside_path}),
+            ("outside", {"path": outside_path}),
+            ("invalid", {"path": "\0"}),
+            ("unresolved", {}),
+        ):
+            events.extend(
+                (
+                    {
+                        "type": "tool_execution_start",
+                        "toolCallId": call_id,
+                        "toolName": "read",
+                        "args": args,
+                    },
+                    {
+                        "type": "tool_execution_end",
+                        "toolCallId": call_id,
+                        "toolName": "read",
+                        "isError": True,
+                    },
+                )
+            )
+        events.append(
+            {
+                "type": "message_end",
+                "message": {
+                    "role": "assistant",
+                    "provider": "provider",
+                    "model": "model",
+                    "content": [{"type": "text", "text": "final"}],
+                    "usage": {
+                        "input": 1,
+                        "output": 1,
+                        "cacheRead": 0,
+                        "cacheWrite": 0,
+                        "totalTokens": 2,
+                        "cost": {"total": 0},
+                    },
+                    "stopReason": "stop",
+                },
+            }
+        )
+
+        result = run_pi_bench.parse_pi_json_events(
+            "\n".join(json.dumps(event) for event in events)
+        )
+
+        self.assertEqual(
+            result["routing"]["failed_reads"],
+            [
+                {
+                    "path_sha256": hashlib.sha256(inside_path.encode()).hexdigest(),
+                    "scope": "inside-skill",
+                },
+                {
+                    "path_sha256": hashlib.sha256(outside_path.encode()).hexdigest(),
+                    "scope": "outside-skill",
+                },
+                {
+                    "path_sha256": hashlib.sha256(b"\0").hexdigest(),
+                    "scope": "unresolved",
+                },
+                {"path_sha256": None, "scope": "unresolved"},
+            ],
+        )
+        serialized = json.dumps(result["routing"])
+        self.assertNotIn(inside_path, serialized)
+        self.assertNotIn(outside_path, serialized)
+        self.assertIsNone(run_pi_bench.response_error(result, "response"))
+
+        tampered = json.loads(json.dumps(result))
+        tampered["routing"]["failed_reads"][0]["path_sha256"] = inside_path
+        self.assertIn(
+            "failed read telemetry is invalid",
+            run_pi_bench.response_error(tampered, "response"),
         )
 
     def test_invalid_stream_and_missing_final_text_are_rejected(self):
@@ -3386,7 +3535,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "9")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "10")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -3564,7 +3713,7 @@ class HybridSchemaV3Test(unittest.TestCase):
     def test_v3_matrix_accepts_hybrid_contract_and_rejects_open_regex(self):
         matrix = schema_v3_matrix()
         run_pi_bench.validate_matrix(matrix)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "9")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "10")
         self.assertEqual(run_pi_bench.evidence_schema_version(matrix), 2)
 
         invalid = json.loads(json.dumps(matrix))

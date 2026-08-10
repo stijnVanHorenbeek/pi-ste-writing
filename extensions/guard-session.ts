@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export type WritingMode = "clear" | "procedure" | "strict";
 
 export interface VerificationReport {
@@ -11,13 +13,25 @@ export interface GuardState {
 	mode: WritingMode;
 	attempts: number;
 	maxAttempts: number;
+	lastRejectedDraftSha256?: string;
 }
 
 export interface SubmissionDecision {
 	status: "accepted" | "retry" | "blocked";
 	draft?: string;
 	verification: VerificationReport;
+	unchangedDraft?: boolean;
 	nextState?: GuardState;
+}
+
+export function repairInstruction(
+	toolName: string,
+	unchangedDraft: boolean,
+): string {
+	if (unchangedDraft) {
+		return `Protected content verification failed. Draft is unchanged from previous rejected submission. Change draft to address listed violations, then call ${toolName} again.`;
+	}
+	return `Protected content verification failed. Repair draft and call ${toolName} again.`;
 }
 
 export function classifySubmissionMessage(
@@ -75,12 +89,19 @@ export function applyVerification(
 	}
 
 	const attempts = state.attempts + 1;
+	const draftSha256 = createHash("sha256").update(draft).digest("hex");
+	const unchangedDraft = state.lastRejectedDraftSha256 === draftSha256;
 	if (attempts >= state.maxAttempts) {
-		return { status: "blocked", verification };
+		return { status: "blocked", verification, unchangedDraft };
 	}
 	return {
 		status: "retry",
 		verification,
-		nextState: { ...state, attempts },
+		unchangedDraft,
+		nextState: {
+			...state,
+			attempts,
+			lastRejectedDraftSha256: draftSha256,
+		},
 	};
 }

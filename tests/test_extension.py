@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTENSION = ROOT / "extensions" / "clear-writing-guard.ts"
+GUARD_CONTRACT = ROOT / "docs" / "guarded-verifier-contract.md"
 
 
 class ProtectedContentNodeTests(unittest.TestCase):
@@ -19,6 +20,15 @@ class ProtectedContentNodeTests(unittest.TestCase):
             timeout=30,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+class GuardContractTests(unittest.TestCase):
+    def test_contract_documents_unchanged_draft_retry_behavior(self):
+        contract = GUARD_CONTRACT.read_text()
+
+        self.assertIn("unchanged rejected draft", contract)
+        self.assertIn("SHA-256", contract)
+        self.assertIn("does not reset or extend", contract)
 
 
 class PackageManifestTests(unittest.TestCase):

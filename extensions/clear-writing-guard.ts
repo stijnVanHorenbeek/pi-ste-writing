@@ -12,6 +12,7 @@ import {
 	applyVerification,
 	classifySubmissionMessage,
 	parseClearWriteArgs,
+	repairInstruction,
 	startGuard,
 	type GuardState,
 } from "./guard-session.ts";
@@ -46,6 +47,7 @@ interface SubmissionDetails {
 	attempt: number;
 	draft?: string;
 	violations?: unknown[];
+	unchangedDraft?: boolean;
 }
 
 function violationSummary(violations: unknown[]): string {
@@ -159,6 +161,7 @@ export default function clearWritingGuard(pi: ExtensionAPI) {
 					status: decision.status,
 					attempt,
 					violations: verification.violations,
+					unchangedDraft: decision.unchangedDraft,
 				} satisfies SubmissionDetails;
 				if (decision.status === "blocked") {
 					const text = `Guard blocked rewrite after ${attempt} failed submissions.\n${violationSummary(verification.violations)}`;
@@ -181,7 +184,7 @@ export default function clearWritingGuard(pi: ExtensionAPI) {
 				return {
 					content: [{
 						type: "text" as const,
-						text: `Protected content verification failed. Repair draft and call ${TOOL_NAME} again.\n${violationSummary(verification.violations)}`,
+						text: `${repairInstruction(TOOL_NAME, decision.unchangedDraft === true)}\n${violationSummary(verification.violations)}`,
 					}],
 					details,
 				};

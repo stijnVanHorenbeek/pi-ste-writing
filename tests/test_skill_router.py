@@ -186,6 +186,15 @@ class SkillRouterTest(unittest.TestCase):
         self.assertRegex(loading, r"semantic-preservation\.md`.*every source")
         self.assertRegex(loading, r"ste-rules\.md`.*strict")
 
+    def test_markdown_reference_paths_are_skill_root_relative_and_exist(self):
+        documents = [SKILL, *sorted((SKILL.parent / "references").glob("*.md"))]
+
+        for document in documents:
+            for relative_path in re.findall(r"`([^`]+\.md)`", document.read_text()):
+                with self.subTest(document=document.name, path=relative_path):
+                    self.assertTrue(relative_path.startswith("references/"))
+                    self.assertTrue((SKILL.parent / relative_path).is_file())
+
     def test_hot_path_excludes_project_metadata_and_duplicated_legal_text(self):
         text = SKILL.read_text()
 

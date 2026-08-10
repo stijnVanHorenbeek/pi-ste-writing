@@ -1,8 +1,8 @@
 # Coding-focused use cases
 
 Use these examples only for human-facing technical prose. Before rewriting, build the
-semantic ledger from `semantic-preservation.md`. Preserve protected values by occurrence
-count, container, and semantic role. Use `checklist.md` before delivery.
+semantic ledger from `references/semantic-preservation.md`. Preserve protected values by
+occurrence count, container, and semantic role. Use `references/checklist.md` before delivery.
 
 Each safe rewrite below uses only the supplied source facts. It preserves uncertainty,
 recommendations, requirements, negation, scope, technical names, and exact values. Do

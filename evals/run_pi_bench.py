@@ -34,7 +34,7 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "9"
+RUNNER_VERSION = "10"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -670,6 +670,25 @@ class PiEventParseError(RuntimeError):
         self.guard_failure = guard_failure
 
 
+def failed_read_detail(path, resolved_skill_root):
+    if not isinstance(path, str):
+        return {"path_sha256": None, "scope": "unresolved"}
+    try:
+        resolved_path = Path(path).resolve()
+    except (OSError, RuntimeError, TypeError, ValueError):
+        scope = "unresolved"
+    else:
+        scope = (
+            "inside-skill"
+            if resolved_path.is_relative_to(resolved_skill_root)
+            else "outside-skill"
+        )
+    return {
+        "path_sha256": hashlib.sha256(path.encode("utf-8")).hexdigest(),
+        "scope": scope,
+    }
+
+
 def parse_pi_json_events(
     stdout,
     skill_path=SKILL_PATH,
@@ -690,6 +709,7 @@ def parse_pi_json_events(
     read_calls = 0
     successful_read_calls = 0
     failed_read_calls = 0
+    failed_reads = []
     skill_entrypoint_read_calls = 0
     skill_tree_read_calls = 0
     outside_skill_read_calls = 0
@@ -827,11 +847,12 @@ def parse_pi_json_events(
             path = pending_reads.pop(event.get("toolCallId"), None)
             if event.get("isError") is not False:
                 failed_read_calls += 1
+                failed_reads.append(failed_read_detail(path, resolved_skill_root))
                 continue
             successful_read_calls += 1
             try:
                 resolved_path = Path(path).resolve() if path else None
-            except (OSError, RuntimeError, TypeError):
+            except (OSError, RuntimeError, TypeError, ValueError):
                 resolved_path = None
             if resolved_path is None or not resolved_path.is_relative_to(
                 resolved_skill_root
@@ -900,6 +921,12 @@ def parse_pi_json_events(
                         and isinstance(details.get("attempt"), int)
                         and not isinstance(details.get("attempt"), bool)
                         else None
+                    ),
+                    **(
+                        {"unchanged_draft": details["unchangedDraft"]}
+                        if isinstance(details, dict)
+                        and isinstance(details.get("unchangedDraft"), bool)
+                        else {}
                     ),
                     "result_draft_sha256": (
                         hashlib.sha256(result_draft.encode("utf-8")).hexdigest()
@@ -1092,6 +1119,8 @@ def parse_pi_json_events(
             "skill_loaded": skill_entrypoint_read_calls > 0,
         },
     }
+    if failed_reads:
+        response["routing"]["failed_reads"] = failed_reads
     guard_observed = bool(
         guard_submissions
         or guard_submission_messages
@@ -1125,6 +1154,13 @@ def parse_pi_json_events(
             "attempts_contiguous": attempts_contiguous,
             "passed": guard_passed,
         }
+        if any(
+            "unchanged_draft" in submission for submission in guard_submissions
+        ):
+            response["guard"]["unchanged_draft_submissions"] = sum(
+                submission.get("unchanged_draft") is True
+                for submission in guard_submissions
+            )
     if not terminal_artifact_valid:
         raise PiEventParseError(
             "Pi benchmark call returned no final assistant text",
@@ -1728,7 +1764,10 @@ def guard_evidence_error(guard):
         "attempts_contiguous",
         "passed",
     }
-    if not isinstance(guard, dict) or set(guard) != expected_fields:
+    if not isinstance(guard, dict) or frozenset(guard) not in {
+        frozenset(expected_fields),
+        frozenset(expected_fields | {"unchanged_draft_submissions"}),
+    }:
         return "guard fields are invalid"
     counters = (
         "malformed_submission_messages",
@@ -1775,7 +1814,10 @@ def guard_evidence_error(guard):
     }
     submissions = guard["submissions"]
     for sequence, submission in enumerate(submissions, 1):
-        if not isinstance(submission, dict) or set(submission) != expected_submission_fields:
+        if not isinstance(submission, dict) or frozenset(submission) not in {
+            frozenset(expected_submission_fields),
+            frozenset(expected_submission_fields | {"unchanged_draft"}),
+        }:
             return "guard submission fields are invalid"
         if (
             submission.get("sequence") != sequence
@@ -1802,6 +1844,10 @@ def guard_evidence_error(guard):
             )
             or not isinstance(submission.get("is_error"), bool)
             or not isinstance(submission.get("submission_message_valid"), bool)
+            or (
+                "unchanged_draft" in submission
+                and not isinstance(submission["unchanged_draft"], bool)
+            )
         ):
             return "guard submission evidence is invalid"
     accepted = [
@@ -1846,6 +1892,22 @@ def guard_evidence_error(guard):
         and attempts_contiguous
         and exact_accepted_output
     )
+    has_unchanged_telemetry = any(
+        "unchanged_draft" in submission for submission in submissions
+    )
+    unchanged_draft_submissions = sum(
+        submission.get("unchanged_draft") is True for submission in submissions
+    )
+    unchanged_telemetry_consistent = all(
+        "unchanged_draft" not in submission
+        or submission["unchanged_draft"]
+        == (
+            index > 0
+            and submission["draft_sha256"]
+            == submissions[index - 1]["draft_sha256"]
+        )
+        for index, submission in enumerate(submissions)
+    )
     if (
         guard["observed"]
         != bool(
@@ -1860,6 +1922,14 @@ def guard_evidence_error(guard):
         or guard["attempts_contiguous"] != attempts_contiguous
         or guard["exact_accepted_output"] != exact_accepted_output
         or guard["passed"] != passed
+        or not unchanged_telemetry_consistent
+        or ("unchanged_draft_submissions" in guard) != has_unchanged_telemetry
+        or guard.get("unchanged_draft_submissions")
+        != (
+            unchanged_draft_submissions
+            if has_unchanged_telemetry
+            else None
+        )
     ):
         return "guard evidence is inconsistent"
     return None
@@ -1930,7 +2000,7 @@ def response_error(response, name, require_stop=False):
         ).hexdigest():
             return f"{name} guard final text hash does not match response"
     routing = response["routing"]
-    if set(routing) != {
+    routing_fields = {
         "tool_calls",
         "non_read_tool_calls",
         "read_calls",
@@ -1940,8 +2010,37 @@ def response_error(response, name, require_stop=False):
         "skill_tree_read_calls",
         "outside_skill_read_calls",
         "skill_loaded",
+    }
+    if frozenset(routing) not in {
+        frozenset(routing_fields),
+        frozenset(routing_fields | {"failed_reads"}),
     }:
         return f"{name} routing fields are invalid"
+    failed_reads = routing.get("failed_reads")
+    if failed_reads is not None and (
+        not isinstance(failed_reads, list)
+        or len(failed_reads) != routing.get("failed_read_calls")
+        or any(
+            not isinstance(detail, dict)
+            or set(detail) != {"path_sha256", "scope"}
+            or detail.get("scope")
+            not in {"inside-skill", "outside-skill", "unresolved"}
+            or (
+                detail.get("path_sha256") is not None
+                and (
+                    not isinstance(detail["path_sha256"], str)
+                    or re.fullmatch(r"[0-9a-f]{64}", detail["path_sha256"])
+                    is None
+                )
+            )
+            or (
+                detail.get("path_sha256") is None
+                and detail.get("scope") != "unresolved"
+            )
+            for detail in failed_reads
+        )
+    ):
+        return f"{name} failed read telemetry is invalid"
     if (
         not isinstance(routing.get("tool_calls"), int)
         or isinstance(routing.get("tool_calls"), bool)

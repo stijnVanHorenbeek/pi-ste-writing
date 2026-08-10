@@ -17,7 +17,7 @@ Evaluation stack includes:
 
 Schema v3 adds hybrid semantic evaluation without changing schema-v1/v2 evidence. Fixture-corpus schema v3 limits objective checks to explicitly declared protected literals and their required order. It does not compare global occurrence counts or exact prose sentences. Paired blind judgments attest open semantic fidelity. Any `not_equivalent`, `uncertain`, or conflicting attestation fails. Preference stays descriptive and cannot override objective or semantic gates. Schema-v3 matrices accept historical schema-v2 or semantic-boundary schema-v3 fixture corpora through explicit paths; archived defaults remain unchanged.
 
-Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios cannot serve as unseen release evidence. Both retained release candidates failed and remain frozen. Commit any future preregistration snapshot before development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
+Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios cannot serve as unseen release evidence. All retained release candidates failed and remain frozen. Commit any future preregistration snapshot before development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
 
 ## Active files
 
@@ -31,6 +31,10 @@ Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios c
 - `fixtures/release-candidate.json`: five unseen prose fixtures.
 - `release-candidate-scenarios.json`: unseen exact-CSV routing control.
 - `release-candidate-quality-judge.json`: 99 matched blind comparisons.
+- `semantic-boundary-release-candidate-matrix.json`: frozen 153-cell schema-v3 matrix.
+- `fixtures/semantic-boundary-release-candidate.json`: five held-out prose fixtures, now development regressions.
+- `semantic-boundary-release-candidate-scenarios.json`: structured negative-routing control.
+- `semantic-boundary-release-candidate-quality-judge.json`: frozen 90-cell blind judge config; judge did not run.
 
 Runner output defaults to ignored development paths under `evals/results/`. Commit evidence only after explicit review.
 
@@ -115,7 +119,7 @@ Raw reuse requires matching:
 
 Stale and failed attempts remain visible. Existing matching successes resume without another call.
 
-Each successful raw cell records provider/model identity, usage metadata, cost, duration, native skill-read evidence, deterministic semantic results, procedure results, exact output-contract results, and advisory style findings. Hidden reasoning content is never stored.
+Each successful raw cell records provider/model identity, usage metadata, cost, duration, native skill-read evidence, deterministic semantic results, procedure results, exact output-contract results, and advisory style findings. Failed reads retain only path SHA-256 and `inside-skill`, `outside-skill`, or `unresolved` scope. Guarded submissions record unchanged-draft telemetry without rejected draft text. Hidden reasoning content is never stored.
 
 ## Reports and gates
 
