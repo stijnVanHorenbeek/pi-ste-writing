@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "status": "failure",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "gemini-3.6-flash",
+    "thinking": "medium",
+    "condition": "guarded",
+    "scenario_id": "release-facts-and-causes",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "5",
+    "matrix_sha256": "2401575e38903457788bb687af0aa69bc95e814f0c07fc43d4c893c7931c4f00",
+    "package_commit": "45238374a507804ed92695131c2be2025ede461a",
+    "package_dirty": false,
+    "skill_sha256": "c69f3245da1c3b008776f4cb960843810aff92e95d94c939839cf8e3ea0187c3",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "c934d10995296f80898bd5a2db342dd10d2025f8a43d98abc2b1d8b05edc266a",
+    "scorer_sha256": "7307e3342f17b314fdc29fbb84d039bfca31dd32d6f048f28cb76ad75f9fb133",
+    "corpus_sha256": "7ca4c84186e45cd42225b8cffe7acb1f262439c344f87e5c9db549f8c37e245c",
+    "scenario_sha256": "ac4e0cf8c28dc20f47ac221825e9afa5bf8e5d6eb1767fb60c45b2cad4f7b619"
+  },
+  "prompt_sha256": "712b2a2c6b65a6f8b2f28e43d034dc70c5fab6bedd0b74d5eb914c676638be5e",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T09:12:00.591856+00:00",
+      "status": "failure",
+      "duration_ms": 9841,
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      },
+      "guard_failure": {
+        "observed": true,
+        "max_submissions": 3,
+        "submissions": [
+          {
+            "sequence": 1,
+            "tool_call_id_sha256": "96a37aa31d00e64c9477c77bb870654d6c5f725a2f3064851a8cffc31135b929",
+            "job_id_sha256": "0090c4e936f20b5883e635ddbe4d266203d01a742b4dfd9e07f4b331917a728b",
+            "draft_sha256": "8d02bfbd384c6ad834aee78243715939605a32e952832a8146b3d18f0fb564b3",
+            "draft_bytes": 319,
+            "result_status": "accepted",
+            "result_attempt": 1,
+            "result_draft_sha256": "8d02bfbd384c6ad834aee78243715939605a32e952832a8146b3d18f0fb564b3",
+            "result_text_sha256": "8d02bfbd384c6ad834aee78243715939605a32e952832a8146b3d18f0fb564b3",
+            "is_error": false,
+            "submission_message_valid": true
+          }
+        ],
+        "accepted_submission": 1,
+        "accepted_draft_sha256": "8d02bfbd384c6ad834aee78243715939605a32e952832a8146b3d18f0fb564b3",
+        "final_text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "exact_accepted_output": false,
+        "malformed_submission_messages": 0,
+        "direct_output_messages": 0,
+        "unauthorized_tool_calls": 0,
+        "unmatched_tool_events": 0,
+        "ambient_resources_disabled": true,
+        "final_message_valid": false,
+        "same_job_id": true,
+        "attempts_contiguous": true,
+        "passed": false
+      }
+    }
+  ],
+  "last_error": {
+    "kind": "output",
+    "message": "Pi benchmark call returned no final assistant text"
+  },
+  "updated_at": "2026-08-10T09:12:10.433504+00:00"
+}

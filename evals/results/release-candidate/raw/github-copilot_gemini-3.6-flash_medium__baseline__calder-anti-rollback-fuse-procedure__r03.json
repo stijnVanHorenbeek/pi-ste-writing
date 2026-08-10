@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "gemini-3.6-flash",
+    "thinking": "medium",
+    "condition": "baseline",
+    "scenario_id": "calder-anti-rollback-fuse-procedure",
+    "repetition": 3
+  },
+  "provenance": {
+    "runner_version": "6",
+    "matrix_sha256": "0ea64a083587af1c90a0c73dafcb9f4a5a760f9b874dbf8f6c790969e2e1c96d",
+    "package_commit": "462664dff955b60e4bf359cc02281f3cc463dd02",
+    "package_dirty": false,
+    "skill_sha256": "c69f3245da1c3b008776f4cb960843810aff92e95d94c939839cf8e3ea0187c3",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "aa8c43bfe8a48589cd4688a9f7101c5ec1d77a179d127ffb6b62bcd05dfe10c3",
+    "scorer_sha256": "7307e3342f17b314fdc29fbb84d039bfca31dd32d6f048f28cb76ad75f9fb133",
+    "corpus_sha256": "8fb3eb9fcd43273158a760d5d787b7e7fa56300345446273e8682f60c29a565c",
+    "scenario_sha256": "0b284f82291a44016941da977596373dec01a65d1c6813befc14bd16be5628ba",
+    "preregistered_judge_config_sha256": "f6ffc1d543468bbd26ef0875104ab62653f13e07b4b79373dcafa3f0d86ef148",
+    "preregistered_judge_config_path": "release-candidate-quality-judge.json"
+  },
+  "prompt_sha256": "5953f269e30c193cb548418038adffbca94cb28c436ea7facf4871e190c3a9ff",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T09:33:09.813460+00:00",
+      "status": "success",
+      "duration_ms": 7090
+    }
+  ],
+  "updated_at": "2026-08-10T09:33:16.905193+00:00",
+  "duration_ms": 7090,
+  "response": {
+    "text": "### Purpose\nThis procedure advances the anti-rollback floor on inactive spectrometer `QW-71F`. It does not alter active spectrometer `QW-88K`.\n\n### Prerequisites\nBefore proceeding, verify that:\n* Work permit `FUSE-7319` is approved.\n* Spectrometer `QW-71F` is disconnected from acquisition.\n* Calder Fuse Station shows **Interlock Closed**.\n\n### Steps\n\n1. **Inspect Wafer Status**\n   Run the following command:\n   ```bash\n   calderctl wafer inspect QW-71F --bank ember-6\n   ```\n   *Verify:* Ensure the output returns `leases=0 floor=v11.2 target=v12.6` before continuing.\n\n2. **Seal Anti-Rollback Floor**\n   > **WARNING:** The next command permanently seals the firmware floor at `v12.6`. The spectrometer can never load firmware below `v12.6`, and a factory reset cannot lower the floor.\n\n   Run the following command:\n   ```bash\n   calderctl wafer seal QW-71F --bank ember-6 --floor v12.6 --permit FUSE-7319\n   ```\n\n3. **Verify Attestation**\n   Run the attestation command:\n   ```bash\n   calderctl wafer attest QW-71F --bank ember-6\n   ```\n   *Verify:* Confirm that the command returns `floor=v12.6 fuse=sealed`.",
+    "provider": "github-copilot",
+    "model": "gemini-3.6-flash",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 344,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 332,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 332,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 676,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.003006,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": false,
+      "failed_rule_ids": [
+        "calder.protected",
+        "calder.scope",
+        "linter.step-numbering",
+        "protected.source-equality"
+      ],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 2,
+          "rules_passed": 0,
+          "rules_failed": 2,
+          "pass_rate": 0.0,
+          "failures": [
+            {
+              "rule_id": "calder.protected",
+              "description": "Preserve commands, outputs, identifiers, and interlock label by container.",
+              "failed_checks": [
+                {
+                  "type": "inline_code",
+                  "value": "calderctl wafer inspect QW-71F --bank ember-6",
+                  "count": 1
+                },
+                {
+                  "type": "inline_code",
+                  "value": "calderctl wafer attest QW-71F --bank ember-6",
+                  "count": 1
+                }
+              ]
+            },
+            {
+              "rule_id": "protected.source-equality",
+              "description": "Preserve nonnumeric protected values and occurrence counts by container.",
+              "changed_kinds": [
+                "fenced-code",
+                "inline-code"
+              ],
+              "findings": [
+                {
+                  "rule": "protected-span",
+                  "category": "semantic",
+                  "severity": "warning",
+                  "source": "github-copilot_gemini-3.6-flash_medium__baseline__calder-anti-rollback-fuse-procedure__r03.json",
+                  "line": 1,
+                  "column": 1,
+                  "text": "missing calderctl wafer inspect QW-71F --bank ember-6",
+                  "message": "Protected inline-code values differ from source.",
+                  "protected_kind": "inline-code"
+                },
+                {
+                  "rule": "protected-span",
+                  "category": "semantic",
+                  "severity": "warning",
+                  "source": "github-copilot_gemini-3.6-flash_medium__baseline__calder-anti-rollback-fuse-procedure__r03.json",
+                  "line": 15,
+                  "column": 1,
+                  "text": "calderctl wafer inspect QW-71F --bank ember-6\n",
+                  "message": "Protected fenced-code values differ from source.",
+                  "protected_kind": "fenced-code"
+                }
+              ]
+            }
+          ]
+        },
+        "required_fact_retention": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 2,
+          "rules_passed": 1,
+          "rules_failed": 1,
+          "pass_rate": 0.5,
+          "failures": [
+            {
+              "rule_id": "calder.scope",
+              "description": "Preserve the one-unit scope and explicit exclusion.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?is)(?:only.{0,40}QW-71F|QW-71F.{0,40}only).{0,100}(?:does not alter|unchanged|does not change).{0,50}QW-88K"
+                }
+              ]
+            }
+          ]
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 4,
+          "rules_passed": 4,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "repository_term_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": true,
+      "passed": false,
+      "required_rules": {
+        "applicable": true,
+        "passed": true,
+        "rules_total": 4,
+        "rules_passed": 4,
+        "rules_failed": 0,
+        "pass_rate": 1.0,
+        "failures": []
+      },
+      "warning_count": 4,
+      "warnings": [
+        {
+          "rule": "step-numbering",
+          "category": "procedure",
+          "severity": "warning",
+          "source": "github-copilot_gemini-3.6-flash_medium__baseline__calder-anti-rollback-fuse-procedure__r03.json",
+          "line": 5,
+          "column": 1,
+          "text": "Before proceeding, verify that:",
+          "message": "Put each procedure instruction in a numbered step."
+        },
+        {
+          "rule": "step-numbering",
+          "category": "procedure",
+          "severity": "warning",
+          "source": "github-copilot_gemini-3.6-flash_medium__baseline__calder-anti-rollback-fuse-procedure__r03.json",
+          "line": 13,
+          "column": 1,
+          "text": "Run the following command:",
+          "message": "Put each procedure instruction in a numbered step."
+        },
+        {
+          "rule": "step-numbering",
+          "category": "procedure",
+          "severity": "warning",
+          "source": "github-copilot_gemini-3.6-flash_medium__baseline__calder-anti-rollback-fuse-procedure__r03.json",
+          "line": 22,
+          "column": 1,
+          "text": "Run the following command:",
+          "message": "Put each procedure instruction in a numbered step."
+        },
+        {
+          "rule": "step-numbering",
+          "category": "procedure",
+          "severity": "warning",
+          "source": "github-copilot_gemini-3.6-flash_medium__baseline__calder-anti-rollback-fuse-procedure__r03.json",
+          "line": 28,
+          "column": 1,
+          "text": "Run the attestation command:",
+          "message": "Put each procedure instruction in a numbered step."
+        }
+      ]
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": false,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

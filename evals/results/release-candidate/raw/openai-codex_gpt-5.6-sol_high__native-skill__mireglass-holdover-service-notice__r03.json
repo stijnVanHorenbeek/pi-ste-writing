@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "native-skill",
+    "scenario_id": "mireglass-holdover-service-notice",
+    "repetition": 3
+  },
+  "provenance": {
+    "runner_version": "6",
+    "matrix_sha256": "0ea64a083587af1c90a0c73dafcb9f4a5a760f9b874dbf8f6c790969e2e1c96d",
+    "package_commit": "462664dff955b60e4bf359cc02281f3cc463dd02",
+    "package_dirty": false,
+    "skill_sha256": "c69f3245da1c3b008776f4cb960843810aff92e95d94c939839cf8e3ea0187c3",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "aa8c43bfe8a48589cd4688a9f7101c5ec1d77a179d127ffb6b62bcd05dfe10c3",
+    "scorer_sha256": "7307e3342f17b314fdc29fbb84d039bfca31dd32d6f048f28cb76ad75f9fb133",
+    "corpus_sha256": "8fb3eb9fcd43273158a760d5d787b7e7fa56300345446273e8682f60c29a565c",
+    "scenario_sha256": "0b284f82291a44016941da977596373dec01a65d1c6813befc14bd16be5628ba",
+    "preregistered_judge_config_sha256": "f6ffc1d543468bbd26ef0875104ab62653f13e07b4b79373dcafa3f0d86ef148",
+    "preregistered_judge_config_path": "release-candidate-quality-judge.json"
+  },
+  "prompt_sha256": "71687f99710e60cc0d0eba61ca1d29efd01403ad0424af663a189ddaf5177767",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T09:39:23.137447+00:00",
+      "status": "success",
+      "duration_ms": 19388
+    }
+  ],
+  "updated_at": "2026-08-10T09:39:42.528063+00:00",
+  "duration_ms": 19388,
+  "response": {
+    "text": "Service notice for harbor technicians: Beginning 2033-05-12, Mireglass release 8.6.2 displays `holdover` when the newest salinity sample is more than 47 seconds old. During `holdover`, the panel continues to display the last accepted gate-height estimate. This state does not indicate probe failure.\n\nIf `holdover` lasts longer than 7 minutes, harbor technicians should inspect the intake screen. While dive permit `BR-27` is active, they must not restart the controller. A restart may clear the state from the panel, but it does not unblock the intake.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 6044,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 409,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 144,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 265,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 6453,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.04249,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 2,
+      "non_read_tool_calls": 0,
+      "read_calls": 2,
+      "successful_read_calls": 2,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 1,
+      "skill_tree_read_calls": 2,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": true,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": false,
+      "failed_rule_ids": [
+        "mireglass.no-failure-claim",
+        "mireglass.release-trigger",
+        "mireglass.restart-effect",
+        "mireglass.retained-estimate",
+        "protected.source-equality"
+      ],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 1,
+          "rules_passed": 0,
+          "rules_failed": 1,
+          "pass_rate": 0.0,
+          "failures": [
+            {
+              "rule_id": "protected.source-equality",
+              "description": "Preserve nonnumeric protected values and occurrence counts by container.",
+              "changed_kinds": [
+                "inline-code"
+              ],
+              "findings": [
+                {
+                  "rule": "protected-span",
+                  "category": "semantic",
+                  "severity": "warning",
+                  "source": "openai-codex_gpt-5.6-sol_high__native-skill__mireglass-holdover-service-notice__r03.json",
+                  "line": 3,
+                  "column": 5,
+                  "text": "holdover",
+                  "message": "Protected inline-code values differ from source.",
+                  "protected_kind": "inline-code"
+                }
+              ]
+            }
+          ]
+        },
+        "required_fact_retention": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 2,
+          "rules_passed": 0,
+          "rules_failed": 2,
+          "pass_rate": 0.0,
+          "failures": [
+            {
+              "rule_id": "mireglass.release-trigger",
+              "description": "Preserve date, release, stale-sample threshold, and state name.",
+              "failed_checks": [
+                {
+                  "type": "inline_code",
+                  "value": "holdover",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "rule_id": "mireglass.retained-estimate",
+              "description": "Preserve the retained last accepted estimate.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?is)panel.{0,40}(?:keeps showing|continues to show|retains).{0,40}last accepted gate-height estimate"
+                }
+              ]
+            }
+          ]
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 3,
+          "rules_passed": 3,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 4,
+          "rules_passed": 2,
+          "rules_failed": 2,
+          "pass_rate": 0.5,
+          "failures": [
+            {
+              "rule_id": "mireglass.no-failure-claim",
+              "description": "Preserve that the state does not establish probe failure.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?is)(?:state|holdover).{0,40}(?:does not (?:say|mean|show|establish)|is not evidence).{0,40}probe.{0,20}fail"
+                }
+              ]
+            },
+            {
+              "rule_id": "mireglass.restart-effect",
+              "description": "Preserve possible display removal without intake remediation.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?is)(?:restart may.{0,40}(?:remove|hide).{0,30}state.{0,40}(?:but|however).{0,30}(?:does not|cannot).{0,20}unblock.{0,20}intake|restart may.{0,40}(?:remove|hide).{0,30}state.{0,80}intake remains blocked.{0,30}restart)"
+                }
+              ]
+            }
+          ]
+        },
+        "repository_term_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": false,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

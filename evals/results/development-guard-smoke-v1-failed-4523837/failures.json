@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "invalid",
+    "cell": {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "guarded",
+      "scenario_id": "release-facts-and-causes",
+      "repetition": 1
+    },
+    "error": "attempt 1 guard fields are invalid"
+  },
+  {
+    "kind": "invalid",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "guarded",
+      "scenario_id": "release-facts-and-causes",
+      "repetition": 1
+    },
+    "error": "attempt 1 guard fields are invalid"
+  },
+  {
+    "kind": "invalid",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "guarded",
+      "scenario_id": "release-facts-and-causes",
+      "repetition": 1
+    },
+    "error": "attempt 1 guard fields are invalid"
+  }
+]
