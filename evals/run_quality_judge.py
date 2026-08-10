@@ -5,6 +5,7 @@ import argparse
 import concurrent.futures
 import hashlib
 import json
+import math
 import re
 import statistics
 import subprocess
@@ -23,7 +24,7 @@ DEFAULT_CONFIG_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-quality-judge.js
 DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.json"
 DEFAULT_BENCHMARK_RESULTS_DIR = run_pi_bench.DEFAULT_RESULTS_DIR
 DEFAULT_JUDGE_RESULTS_DIR = HERE / "results" / "current-judge"
-JUDGE_RUNNER_VERSION = "4"
+JUDGE_RUNNER_VERSION = "5"
 REQUIRED_DIMENSIONS = (
     "factual_semantic_fidelity",
     "task_completion",
@@ -100,8 +101,8 @@ def source_compatibility_error(
 
 
 def validate_judge_config(config):
-    if not isinstance(config, dict) or config.get("schema_version") not in {1, 2, 3}:
-        raise ValueError("judge config schema_version must be 1, 2, or 3")
+    if not isinstance(config, dict) or config.get("schema_version") not in {1, 2, 3, 4}:
+        raise ValueError("judge config schema_version must be 1, 2, 3, or 4")
     schema_version = config["schema_version"]
     if not isinstance(config.get("version"), int) or config["version"] < 1:
         raise ValueError("judge config version must be a positive integer")
@@ -247,38 +248,43 @@ def validate_judge_config(config):
             or sum(provider_limits.values()) != max_parallel_calls
             or config.get("preference_claim") != "descriptive-only"
             or not isinstance(thresholds, dict)
-            or set(thresholds)
-            != (
-                {
-                    "judge_completeness",
-                    "cross_provider_mapping",
-                    "maximum_review_required",
-                }
-                if schema_version == 2
-                else {
-                    "judge_completeness", "cross_provider_mapping",
-                    "semantic_candidate_coverage", "maximum_not_equivalent",
-                    "maximum_uncertain", "maximum_conflicts",
-                    "maximum_review_required",
-                }
-            )
-            or thresholds.get("judge_completeness") != 1.0
-            or thresholds.get("cross_provider_mapping") != 1.0
-            or thresholds.get("maximum_review_required") != 0
             or (
-                schema_version == 3
+                schema_version in {2, 3}
                 and (
-                    thresholds.get("semantic_candidate_coverage") != 1.0
-                    or thresholds.get("maximum_not_equivalent") != 0
-                    or thresholds.get("maximum_uncertain") != 0
-                    or thresholds.get("maximum_conflicts") != 0
+                    set(thresholds)
+                    != (
+                        {
+                            "judge_completeness",
+                            "cross_provider_mapping",
+                            "maximum_review_required",
+                        }
+                        if schema_version == 2
+                        else {
+                            "judge_completeness", "cross_provider_mapping",
+                            "semantic_candidate_coverage", "maximum_not_equivalent",
+                            "maximum_uncertain", "maximum_conflicts",
+                            "maximum_review_required",
+                        }
+                    )
+                    or thresholds.get("judge_completeness") != 1.0
+                    or thresholds.get("cross_provider_mapping") != 1.0
+                    or thresholds.get("maximum_review_required") != 0
+                    or (
+                        schema_version == 3
+                        and (
+                            thresholds.get("semantic_candidate_coverage") != 1.0
+                            or thresholds.get("maximum_not_equivalent") != 0
+                            or thresholds.get("maximum_uncertain") != 0
+                            or thresholds.get("maximum_conflicts") != 0
+                        )
+                    )
                 )
             )
         ):
             raise ValueError(
                 "judge schema-v2/v3 requires bounded provider parallelism and descriptive-only preference"
             )
-        if schema_version == 3:
+        if schema_version in {3, 4}:
             gate = config.get("semantic_gate")
             if (
                 config.get("verdict_schema_version") != 2
@@ -289,14 +295,52 @@ def validate_judge_config(config):
                     "require_all_observations_accepted", "manual_override",
                 }
                 or gate.get("enabled") is not True
-                or gate.get("gated_conditions") != ["native-skill", "guarded"]
+                or gate.get("gated_conditions")
+                != (["native-skill", "guarded"] if schema_version == 3 else ["guarded"])
                 or gate.get("applicability_field") != "semantic_review_applicable"
                 or gate.get("accepted_label") != "equivalent"
                 or gate.get("adverse_labels") != ["not_equivalent", "uncertain"]
-                or gate.get("require_all_observations_accepted") is not True
+                or gate.get("require_all_observations_accepted")
+                is not (schema_version == 3)
                 or gate.get("manual_override") is not False
             ):
-                raise ValueError("judge schema-v3 semantic gate is invalid")
+                raise ValueError(f"judge schema-v{schema_version} semantic gate is invalid")
+        if schema_version == 4:
+            expected_thresholds = {
+                "expected_core_candidates": 45,
+                "minimum_semantic_candidates_covered": 44,
+                "cross_provider_mapping": 1.0,
+                "maximum_not_equivalent": 0,
+                "maximum_uncertain": 1,
+                "maximum_conflicts": 0,
+                "maximum_core_review_required": 1,
+                "maximum_blocking_issues_by_category": {
+                    category: 0 for category in categories
+                },
+            }
+            supported = config.get("supported_model_specs")
+            model_keys = [
+                (model.get("provider"), model.get("model"), model.get("thinking"))
+                for model in supported
+            ] if isinstance(supported, list) else []
+            if (
+                thresholds != expected_thresholds
+                or not isinstance(supported, list)
+                or len(supported) != 3
+                or model_keys != list(run_pi_bench.GUARDED_CORE_MODEL_SPECS)
+                or len(model_keys) != len(set(model_keys))
+                or any(
+                    not all(isinstance(model.get(key), str) and model[key] for key in ("provider", "model", "thinking"))
+                    or model["thinking"] not in run_pi_bench.THINKING_LEVELS
+                    for model in supported
+                )
+                or config.get("wilson_interval") != {
+                    "confidence_level": 0.95,
+                    "reporting": "descriptive-only",
+                    "population_guarantee": False,
+                }
+            ):
+                raise ValueError("judge schema-v4 guarded-core contract is invalid")
 
 
 def load_judge_config(path=DEFAULT_CONFIG_PATH):
@@ -308,13 +352,22 @@ def load_judge_config(path=DEFAULT_CONFIG_PATH):
 def validate_judge_matrix(config, matrix):
     validate_judge_config(config)
     run_pi_bench.validate_matrix(matrix)
-    if config["schema_version"] != matrix["schema_version"]:
+    if (
+        matrix.get("run_kind") == run_pi_bench.GUARDED_CORE_RUN_KIND
+        and config["schema_version"] != 4
+    ):
+        raise ValueError("guarded-core release candidate requires judge schema-v4")
+    if config["schema_version"] != matrix["schema_version"] and not (
+        config["schema_version"] == 4
+        and matrix["schema_version"] == 3
+        and matrix.get("run_kind") == run_pi_bench.GUARDED_CORE_RUN_KIND
+    ):
         raise ValueError("judge and source matrix schema versions must match")
     if matrix.get("matrix_id") != config.get("source_matrix_id"):
         raise ValueError("judge source matrix ID does not match")
     if matrix["repetitions"] < config["source_repetitions_minimum"]:
         raise ValueError("source matrix has insufficient repetitions for judging")
-    if matrix["schema_version"] == 3:
+    if matrix["schema_version"] == 3 and config["schema_version"] == 3:
         review = matrix["semantic_review"]
         gate = config["semantic_gate"]
         thresholds = config["acceptance_thresholds"]
@@ -330,6 +383,24 @@ def validate_judge_matrix(config, matrix):
             or gate["manual_override"] != review["manual_override"]
         ):
             raise ValueError("judge semantic gate does not match matrix semantic review")
+    if config["schema_version"] == 4:
+        comparison = config["comparisons"]
+        core = matrix.get("guarded_core", {})
+        if (
+            comparison != [{
+                "id": "baseline-vs-guarded",
+                "left_condition": "baseline",
+                "right_condition": "guarded",
+                "role": "guarded-core-blind-pair",
+            }]
+            or config["supported_model_specs"] != core.get("model_specs")
+            or config["acceptance_thresholds"]["expected_core_candidates"]
+            != core.get("expected_cells")
+            or config["acceptance_thresholds"]["minimum_semantic_candidates_covered"]
+            != core.get("minimum_successful_cells")
+            or config["semantic_gate"]["gated_conditions"] != [core.get("condition")]
+        ):
+            raise ValueError("judge schema-v4 guarded-core contract does not match matrix")
     conditions = set(matrix["conditions"])
     if any(
         comparison["left_condition"] not in conditions
@@ -403,11 +474,20 @@ def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MA
     ):
         raise ValueError("source benchmark matrix identity does not match")
     completeness = results.get("completeness")
-    if not isinstance(completeness, dict) or completeness.get("complete") is not True:
+    guarded_core_run = matrix.get("run_kind") == run_pi_bench.GUARDED_CORE_RUN_KIND
+    if not isinstance(completeness, dict) or (
+        not guarded_core_run and completeness.get("complete") is not True
+    ):
         raise ValueError("source benchmark must be complete before judging")
     integrity = results.get("condition_integrity")
-    if not isinstance(integrity, dict) or integrity.get("accepted") is not True:
+    if not isinstance(integrity, dict) or (
+        not guarded_core_run and integrity.get("accepted") is not True
+    ):
         raise ValueError("source benchmark condition integrity is not accepted")
+    if guarded_core_run:
+        guarded_core = results.get("guarded_core_acceptance")
+        if not isinstance(guarded_core, dict) or guarded_core.get("accepted") is not True:
+            raise ValueError("source benchmark guarded-core acceptance is not accepted")
     acceptance_key = (
         "objective_acceptance"
         if matrix["schema_version"] == 3
@@ -416,7 +496,7 @@ def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MA
     semantic = results.get(acceptance_key)
     if not isinstance(semantic, dict) or not isinstance(semantic.get("accepted"), bool):
         raise ValueError(f"source benchmark {acceptance_key} is invalid")
-    if matrix["schema_version"] in {2, 3}:
+    if matrix["schema_version"] in {2, 3} and not guarded_core_run:
         if semantic.get("accepted") is not True:
             raise ValueError(f"source benchmark {acceptance_key} is not accepted")
         procedure = results.get(
@@ -482,12 +562,20 @@ def validate_source_evidence(
         if matrix["schema_version"] == 3
         else "semantic_acceptance"
     )
-    authority_fields = [
-        ("completeness", "completeness"),
-        ("condition_integrity", "condition integrity"),
-        (acceptance_key, acceptance_key.replace("_", " ")),
-    ]
-    if matrix["schema_version"] in {2, 3}:
+    guarded_core_run = matrix.get("run_kind") == run_pi_bench.GUARDED_CORE_RUN_KIND
+    authority_fields = (
+        [
+            ("completeness", "completeness"),
+            ("guarded_core_acceptance", "guarded-core acceptance"),
+        ]
+        if guarded_core_run
+        else [
+            ("completeness", "completeness"),
+            ("condition_integrity", "condition integrity"),
+            (acceptance_key, acceptance_key.replace("_", " ")),
+        ]
+    )
+    if matrix["schema_version"] in {2, 3} and not guarded_core_run:
         authority_fields.extend(
             (
                 (
@@ -595,7 +683,7 @@ def iter_judge_cells(matrix, config, scenarios=None):
         judge = config["judges_by_source_provider"][source_model["provider"]]
         for comparison in config["comparisons"]:
             for scenario_id in matrix["scenario_ids"]:
-                if config["schema_version"] == 3 and scenarios is not None:
+                if config["schema_version"] in {3, 4} and scenarios is not None:
                     scenario = scenarios[scenario_id]
                     fixture = scenario.get("fixture", scenario)
                     if fixture.get(
@@ -687,7 +775,7 @@ def build_judge_prompt(config, scenario, candidates, assignment):
     verdict_schema = 1
     semantic_instructions = ""
     semantic_shape = ""
-    if config["schema_version"] == 3:
+    if config["schema_version"] in {3, 4}:
         verdict_schema = 2
         fixture = scenario.get("fixture", scenario)
         claims = fixture.get("semantic_claims", [])
@@ -753,7 +841,7 @@ def judge_output_error(verdict, config):
     }
     if not isinstance(verdict, dict) or set(verdict) != root_fields:
         return "judge verdict fields are invalid"
-    expected_verdict_schema = 2 if config["schema_version"] == 3 else 1
+    expected_verdict_schema = 2 if config["schema_version"] in {3, 4} else 1
     if verdict["schema_version"] != expected_verdict_schema:
         return f"judge verdict schema_version must be {expected_verdict_schema}"
     if verdict["preference"] not in {"A", "B", "tie"}:
@@ -775,7 +863,7 @@ def judge_output_error(verdict, config):
     categories = set(config["blocking_issue_categories"])
     for label, candidate in candidates.items():
         candidate_fields = {"scores", "blocking_issues"}
-        if config["schema_version"] == 3:
+        if config["schema_version"] in {3, 4}:
             candidate_fields.add("semantic_fidelity")
         if not isinstance(candidate, dict) or set(candidate) != candidate_fields:
             return f"candidate {label} fields are invalid"
@@ -806,7 +894,7 @@ def judge_output_error(verdict, config):
                 "evidence"
             ].strip():
                 return f"candidate {label} {dimension_id} evidence is invalid"
-        if config["schema_version"] == 3:
+        if config["schema_version"] in {3, 4}:
             semantic = candidate["semantic_fidelity"]
             if not isinstance(semantic, dict) or set(semantic) != {"label", "issues"}:
                 return f"candidate {label} semantic fidelity fields are invalid"
@@ -870,7 +958,7 @@ def semantic_attestation_evidence_error(
     candidates,
     assignment,
 ):
-    if config["schema_version"] != 3:
+    if config["schema_version"] not in {3, 4}:
         return None
     fixture = scenario.get("fixture", scenario)
     if fixture.get(config["semantic_gate"]["applicability_field"]) is not True:
@@ -1086,12 +1174,12 @@ def judge_evidence_error(
         assignment,
         semantic_gated_conditions=(
             set(config["semantic_gate"]["gated_conditions"])
-            if config["schema_version"] == 3
+            if config["schema_version"] in {3, 4}
             else None
         ),
         semantic_gate_applies=(
             fixture.get(config["semantic_gate"]["applicability_field"]) is True
-            if config["schema_version"] == 3
+            if config["schema_version"] in {3, 4}
             else True
         ),
     )
@@ -1119,7 +1207,7 @@ def judge_response_error(response, cell, require_stop=True):
 
 
 def judge_document_error(document, config):
-    expected_schema = 2 if config["schema_version"] == 3 else 1
+    expected_schema = 2 if config["schema_version"] in {3, 4} else 1
     if not isinstance(document, dict) or document.get("schema_version") != expected_schema:
         return "judge document schema is invalid"
     if document.get("status") not in {"success", "failure"}:
@@ -1328,6 +1416,32 @@ def summarize_judgments(documents, config):
     }
 
 
+def summarize_guarded_core_judgments(documents, config):
+    gated_conditions = set(config["semantic_gate"]["gated_conditions"])
+    blocking_issue_counts = Counter()
+    cross_provider = 0
+    review_required = 0
+    for document in documents:
+        cell = document["cell"]
+        if cell["source_model"]["provider"] != cell["judge"]["provider"]:
+            cross_provider += 1
+        assignment = document["blind_assignment"]
+        for label, candidate in document["verdict"]["candidates"].items():
+            if assignment[label] not in gated_conditions:
+                continue
+            for issue in candidate["blocking_issues"]:
+                blocking_issue_counts[issue["category"]] += 1
+            semantic_label = candidate["semantic_fidelity"]["label"]
+            if semantic_label != "equivalent" or candidate["blocking_issues"]:
+                review_required += 1
+    return {
+        "judgments": len(documents),
+        "cross_provider_judgments": cross_provider,
+        "core_review_required": review_required,
+        "core_blocking_issue_counts": dict(sorted(blocking_issue_counts.items())),
+    }
+
+
 def summarize_semantic_attestations(documents, matrix, config, scenarios):
     gate = config["semantic_gate"]
     gated_conditions = set(gate["gated_conditions"])
@@ -1377,15 +1491,29 @@ def summarize_semantic_attestations(documents, matrix, config, scenarios):
     covered = set(labels_by_candidate)
     conflicts = sum(len(labels) > 1 for labels in labels_by_candidate.values())
     label_counts = Counter(label for _key, label in observations)
-    accepted = (
-        bool(expected)
-        and bool(observations)
-        and covered == expected
-        and label_counts["not_equivalent"] == 0
-        and label_counts["uncertain"] == 0
-        and conflicts == 0
-    )
-    return {
+    if config["schema_version"] == 4:
+        thresholds = config["acceptance_thresholds"]
+        covered_expected = len(covered & expected)
+        accepted = (
+            len(expected) == thresholds["expected_core_candidates"]
+            and covered.issubset(expected)
+            and covered_expected
+            >= thresholds["minimum_semantic_candidates_covered"]
+            and label_counts["not_equivalent"]
+            <= thresholds["maximum_not_equivalent"]
+            and label_counts["uncertain"] <= thresholds["maximum_uncertain"]
+            and conflicts <= thresholds["maximum_conflicts"]
+        )
+    else:
+        accepted = (
+            bool(expected)
+            and bool(observations)
+            and covered == expected
+            and label_counts["not_equivalent"] == 0
+            and label_counts["uncertain"] == 0
+            and conflicts == 0
+        )
+    result = {
         "expected_unique_candidates": len(expected),
         "covered_unique_candidates": len(covered & expected),
         "attestation_observations": len(observations),
@@ -1395,6 +1523,35 @@ def summarize_semantic_attestations(documents, matrix, config, scenarios):
         "conflicts": conflicts,
         "accepted": accepted,
     }
+    if config["schema_version"] == 4:
+        sample_size = len(observations)
+        successes = label_counts["equivalent"]
+        if sample_size:
+            z = 1.959963984540054
+            proportion = successes / sample_size
+            denominator = 1 + z * z / sample_size
+            center = (proportion + z * z / (2 * sample_size)) / denominator
+            margin = (
+                z
+                * math.sqrt(
+                    proportion * (1 - proportion) / sample_size
+                    + z * z / (4 * sample_size * sample_size)
+                )
+                / denominator
+            )
+            lower, upper = center - margin, center + margin
+        else:
+            proportion = lower = upper = None
+        result["wilson_95_interval"] = {
+            "successes": successes,
+            "sample_size": sample_size,
+            "proportion": round(proportion, 6) if proportion is not None else None,
+            "lower": round(lower, 6) if lower is not None else None,
+            "upper": round(upper, 6) if upper is not None else None,
+            "claim": "descriptive-only",
+            "population_guarantee": False,
+        }
+    return result
 
 
 def judge_raw_result_name(cell):
@@ -1412,6 +1569,34 @@ def judge_raw_result_name(cell):
         judge["thinking"],
     )
     return "__".join(run_pi_bench.file_slug(value) for value in values) + ".json"
+
+
+def guarded_core_quality_accepted(
+    config,
+    expected,
+    successful,
+    summary,
+    semantic_acceptance,
+    source_guarded_core_accepted,
+):
+    thresholds = config["acceptance_thresholds"]
+    return (
+        expected == thresholds["expected_core_candidates"]
+        and successful >= thresholds["minimum_semantic_candidates_covered"]
+        and semantic_acceptance["covered_unique_candidates"]
+        >= thresholds["minimum_semantic_candidates_covered"]
+        and semantic_acceptance["accepted"] is True
+        and source_guarded_core_accepted is True
+        and summary["cross_provider_judgments"] == successful
+        and summary["core_review_required"]
+        <= thresholds["maximum_core_review_required"]
+        and all(
+            summary["core_blocking_issue_counts"].get(category, 0) <= maximum
+            for category, maximum in thresholds[
+                "maximum_blocking_issues_by_category"
+            ].items()
+        )
+    )
 
 
 def aggregate_judge_results(
@@ -1507,6 +1692,11 @@ def aggregate_judge_results(
 
     expected = len(cells)
     summary = summarize_judgments(documents, config)
+    guarded_core_summary = (
+        summarize_guarded_core_judgments(documents, config)
+        if config["schema_version"] == 4
+        else None
+    )
     completeness = {
         "expected": expected,
         "successful": counts["successful"],
@@ -1523,6 +1713,9 @@ def aggregate_judge_results(
     )
     source_semantic_accepted = source_results[source_acceptance_key]["accepted"]
     source_integrity_accepted = source_results["condition_integrity"]["accepted"]
+    source_guarded_core_accepted = source_results.get(
+        "guarded_core_acceptance", {"accepted": False}
+    )["accepted"]
     source_procedure_accepted = source_results.get(
         (
             "objective_procedure_acceptance"
@@ -1541,7 +1734,7 @@ def aggregate_judge_results(
     for source_model in matrix["models"]:
         for comparison in config["comparisons"]:
             for scenario_id in matrix["scenario_ids"]:
-                if config["schema_version"] == 3:
+                if config["schema_version"] in {3, 4}:
                     scenario = (scenarios or {})[scenario_id]
                     fixture = scenario.get("fixture", scenario)
                     if fixture.get(
@@ -1571,33 +1764,83 @@ def aggregate_judge_results(
                     }
                 )
     semantic_acceptance = None
-    if config["schema_version"] == 3:
+    if config["schema_version"] in {3, 4}:
         semantic_acceptance = summarize_semantic_attestations(
             documents, matrix, config, scenarios or {}
         )
-    quality_acceptance = {
-        "expected_judgments": expected,
-        "successful_judgments": counts["successful"],
-        "cross_provider_judgments": summary["cross_provider_judgments"],
-        "review_required": summary["review_required"],
-        "accepted": (
-            expected > 0
-            and completeness["complete"]
-            and source_semantic_accepted
+    if config["schema_version"] == 4:
+        thresholds = config["acceptance_thresholds"]
+        source_gates_accepted = source_guarded_core_accepted
+        evidence_complete_enough = (
+            expected == thresholds["expected_core_candidates"]
+            and semantic_acceptance["covered_unique_candidates"]
+            >= thresholds["minimum_semantic_candidates_covered"]
+        )
+        cross_provider_accepted = (
+            guarded_core_summary["cross_provider_judgments"]
+            == counts["successful"]
+        )
+        blocking_accepted = all(
+            guarded_core_summary["core_blocking_issue_counts"].get(category, 0)
+            <= maximum
+            for category, maximum in thresholds[
+                "maximum_blocking_issues_by_category"
+            ].items()
+        )
+    else:
+        source_gates_accepted = (
+            source_semantic_accepted
             and source_integrity_accepted
             and source_procedure_accepted
             and source_output_contract_accepted
             and source_guard_accepted
-            and summary["cross_provider_judgments"] == expected
-            and summary["review_required"] == 0
-            and (
-                semantic_acceptance is None
-                or semantic_acceptance["accepted"]
+        )
+        evidence_complete_enough = completeness["complete"]
+        cross_provider_accepted = summary["cross_provider_judgments"] == expected
+        blocking_accepted = True
+    quality_acceptance = {
+        "expected_judgments": expected,
+        "successful_judgments": counts["successful"],
+        "cross_provider_judgments": (
+            guarded_core_summary["cross_provider_judgments"]
+            if guarded_core_summary is not None
+            else summary["cross_provider_judgments"]
+        ),
+        "review_required": (
+            guarded_core_summary["core_review_required"]
+            if guarded_core_summary is not None
+            else summary["review_required"]
+        ),
+        "accepted": (
+            guarded_core_quality_accepted(
+                config,
+                expected,
+                counts["successful"],
+                guarded_core_summary,
+                semantic_acceptance,
+                source_guarded_core_accepted,
+            )
+            if config["schema_version"] == 4
+            else (
+                expected > 0
+                and evidence_complete_enough
+                and source_gates_accepted
+                and cross_provider_accepted
+                and summary["review_required"] == 0
+                and blocking_accepted
+                and (
+                    semantic_acceptance is None
+                    or semantic_acceptance["accepted"]
+                )
             )
         ),
     }
     results = {
-        "schema_version": 2 if config["schema_version"] == 3 else 1,
+        "schema_version": (
+            3 if config["schema_version"] == 4
+            else 2 if config["schema_version"] == 3
+            else 1
+        ),
         "generated_at": generated_at or run_pi_bench.utc_now(),
         "provenance": provenance,
         "judge": {
@@ -1608,18 +1851,30 @@ def aggregate_judge_results(
         "completeness": completeness,
         "semantic_authority": {
             "source_accepted": source_semantic_accepted,
+            **(
+                {"guarded_core_accepted": source_guarded_core_accepted}
+                if config["schema_version"] == 4
+                else {}
+            ),
             "condition_integrity_accepted": source_integrity_accepted,
             "procedure_accepted": source_procedure_accepted,
             "output_contract_accepted": source_output_contract_accepted,
             "guard_integrity_accepted": source_guard_accepted,
             "rule": (
-                "Objective contracts, semantic fidelity, output contracts, and guard integrity override preference."
+                "Guarded-core acceptance and schema-v4 semantic thresholds override advisory global aggregates and preference."
+                if config["schema_version"] == 4
+                else "Objective contracts, semantic fidelity, output contracts, and guard integrity override preference."
                 if config["schema_version"] == 3
                 else "Deterministic semantic, output-contract, and guard-integrity failures override judge preference."
             ),
         },
         "quality_acceptance": quality_acceptance,
         "summary": summary,
+        **(
+            {"guarded_core_summary": guarded_core_summary}
+            if guarded_core_summary is not None
+            else {}
+        ),
         "limitations": list(config["limitations"]),
         "unresolved": unresolved,
     }
@@ -1643,6 +1898,7 @@ def write_judge_reports(results, results_directory):
     completeness = results["completeness"]
     accepted = results["quality_acceptance"]["accepted"]
     hybrid = "semantic_acceptance" in results
+    guarded_core = "guarded_core_accepted" in results["semantic_authority"]
     lines = [
         "# Independent quality-judge results",
         "",
@@ -1653,6 +1909,20 @@ def write_judge_reports(results, results_directory):
         "",
         "## Semantic authority",
         "",
+        *(
+            [
+                "- Source guarded-core acceptance: "
+                + (
+                    "accepted"
+                    if results["semantic_authority"]["guarded_core_accepted"]
+                    else "not accepted"
+                )
+                + ".",
+                "- Global source aggregates below are advisory for schema-v4 guarded-core judging.",
+            ]
+            if guarded_core
+            else []
+        ),
         (
             f"- Source {'objective-contract' if hybrid else 'deterministic semantic'} acceptance: "
             + ("accepted" if results["semantic_authority"]["source_accepted"] else "not accepted")
@@ -1695,13 +1965,21 @@ def write_judge_reports(results, results_directory):
             + "."
         ),
         (
-            "- Objective-contract, semantic-fidelity, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference."
-            if hybrid
-            else "- Deterministic semantic, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference."
+            "- Guarded-core objective, semantic-fidelity, procedure, output-contract, routing, and guard-integrity failures override judge preference."
+            if guarded_core
+            else (
+                "- Objective-contract, semantic-fidelity, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference."
+                if hybrid
+                else "- Deterministic semantic, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference."
+            )
         ),
         (
-            "- Judge blocking findings requiring review: "
-            f"{results['quality_acceptance']['review_required']}."
+            (
+                "- Guarded-core review-required outcomes: "
+                if guarded_core
+                else "- Judge blocking findings requiring review: "
+            )
+            + f"{results['quality_acceptance']['review_required']}."
         ),
         *(
             [
@@ -1713,6 +1991,16 @@ def write_judge_reports(results, results_directory):
                 f"- Not-equivalent observations: {results['semantic_acceptance']['not_equivalent_observations']}.",
                 f"- Uncertain observations: {results['semantic_acceptance']['uncertain_observations']}.",
                 f"- Conflicts: {results['semantic_acceptance']['conflicts']}.",
+                *(
+                    [
+                        "- Wilson 95% interval for observed equivalent proportion: "
+                        f"[{results['semantic_acceptance']['wilson_95_interval']['lower']}, "
+                        f"{results['semantic_acceptance']['wilson_95_interval']['upper']}] "
+                        "(descriptive only; no population guarantee)."
+                    ]
+                    if "wilson_95_interval" in results["semantic_acceptance"]
+                    else []
+                ),
             ]
             if hybrid
             else []
@@ -1860,7 +2148,7 @@ def run_judge_cell(
         now = run_pi_bench.utc_now
     command = build_judge_command(cell, config, prompt)
     document = {
-        "schema_version": 2 if config["schema_version"] == 3 else 1,
+        "schema_version": 2 if config["schema_version"] in {3, 4} else 1,
         "status": "failure",
         "cell": cell,
         "provenance": provenance,
@@ -1914,14 +2202,14 @@ def run_judge_cell(
                     assignment,
                     semantic_gated_conditions=(
                         set(config["semantic_gate"]["gated_conditions"])
-                        if config["schema_version"] == 3
+                        if config["schema_version"] in {3, 4}
                         else None
                     ),
                     semantic_gate_applies=(
                         fixture.get(
                             config["semantic_gate"]["applicability_field"]
                         ) is True
-                        if config["schema_version"] == 3
+                        if config["schema_version"] in {3, 4}
                         else True
                     ),
                 )
@@ -2001,11 +2289,11 @@ def execute_judging(
     raw_directory.mkdir(parents=True, exist_ok=True)
 
     if not report_only:
-        if config["schema_version"] in {2, 3} or "skill_sha256" in provenance:
+        if config["schema_version"] in {2, 3, 4} or "skill_sha256" in provenance:
             if error := source_compatibility_error(
                 source_provenance,
                 provenance,
-                require_same_commit=config["schema_version"] in {2, 3},
+                require_same_commit=config["schema_version"] in {2, 3, 4},
             ):
                 raise RuntimeError(error)
         skill_text = source_skill_text
@@ -2022,7 +2310,7 @@ def execute_judging(
                 "judge generation requires the benchmark extension snapshot"
             )
         cells = list(iter_judge_cells(matrix, config, scenarios))
-        if config["schema_version"] in {2, 3}:
+        if config["schema_version"] in {2, 3, 4}:
             cells = provider_bounded_order(
                 cells,
                 config["max_parallel_calls_by_provider"],
@@ -2127,13 +2415,19 @@ def execute_judging(
 
 
 def judge_accepted(results):
+    authority = results["semantic_authority"]
+    if "guarded_core_accepted" in authority:
+        return (
+            authority["guarded_core_accepted"] is True
+            and results["quality_acceptance"]["accepted"] is True
+        )
     return (
         results["completeness"]["complete"]
-        and results["semantic_authority"]["source_accepted"]
-        and results["semantic_authority"]["condition_integrity_accepted"]
-        and results["semantic_authority"]["procedure_accepted"]
-        and results["semantic_authority"]["output_contract_accepted"]
-        and results["semantic_authority"]["guard_integrity_accepted"]
+        and authority["source_accepted"]
+        and authority["condition_integrity_accepted"]
+        and authority["procedure_accepted"]
+        and authority["output_contract_accepted"]
+        and authority["guard_integrity_accepted"]
         and results["quality_acceptance"]["accepted"]
     )
 

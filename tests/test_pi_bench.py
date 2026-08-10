@@ -38,6 +38,13 @@ sys.path.insert(0, str(EVALS_DIR))
 import run_pi_bench
 
 
+SUPPORTED_GUARDED_CORE_MODELS = [
+    {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "high"},
+    {"provider": "github-copilot", "model": "claude-sonnet-5", "thinking": "high"},
+    {"provider": "github-copilot", "model": "claude-opus-4.6", "thinking": "high"},
+]
+
+
 def schema_v3_matrix():
     matrix = json.loads(RELEASE_CANDIDATE_MATRIX_PATH.read_text(encoding="utf-8"))
     matrix["schema_version"] = 3
@@ -58,6 +65,46 @@ def schema_v3_matrix():
         "adverse_labels": ["not_equivalent", "uncertain"],
         "conflict_policy": "fail",
         "manual_override": False,
+    }
+    return matrix
+
+
+def guarded_core_matrix():
+    matrix = schema_v3_matrix()
+    core_scenarios = matrix["scenario_ids"][:5]
+    matrix["run_kind"] = "guarded-core-release-candidate"
+    matrix["acceptance_model"] = "guarded-core-semantic-v1"
+    matrix["objective_gate_conditions"] = ["guarded"]
+    matrix["semantic_review"]["gated_conditions"] = ["guarded"]
+    matrix["semantic_review"]["required_unique_candidate_coverage"] = {
+        "numerator": 44,
+        "denominator": 45,
+    }
+    matrix["models"] = json.loads(json.dumps(SUPPORTED_GUARDED_CORE_MODELS))
+    matrix["max_parallel_calls_by_provider"] = {
+        "openai-codex": 1,
+        "github-copilot": 2,
+    }
+    matrix["max_parallel_calls"] = 3
+    matrix["guarded_core"] = {
+        "condition": "guarded",
+        "scenario_ids": core_scenarios,
+        "model_specs": json.loads(json.dumps(SUPPORTED_GUARDED_CORE_MODELS)),
+        "expected_cells": 45,
+        "expected_procedure_cells": 9,
+        "minimum_successful_cells": 44,
+        "minimum_successful_repetitions_per_model_scenario": 2,
+        "procedure_mode_requires_full_completion": True,
+        "required_success_rates": {
+            "model_identity": 1.0,
+            "routing_safety": 1.0,
+            "objective_contract": 1.0,
+            "objective_procedure": 1.0,
+            "gated_output_contract": 1.0,
+            "correlated_guard_integrity": 1.0,
+        },
+        "compatibility_cells_veto": False,
+        "global_activation_veto": False,
     }
     return matrix
 
@@ -163,6 +210,236 @@ def guarded_event_stream(
 
 
 class MatrixLoadingTest(unittest.TestCase):
+    def test_schema_v3_guarded_core_contract_is_exact_and_fail_closed(self):
+        matrix = guarded_core_matrix()
+
+        run_pi_bench.validate_matrix(matrix)
+
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "12")
+        self.assertEqual(matrix["guarded_core"]["expected_cells"], 45)
+        self.assertEqual(matrix["objective_gate_conditions"], ["guarded"])
+        self.assertEqual(
+            matrix["semantic_review"]["required_unique_candidate_coverage"],
+            {"numerator": 44, "denominator": 45},
+        )
+        cases = {
+            "condition": "native-skill",
+            "expected_cells": 44,
+            "expected_procedure_cells": 8,
+            "minimum_successful_cells": 43,
+            "minimum_successful_repetitions_per_model_scenario": 1,
+            "procedure_mode_requires_full_completion": False,
+            "compatibility_cells_veto": True,
+            "global_activation_veto": True,
+        }
+        for field, value in cases.items():
+            with self.subTest(field=field):
+                invalid = json.loads(json.dumps(matrix))
+                invalid["guarded_core"][field] = value
+                with self.assertRaisesRegex(ValueError, "guarded_core contract"):
+                    run_pi_bench.validate_matrix(invalid)
+        invalid = json.loads(json.dumps(matrix))
+        invalid["guarded_core"]["model_specs"][0]["thinking"] = "low"
+        with self.assertRaisesRegex(ValueError, "guarded_core contract"):
+            run_pi_bench.validate_matrix(invalid)
+        invalid = json.loads(json.dumps(matrix))
+        invalid["models"][0]["thinking"] = "low"
+        invalid["guarded_core"]["model_specs"][0]["thinking"] = "low"
+        with self.assertRaisesRegex(ValueError, "guarded_core contract"):
+            run_pi_bench.validate_matrix(invalid)
+        invalid = json.loads(json.dumps(matrix))
+        invalid["guarded_core"]["required_success_rates"]["objective_contract"] = 0.99
+        with self.assertRaisesRegex(ValueError, "guarded_core contract"):
+            run_pi_bench.validate_matrix(invalid)
+        invalid = json.loads(json.dumps(matrix))
+        core_scenario = invalid["guarded_core"]["scenario_ids"][0]
+        invalid["conditions_by_scenario"][core_scenario].remove("baseline")
+        with self.assertRaisesRegex(ValueError, "guarded_core contract"):
+            run_pi_bench.validate_matrix(invalid)
+        invalid = json.loads(json.dumps(matrix))
+        invalid["objective_gate_conditions"] = ["native-skill", "guarded"]
+        invalid["semantic_review"]["gated_conditions"] = invalid[
+            "objective_gate_conditions"
+        ]
+        invalid["semantic_review"]["required_unique_candidate_coverage"] = 1.0
+        with self.assertRaisesRegex(ValueError, "guarded-core semantic_review"):
+            run_pi_bench.validate_matrix(invalid)
+
+    def test_guarded_core_acceptance_allows_one_nonprocedure_failure_only(self):
+        matrix = guarded_core_matrix()
+        fixtures = {
+            scenario_id: {
+                "mode": "procedure" if index == 0 else "clear",
+                "output_contract_gate": True,
+            }
+            for index, scenario_id in enumerate(matrix["scenario_ids"])
+        }
+        cells = [
+            cell
+            for cell in run_pi_bench.iter_cells(matrix, fixtures)
+            if cell["condition"] == "guarded"
+            and cell["scenario_id"] in matrix["guarded_core"]["scenario_ids"]
+        ]
+
+        def success(cell):
+            procedure = fixtures[cell["scenario_id"]]["mode"] == "procedure"
+            return {
+                "cell": cell,
+                "condition_integrity": {"model_identity_passed": True},
+                "response": {
+                    "provider": cell["provider"],
+                    "model": cell["model"],
+                    "routing": {
+                        "tool_calls": 1,
+                        "non_read_tool_calls": 1,
+                        "read_calls": 0,
+                        "successful_read_calls": 0,
+                        "failed_read_calls": 0,
+                        "skill_entrypoint_read_calls": 0,
+                        "skill_tree_read_calls": 0,
+                        "outside_skill_read_calls": 0,
+                        "skill_loaded": False,
+                    },
+                    "guard": {"observed": True, "passed": True, "submissions": [{}]},
+                },
+                "evaluation": {
+                    "objective_contract": {"passed": True},
+                    "objective_procedure": {
+                        "applicable": procedure,
+                        "passed": True if procedure else None,
+                    },
+                    "output_contract": {"gated": True, "passed": True},
+                },
+            }
+
+        rows = [success(cell) for cell in cells]
+        accepted = run_pi_bench.aggregate_guarded_core(matrix, fixtures, cells, rows)
+        self.assertTrue(accepted["accepted"])
+        self.assertEqual(accepted["expected_cells"], 45)
+        self.assertEqual(accepted["minimum_successful_cells"], 44)
+        self.assertEqual(accepted["procedure_completion"]["expected_cells"], 9)
+        self.assertEqual(
+            accepted["procedure_completion"]["expected_cells"],
+            matrix["guarded_core"]["expected_procedure_cells"],
+        )
+
+        nonprocedure = next(
+            row for row in rows
+            if fixtures[row["cell"]["scenario_id"]]["mode"] != "procedure"
+        )
+        one_missing = [row for row in rows if row is not nonprocedure]
+        tolerated = run_pi_bench.aggregate_guarded_core(
+            matrix, fixtures, cells, one_missing
+        )
+        self.assertTrue(tolerated["accepted"])
+        self.assertEqual(tolerated["successful_cells"], 44)
+
+        second_same_group = next(
+            row for row in one_missing
+            if row["cell"]["scenario_id"] == nonprocedure["cell"]["scenario_id"]
+            and row["cell"]["provider"] == nonprocedure["cell"]["provider"]
+            and row["cell"]["model"] == nonprocedure["cell"]["model"]
+        )
+        below_group_minimum = [row for row in one_missing if row is not second_same_group]
+        self.assertFalse(
+            run_pi_bench.aggregate_guarded_core(
+                matrix, fixtures, cells, below_group_minimum
+            )["accepted"]
+        )
+
+        procedure_row = next(
+            row for row in rows
+            if fixtures[row["cell"]["scenario_id"]]["mode"] == "procedure"
+        )
+        failed_procedure = json.loads(json.dumps(rows))
+        failed_procedure[rows.index(procedure_row)]["evaluation"]["objective_procedure"]["passed"] = False
+        failed_procedure_result = run_pi_bench.aggregate_guarded_core(
+            matrix, fixtures, cells, failed_procedure
+        )
+        self.assertFalse(failed_procedure_result["accepted"])
+        self.assertFalse(
+            failed_procedure_result["checks"]["objective_procedure"]["accepted"]
+        )
+        missing_procedure = [row for row in rows if row is not procedure_row]
+        self.assertFalse(
+            run_pi_bench.aggregate_guarded_core(
+                matrix, fixtures, cells, missing_procedure
+            )["accepted"]
+        )
+        no_procedure_fixtures = {
+            scenario_id: {"mode": "clear", "output_contract_gate": True}
+            for scenario_id in matrix["scenario_ids"]
+        }
+        no_procedure_rows = [success(cell) for cell in cells]
+        self.assertFalse(
+            run_pi_bench.aggregate_guarded_core(
+                matrix, no_procedure_fixtures, cells, no_procedure_rows
+            )["accepted"]
+        )
+
+    def test_guarded_core_correlates_all_success_axes_and_controls_exit_only_for_new_kind(self):
+        matrix = guarded_core_matrix()
+        fixtures = {
+            scenario_id: {"mode": "clear", "output_contract_gate": True}
+            for scenario_id in matrix["scenario_ids"]
+        }
+        cells = [
+            cell
+            for cell in run_pi_bench.iter_cells(matrix, fixtures)
+            if cell["condition"] == "guarded"
+            and cell["scenario_id"] in matrix["guarded_core"]["scenario_ids"]
+        ]
+        rows = []
+        for cell in cells:
+            rows.append({
+                "cell": cell,
+                "condition_integrity": {"model_identity_passed": True},
+                "response": {
+                    "provider": cell["provider"], "model": cell["model"],
+                    "routing": {
+                        "tool_calls": 1, "non_read_tool_calls": 1, "read_calls": 0,
+                        "successful_read_calls": 0, "failed_read_calls": 0,
+                        "skill_entrypoint_read_calls": 0, "skill_tree_read_calls": 0,
+                        "outside_skill_read_calls": 0, "skill_loaded": False,
+                    },
+                    "guard": {"observed": True, "passed": True, "submissions": [{}]},
+                },
+                "evaluation": {
+                    "objective_contract": {"passed": True},
+                    "objective_procedure": {"applicable": False, "passed": None},
+                    "output_contract": {"gated": True, "passed": True},
+                },
+            })
+        for axis, mutate in {
+            "model_identity": lambda row: row["condition_integrity"].update(model_identity_passed=False),
+            "routing_safety": lambda row: row["response"]["routing"].update(skill_loaded=True),
+            "objective_contract": lambda row: row["evaluation"]["objective_contract"].update(passed=False),
+            "gated_output_contract": lambda row: row["evaluation"]["output_contract"].update(passed=False),
+            "correlated_guard_integrity": lambda row: row["response"]["guard"].update(passed=False),
+        }.items():
+            with self.subTest(axis=axis):
+                changed = json.loads(json.dumps(rows))
+                mutate(changed[0])
+                result = run_pi_bench.aggregate_guarded_core(
+                    matrix, fixtures, cells, changed
+                )
+                self.assertFalse(result["accepted"])
+                self.assertFalse(result["checks"][axis]["accepted"])
+
+        guarded_result = {
+            "matrix": {"run_kind": "guarded-core-release-candidate"},
+            "guarded_core_acceptance": {"accepted": True},
+            "completeness": {"complete": False},
+            "condition_integrity": {"accepted": False},
+            "objective_acceptance": {"accepted": False},
+            "objective_procedure_acceptance": {"accepted": False},
+            "output_contract_acceptance": {"accepted": False},
+            "guard_integrity": {"accepted": False},
+        }
+        self.assertTrue(run_pi_bench.benchmark_accepted(guarded_result))
+        guarded_result["guarded_core_acceptance"]["accepted"] = False
+        self.assertFalse(run_pi_bench.benchmark_accepted(guarded_result))
+
     def test_matrix_rejects_fewer_than_three_repetitions(self):
         matrix = json.loads(MATRIX_PATH.read_text(encoding="utf-8"))
         matrix["repetitions"] = 2
@@ -3608,7 +3885,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "11")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "12")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -3786,7 +4063,7 @@ class HybridSchemaV3Test(unittest.TestCase):
     def test_v3_matrix_accepts_hybrid_contract_and_rejects_open_regex(self):
         matrix = schema_v3_matrix()
         run_pi_bench.validate_matrix(matrix)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "11")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "12")
         self.assertEqual(run_pi_bench.evidence_schema_version(matrix), 2)
 
         invalid = json.loads(json.dumps(matrix))

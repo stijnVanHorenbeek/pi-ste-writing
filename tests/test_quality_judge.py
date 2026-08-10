@@ -108,6 +108,13 @@ def schema_v2_design():
     return matrix, config
 
 
+SUPPORTED_GUARDED_CORE_MODELS = [
+    {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "high"},
+    {"provider": "github-copilot", "model": "claude-sonnet-5", "thinking": "high"},
+    {"provider": "github-copilot", "model": "claude-opus-4.6", "thinking": "high"},
+]
+
+
 def schema_v3_design():
     matrix, config = schema_v2_design()
     matrix["schema_version"] = 3
@@ -152,6 +159,285 @@ def schema_v3_design():
     return matrix, config
 
 
+def schema_v4_guarded_core_design():
+    matrix, config = schema_v3_design()
+    core_scenarios = matrix["scenario_ids"][:5]
+    matrix["run_kind"] = "guarded-core-release-candidate"
+    matrix["acceptance_model"] = "guarded-core-semantic-v1"
+    matrix["objective_gate_conditions"] = ["guarded"]
+    matrix["semantic_review"]["gated_conditions"] = ["guarded"]
+    matrix["semantic_review"]["required_unique_candidate_coverage"] = {
+        "numerator": 44,
+        "denominator": 45,
+    }
+    matrix["models"] = copy.deepcopy(SUPPORTED_GUARDED_CORE_MODELS)
+    matrix["max_parallel_calls"] = 3
+    matrix["max_parallel_calls_by_provider"] = {
+        "openai-codex": 1,
+        "github-copilot": 2,
+    }
+    matrix["guarded_core"] = {
+        "condition": "guarded",
+        "scenario_ids": core_scenarios,
+        "model_specs": copy.deepcopy(SUPPORTED_GUARDED_CORE_MODELS),
+        "expected_cells": 45,
+        "expected_procedure_cells": 9,
+        "minimum_successful_cells": 44,
+        "minimum_successful_repetitions_per_model_scenario": 2,
+        "procedure_mode_requires_full_completion": True,
+        "required_success_rates": {
+            "model_identity": 1.0,
+            "routing_safety": 1.0,
+            "objective_contract": 1.0,
+            "objective_procedure": 1.0,
+            "gated_output_contract": 1.0,
+            "correlated_guard_integrity": 1.0,
+        },
+        "compatibility_cells_veto": False,
+        "global_activation_veto": False,
+    }
+    config["schema_version"] = 4
+    config["comparisons"] = [{
+        "id": "baseline-vs-guarded",
+        "left_condition": "baseline",
+        "right_condition": "guarded",
+        "role": "guarded-core-blind-pair",
+    }]
+    config["supported_model_specs"] = copy.deepcopy(SUPPORTED_GUARDED_CORE_MODELS)
+    config["semantic_gate"]["gated_conditions"] = ["guarded"]
+    config["semantic_gate"]["require_all_observations_accepted"] = False
+    config["acceptance_thresholds"] = {
+        "expected_core_candidates": 45,
+        "minimum_semantic_candidates_covered": 44,
+        "cross_provider_mapping": 1.0,
+        "maximum_not_equivalent": 0,
+        "maximum_uncertain": 1,
+        "maximum_conflicts": 0,
+        "maximum_core_review_required": 1,
+        "maximum_blocking_issues_by_category": {
+            category: 0 for category in config["blocking_issue_categories"]
+        },
+    }
+    config["wilson_interval"] = {
+        "confidence_level": 0.95,
+        "reporting": "descriptive-only",
+        "population_guarantee": False,
+    }
+    return matrix, config
+
+
+class GuardedCoreJudgeContractTest(unittest.TestCase):
+    def test_schema_v4_contract_is_exact_and_matches_guarded_core_matrix(self):
+        matrix, config = schema_v4_guarded_core_design()
+
+        run_quality_judge.validate_judge_matrix(config, matrix)
+        legacy = copy.deepcopy(config)
+        legacy["schema_version"] = 3
+        legacy.pop("supported_model_specs")
+        legacy.pop("wilson_interval")
+        legacy["semantic_gate"]["gated_conditions"] = ["native-skill", "guarded"]
+        legacy["semantic_gate"]["require_all_observations_accepted"] = True
+        legacy["comparisons"] = schema_v3_design()[1]["comparisons"]
+        legacy["acceptance_thresholds"] = schema_v3_design()[1]["acceptance_thresholds"]
+        with self.assertRaisesRegex(ValueError, "requires judge schema-v4"):
+            run_quality_judge.validate_judge_matrix(legacy, matrix)
+
+        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "5")
+        self.assertEqual(config["acceptance_thresholds"]["expected_core_candidates"], 45)
+        self.assertEqual(
+            config["acceptance_thresholds"]["minimum_semantic_candidates_covered"], 44
+        )
+        invalid = copy.deepcopy(config)
+        invalid["comparisons"][0]["left_condition"] = "native-skill"
+        with self.assertRaisesRegex(ValueError, "schema-v4 guarded-core"):
+            run_quality_judge.validate_judge_matrix(invalid, matrix)
+        invalid = copy.deepcopy(config)
+        invalid["supported_model_specs"][0]["thinking"] = "low"
+        with self.assertRaisesRegex(ValueError, "schema-v4 guarded-core"):
+            run_quality_judge.validate_judge_config(invalid)
+        with self.assertRaisesRegex(ValueError, "schema-v4 guarded-core"):
+            run_quality_judge.validate_judge_matrix(invalid, matrix)
+        invalid = copy.deepcopy(config)
+        invalid["acceptance_thresholds"]["maximum_uncertain"] = 2
+        with self.assertRaisesRegex(ValueError, "schema-v4 guarded-core"):
+            run_quality_judge.validate_judge_config(invalid)
+
+    def test_schema_v4_source_validation_uses_guarded_core_not_advisory_aggregates(self):
+        matrix, _config = schema_v4_guarded_core_design()
+        with tempfile.TemporaryDirectory() as directory:
+            matrix_path = Path(directory) / "matrix.json"
+            matrix_path.write_text(json.dumps(matrix))
+            results = {
+                "schema_version": 2,
+                "matrix": {"id": matrix["matrix_id"], "version": matrix["version"]},
+                "completeness": {"complete": False},
+                "condition_integrity": {"accepted": False},
+                "objective_acceptance": {"accepted": False},
+                "objective_procedure_acceptance": {"accepted": False},
+                "output_contract_acceptance": {"accepted": False},
+                "guard_integrity": {"accepted": False},
+                "guarded_core_acceptance": {"accepted": True},
+                "provenance": {
+                    "matrix_sha256": hashlib.sha256(matrix_path.read_bytes()).hexdigest(),
+                },
+            }
+            judge_path = Path(directory) / "judge.json"
+            judge_path.write_text("{}")
+            with mock.patch.object(
+                run_quality_judge.run_pi_bench,
+                "evals_relative_path",
+                return_value=judge_path,
+            ):
+                results["provenance"].update({
+                    "preregistered_judge_config_path": matrix["judge_config_path"],
+                    "preregistered_judge_config_sha256": hashlib.sha256(judge_path.read_bytes()).hexdigest(),
+                })
+                run_quality_judge.validate_source_results(results, matrix, matrix_path)
+                results["guarded_core_acceptance"]["accepted"] = False
+                with self.assertRaisesRegex(ValueError, "guarded-core acceptance"):
+                    run_quality_judge.validate_source_results(results, matrix, matrix_path)
+
+    def test_schema_v4_quality_gate_is_fail_closed_for_review_and_blocking_categories(self):
+        _matrix, config = schema_v4_guarded_core_design()
+        summary = {
+            "cross_provider_judgments": 44,
+            "core_review_required": 1,
+            "core_blocking_issue_counts": {},
+        }
+        semantic = {
+            "covered_unique_candidates": 44,
+            "accepted": True,
+        }
+        self.assertTrue(run_quality_judge.guarded_core_quality_accepted(
+            config, 45, 44, summary, semantic, True
+        ))
+        cases = {
+            "too_few": (43, summary, semantic, True),
+            "cross_provider": (44, summary | {"cross_provider_judgments": 43}, semantic, True),
+            "review": (44, summary | {"core_review_required": 2}, semantic, True),
+            "blocking": (44, summary | {"core_blocking_issue_counts": {"semantic": 1}}, semantic, True),
+            "semantic": (44, summary, semantic | {"accepted": False}, True),
+            "source": (44, summary, semantic, False),
+        }
+        for name, (successful, changed_summary, changed_semantic, source_accepted) in cases.items():
+            with self.subTest(name=name):
+                self.assertFalse(run_quality_judge.guarded_core_quality_accepted(
+                    config, 45, successful, changed_summary, changed_semantic,
+                    source_accepted,
+                ))
+
+    def test_schema_v4_core_summary_ignores_baseline_blocking_and_allows_one_uncertain(self):
+        matrix, config = schema_v4_guarded_core_design()
+        scenarios = {
+            scenario_id: {
+                "semantic_review_applicable": scenario_id
+                in matrix["guarded_core"]["scenario_ids"]
+            }
+            for scenario_id in matrix["scenario_ids"]
+        }
+        cell = next(iter(run_quality_judge.iter_judge_cells(matrix, config, scenarios)))
+        assignment = run_quality_judge.blind_assignment(cell)
+        guarded_label = next(
+            label for label, condition in assignment.items() if condition == "guarded"
+        )
+        baseline_label = next(
+            label for label, condition in assignment.items() if condition == "baseline"
+        )
+        verdict = valid_verdict(config)
+        verdict["candidates"][baseline_label]["blocking_issues"] = [
+            {"category": "safety", "evidence": "baseline-only diagnostic"}
+        ]
+        document = {
+            "cell": cell,
+            "blind_assignment": assignment,
+            "verdict": verdict,
+            "outcome": {"review_required": True},
+        }
+        summary = run_quality_judge.summarize_guarded_core_judgments(
+            [document], config
+        )
+        self.assertEqual(summary["core_blocking_issue_counts"], {})
+        self.assertEqual(summary["core_review_required"], 0)
+
+        verdict["candidates"][guarded_label]["semantic_fidelity"] = {
+            "label": "uncertain",
+            "issues": [{
+                "category": "scope",
+                "claim_id": "claim",
+                "source_evidence": "source",
+                "candidate_evidence": "candidate",
+                "explanation": "uncertain scope",
+            }],
+        }
+        summary = run_quality_judge.summarize_guarded_core_judgments(
+            [document], config
+        )
+        self.assertEqual(summary["core_review_required"], 1)
+        self.assertEqual(summary["core_blocking_issue_counts"], {})
+
+    def test_schema_v4_judge_exit_uses_guarded_core_acceptance_only(self):
+        results = {
+            "completeness": {"complete": False},
+            "semantic_authority": {
+                "source_accepted": False,
+                "condition_integrity_accepted": False,
+                "procedure_accepted": False,
+                "output_contract_accepted": False,
+                "guard_integrity_accepted": False,
+                "guarded_core_accepted": True,
+            },
+            "quality_acceptance": {"accepted": True},
+        }
+        self.assertTrue(run_quality_judge.judge_accepted(results))
+        results["quality_acceptance"]["accepted"] = False
+        self.assertFalse(run_quality_judge.judge_accepted(results))
+
+    def test_schema_v4_semantic_thresholds_and_wilson_interval_are_descriptive(self):
+        matrix, config = schema_v4_guarded_core_design()
+        scenarios = {
+            scenario_id: {"semantic_review_applicable": scenario_id in matrix["guarded_core"]["scenario_ids"]}
+            for scenario_id in matrix["scenario_ids"]
+        }
+        documents = []
+        cells = list(run_quality_judge.iter_judge_cells(matrix, config, scenarios))
+        self.assertEqual(len(cells), 45)
+        for index, cell in enumerate(cells[:44]):
+            verdict = valid_verdict(config)
+            guarded_label = next(
+                label
+                for label, condition in run_quality_judge.blind_assignment(cell).items()
+                if condition == "guarded"
+            )
+            verdict["candidates"][guarded_label]["semantic_fidelity"] = {
+                "label": "uncertain" if index == 0 else "equivalent",
+                "issues": [],
+            }
+            documents.append({
+                "cell": cell,
+                "blind_assignment": run_quality_judge.blind_assignment(cell),
+                "verdict": verdict,
+            })
+        semantic = run_quality_judge.summarize_semantic_attestations(
+            documents, matrix, config, scenarios
+        )
+        self.assertTrue(semantic["accepted"])
+        self.assertEqual(semantic["covered_unique_candidates"], 44)
+        self.assertEqual(semantic["uncertain_observations"], 1)
+        self.assertEqual(semantic["wilson_95_interval"]["claim"], "descriptive-only")
+        self.assertFalse(semantic["wilson_95_interval"]["population_guarantee"])
+
+        second_uncertain = copy.deepcopy(documents)
+        guarded_label = next(
+            label
+            for label, condition in second_uncertain[1]["blind_assignment"].items()
+            if condition == "guarded"
+        )
+        second_uncertain[1]["verdict"]["candidates"][guarded_label]["semantic_fidelity"]["label"] = "uncertain"
+        self.assertFalse(run_quality_judge.summarize_semantic_attestations(
+            second_uncertain, matrix, config, scenarios
+        )["accepted"])
+
+
 class JudgeConfigTest(unittest.TestCase):
     def test_default_judge_reads_default_benchmark_output(self):
         self.assertEqual(
@@ -175,7 +461,7 @@ class JudgeConfigTest(unittest.TestCase):
             ],
         )
         self.assertEqual(config["version"], 2)
-        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "4")
+        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "5")
         self.assertEqual(config["source_repetitions_minimum"], 3)
         self.assertEqual(
             [comparison["id"] for comparison in config["comparisons"]],
@@ -356,10 +642,10 @@ def valid_verdict(config):
         for dimension in config["dimensions"]
     }
     candidate = {"scores": copy.deepcopy(scores), "blocking_issues": []}
-    if config["schema_version"] == 3:
+    if config["schema_version"] in {3, 4}:
         candidate["semantic_fidelity"] = {"label": "equivalent", "issues": []}
     return {
-        "schema_version": 2 if config["schema_version"] == 3 else 1,
+        "schema_version": 2 if config["schema_version"] in {3, 4} else 1,
         "candidates": {
             "A": copy.deepcopy(candidate),
             "B": copy.deepcopy(candidate),

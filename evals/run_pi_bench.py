@@ -34,8 +34,15 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "11"
+RUNNER_VERSION = "12"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
+GUARDED_CORE_RUN_KIND = "guarded-core-release-candidate"
+RELEASE_RUN_KINDS = {"release-candidate", GUARDED_CORE_RUN_KIND}
+GUARDED_CORE_MODEL_SPECS = (
+    ("openai-codex", "gpt-5.6-sol", "high"),
+    ("github-copilot", "claude-sonnet-5", "high"),
+    ("github-copilot", "claude-opus-4.6", "high"),
+)
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
 SKILL_PATH = SKILL_DIR / "SKILL.md"
@@ -180,14 +187,16 @@ def validate_matrix(matrix):
     schema_version = matrix["schema_version"]
     run_kind = matrix.get("run_kind")
     if schema_version in {2, 3} and run_kind not in {
-        "release-candidate",
+        *RELEASE_RUN_KINDS,
         "development-smoke",
         "development-probe",
     }:
         raise ValueError(
             "matrix schema-v2/v3 run_kind must be release-candidate, "
-            "development-smoke, or development-probe"
+            "guarded-core-release-candidate, development-smoke, or development-probe"
         )
+    if run_kind == GUARDED_CORE_RUN_KIND and schema_version != 3:
+        raise ValueError("guarded-core release candidates require matrix schema-v3")
     if schema_version == 1 and run_kind is not None:
         raise ValueError("matrix schema-v1 does not support run_kind")
     if run_kind == "development-probe":
@@ -363,7 +372,7 @@ def validate_matrix(matrix):
             or fraction["numerator"] > fraction["denominator"]
             or thresholds.get("negative_activation_maximum_loaded") != 0
             or thresholds.get("activation_applicable")
-            is not (run_kind == "release-candidate")
+            is not (run_kind in RELEASE_RUN_KINDS)
         ):
             raise ValueError("matrix schema-v2/v3 acceptance thresholds are invalid")
     elif thresholds is not None:
@@ -384,7 +393,7 @@ def validate_matrix(matrix):
             and repetitions != 3
         )
         or (
-            (schema_version == 1 or run_kind == "release-candidate")
+            (schema_version == 1 or run_kind in RELEASE_RUN_KINDS)
             and repetitions < 3
         )
     ):
@@ -416,9 +425,23 @@ def validate_matrix(matrix):
         raise ValueError(f"matrix {gate_field} must be unique conditions")
     if schema_version == 3:
         review = matrix.get("semantic_review")
+        guarded_core_review = run_kind == GUARDED_CORE_RUN_KIND
+        expected_gate_conditions = (
+            ["guarded"] if guarded_core_review else ["native-skill", "guarded"]
+        )
+        expected_coverage = (
+            {"numerator": 44, "denominator": 45}
+            if guarded_core_review
+            else 1.0
+        )
         if (
-            gate_conditions != ["native-skill", "guarded"]
-            or matrix.get("acceptance_model") != "hybrid-semantic-v1"
+            gate_conditions != expected_gate_conditions
+            or matrix.get("acceptance_model")
+            != (
+                "guarded-core-semantic-v1"
+                if guarded_core_review
+                else "hybrid-semantic-v1"
+            )
             or not isinstance(review, dict)
             or set(review) != {
                 "config_path", "applicability_field", "gated_conditions",
@@ -428,15 +451,89 @@ def validate_matrix(matrix):
             or review.get("config_path") != matrix.get("judge_config_path")
             or review.get("applicability_field") != "semantic_review_applicable"
             or review.get("gated_conditions") != gate_conditions
-            or review.get("required_unique_candidate_coverage") != 1.0
+            or review.get("required_unique_candidate_coverage") != expected_coverage
             or review.get("accepted_label") != "equivalent"
             or review.get("adverse_labels") != ["not_equivalent", "uncertain"]
             or review.get("conflict_policy") != "fail"
             or review.get("manual_override") is not False
         ):
-            raise ValueError("matrix schema-v3 semantic_review is invalid")
+            raise ValueError(
+                "matrix guarded-core semantic_review is invalid"
+                if guarded_core_review
+                else "matrix schema-v3 semantic_review is invalid"
+            )
     elif "acceptance_model" in matrix or "objective_gate_conditions" in matrix or "semantic_review" in matrix:
         raise ValueError("matrix schema-v1/v2 does not support hybrid semantic fields")
+
+    guarded_core = matrix.get("guarded_core")
+    if run_kind == GUARDED_CORE_RUN_KIND:
+        required_rates = {
+            "model_identity",
+            "routing_safety",
+            "objective_contract",
+            "objective_procedure",
+            "gated_output_contract",
+            "correlated_guard_integrity",
+        }
+        required_fields = {
+            "condition",
+            "scenario_ids",
+            "model_specs",
+            "expected_cells",
+            "expected_procedure_cells",
+            "minimum_successful_cells",
+            "minimum_successful_repetitions_per_model_scenario",
+            "procedure_mode_requires_full_completion",
+            "required_success_rates",
+            "compatibility_cells_veto",
+            "global_activation_veto",
+        }
+        core_scenarios = guarded_core.get("scenario_ids") if isinstance(guarded_core, dict) else None
+        model_specs = guarded_core.get("model_specs") if isinstance(guarded_core, dict) else None
+        rates = guarded_core.get("required_success_rates") if isinstance(guarded_core, dict) else None
+        derived_cells = (
+            len(core_scenarios) * len(model_specs) * repetitions
+            if isinstance(core_scenarios, list)
+            and isinstance(model_specs, list)
+            and isinstance(repetitions, int)
+            else None
+        )
+        if (
+            not isinstance(guarded_core, dict)
+            or set(guarded_core) != required_fields
+            or guarded_core.get("condition") != "guarded"
+            or not isinstance(core_scenarios, list)
+            or len(core_scenarios) != 5
+            or len(core_scenarios) != len(set(core_scenarios))
+            or not all(isinstance(item, str) and item in scenarios for item in core_scenarios)
+            or any(
+                not {"baseline", "native-skill", "guarded"}.issubset(
+                    conditions_for_scenario(matrix, item)
+                )
+                for item in core_scenarios
+            )
+            or model_specs != models
+            or [
+                (model["provider"], model["model"], model["thinking"])
+                for model in model_specs
+            ]
+            != list(GUARDED_CORE_MODEL_SPECS)
+            or repetitions != 3
+            or guarded_core.get("expected_cells") != 45
+            or derived_cells != guarded_core.get("expected_cells")
+            or guarded_core.get("expected_procedure_cells") != 9
+            or guarded_core.get("minimum_successful_cells") != 44
+            or guarded_core.get("minimum_successful_repetitions_per_model_scenario") != 2
+            or guarded_core.get("procedure_mode_requires_full_completion") is not True
+            or not isinstance(rates, dict)
+            or set(rates) != required_rates
+            or any(rates.get(key) != 1.0 for key in required_rates)
+            or guarded_core.get("compatibility_cells_veto") is not False
+            or guarded_core.get("global_activation_veto") is not False
+        ):
+            raise ValueError("matrix guarded_core contract is invalid")
+    elif guarded_core is not None:
+        raise ValueError("matrix guarded_core contract requires guarded-core release run kind")
 
     isolation = matrix.get("isolation")
     if not isinstance(isolation, dict) or isolation.get("skills") != "explicit-only":
@@ -469,7 +566,7 @@ def validate_matrix(matrix):
         if value is not None:
             evals_relative_path(value, f"matrix {key}")
     judge_config_path = matrix.get("judge_config_path")
-    if schema_version in {2, 3} and run_kind == "release-candidate":
+    if schema_version in {2, 3} and run_kind in RELEASE_RUN_KINDS:
         evals_relative_path(judge_config_path, "matrix judge_config_path")
     elif judge_config_path is not None:
         raise ValueError(
@@ -479,7 +576,7 @@ def validate_matrix(matrix):
     if prerequisite is not None:
         if (
             schema_version not in {2, 3}
-            or run_kind != "release-candidate"
+            or run_kind not in RELEASE_RUN_KINDS
             or not isinstance(prerequisite, dict)
             or set(prerequisite) != {"matrix_path", "results_directory"}
         ):
@@ -550,7 +647,7 @@ def validate_scenario_applicability(matrix, scenarios):
         if (
             mode not in {"clear", "procedure", "strict"}
             or (
-                matrix["run_kind"] == "release-candidate"
+                matrix["run_kind"] in RELEASE_RUN_KINDS
                 and scenario.get("task") != canonical_rewrite_task(mode)
             )
             or contract.get("type") != "text"
@@ -2914,6 +3011,155 @@ def scenario_procedure_applicable(scenario):
     )
 
 
+def aggregate_guarded_core(matrix, fixtures, cells, successes):
+    contract = matrix["guarded_core"]
+    core_scenarios = set(contract["scenario_ids"])
+    core_models = {
+        (model["provider"], model["model"], model["thinking"])
+        for model in contract["model_specs"]
+    }
+
+    def is_core_cell(cell):
+        return (
+            cell["condition"] == contract["condition"]
+            and cell["scenario_id"] in core_scenarios
+            and (cell["provider"], cell["model"], cell["thinking"]) in core_models
+        )
+
+    expected_rows = [cell for cell in cells if is_core_cell(cell)]
+    successful_rows = [row for row in successes if is_core_cell(row["cell"])]
+    def is_procedure_mode(scenario_id):
+        scenario = fixtures[scenario_id]
+        fixture = scenario.get("fixture", scenario)
+        return fixture.get("mode") == "procedure"
+
+    expected_procedure_rows = [
+        cell for cell in expected_rows if is_procedure_mode(cell["scenario_id"])
+    ]
+    successful_procedure_rows = [
+        row
+        for row in successful_rows
+        if is_procedure_mode(row["cell"]["scenario_id"])
+    ]
+
+    groups = []
+    for model in contract["model_specs"]:
+        for scenario_id in contract["scenario_ids"]:
+            successful = sum(
+                row["cell"]["provider"] == model["provider"]
+                and row["cell"]["model"] == model["model"]
+                and row["cell"]["thinking"] == model["thinking"]
+                and row["cell"]["scenario_id"] == scenario_id
+                for row in successful_rows
+            )
+            groups.append(
+                {
+                    "model": dict(model),
+                    "scenario_id": scenario_id,
+                    "expected_cells": matrix["repetitions"],
+                    "successful_cells": successful,
+                    "accepted": successful
+                    >= contract["minimum_successful_repetitions_per_model_scenario"],
+                }
+            )
+
+    def check(rows, predicate):
+        passed = sum(bool(predicate(row)) for row in rows)
+        return {
+            "successful_cells": len(rows),
+            "passed_cells": passed,
+            "failed_cells": len(rows) - passed,
+            "required_rate": 1.0,
+            "accepted": passed == len(rows),
+        }
+
+    procedure_rows = [
+        row
+        for row in successful_rows
+        if is_procedure_mode(row["cell"]["scenario_id"])
+        or row["evaluation"]["objective_procedure"]["applicable"]
+    ]
+    gated_output_rows = [
+        row
+        for row in successful_rows
+        if row["evaluation"]["output_contract"].get("gated", True)
+    ]
+    checks = {
+        "model_identity": check(
+            successful_rows,
+            lambda row: row["condition_integrity"].get(
+                "model_identity_passed",
+                row["response"].get("provider") == row["cell"]["provider"]
+                and row["response"].get("model") == row["cell"]["model"],
+            ),
+        ),
+        "routing_safety": check(
+            successful_rows,
+            lambda row: routing_safety_passed(row["cell"], row["response"]),
+        ),
+        "objective_contract": check(
+            successful_rows,
+            lambda row: row["evaluation"]["objective_contract"]["passed"] is True,
+        ),
+        "objective_procedure": check(
+            procedure_rows,
+            lambda row: (
+                row["evaluation"]["objective_procedure"]["applicable"] is True
+                and row["evaluation"]["objective_procedure"]["passed"] is True
+            ),
+        ),
+        "gated_output_contract": check(
+            gated_output_rows,
+            lambda row: row["evaluation"]["output_contract"]["passed"] is True,
+        ),
+        "correlated_guard_integrity": check(
+            successful_rows,
+            lambda row: row["response"].get("guard", {}).get("passed") is True,
+        ),
+    }
+    procedure_completion = {
+        "expected_cells": len(expected_procedure_rows),
+        "contract_expected_cells": contract["expected_procedure_cells"],
+        "successful_cells": len(successful_procedure_rows),
+        "accepted": (
+            len(expected_procedure_rows) == contract["expected_procedure_cells"]
+            and len(successful_procedure_rows) == len(expected_procedure_rows)
+        ),
+    }
+    expected_matches_contract = len(expected_rows) == contract["expected_cells"]
+    minimum_success_met = (
+        len(successful_rows) >= contract["minimum_successful_cells"]
+    )
+    group_minimum_met = all(group["accepted"] for group in groups)
+    accepted = (
+        expected_matches_contract
+        and minimum_success_met
+        and group_minimum_met
+        and procedure_completion["accepted"]
+        and all(report["accepted"] for report in checks.values())
+    )
+    return {
+        "condition": contract["condition"],
+        "scenario_ids": list(contract["scenario_ids"]),
+        "model_specs": [dict(model) for model in contract["model_specs"]],
+        "expected_cells": contract["expected_cells"],
+        "derived_expected_cells": len(expected_rows),
+        "successful_cells": len(successful_rows),
+        "minimum_successful_cells": contract["minimum_successful_cells"],
+        "minimum_success_met": minimum_success_met,
+        "minimum_successful_repetitions_per_model_scenario": contract[
+            "minimum_successful_repetitions_per_model_scenario"
+        ],
+        "model_scenario_groups": groups,
+        "group_minimum_met": group_minimum_met,
+        "procedure_completion": procedure_completion,
+        "checks": checks,
+        "compatibility_cells_veto": False,
+        "global_activation_veto": False,
+        "accepted": accepted,
+    }
+
+
 def aggregate_results(
     matrix,
     fixtures,
@@ -3265,6 +3511,11 @@ def aggregate_results(
             "version": matrix["version"],
             "conditions": matrix["conditions"],
             "repetitions": matrix["repetitions"],
+            **(
+                {"run_kind": matrix["run_kind"]}
+                if matrix.get("run_kind") == GUARDED_CORE_RUN_KIND
+                else {}
+            ),
         },
         "completeness": completeness,
         "condition_integrity": condition_integrity,
@@ -3277,6 +3528,10 @@ def aggregate_results(
         "partial_outputs": partial_outputs,
         "unresolved": unresolved,
     }
+    if matrix.get("run_kind") == GUARDED_CORE_RUN_KIND:
+        results["guarded_core_acceptance"] = aggregate_guarded_core(
+            matrix, fixtures, cells, successes
+        )
     if matrix["schema_version"] in {2, 3}:
         results[
             "objective_procedure_acceptance"
@@ -3360,6 +3615,36 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
                 ],
             ]
             if "applicability" in results
+            else []
+        ),
+        *(
+            [
+                "",
+                "## Guarded-core release acceptance",
+                "",
+                (
+                    "**Guarded core: "
+                    + (
+                        "ACCEPTED"
+                        if results["guarded_core_acceptance"]["accepted"]
+                        else "NOT ACCEPTED"
+                    )
+                    + ".**"
+                ),
+                (
+                    "Successful guarded-core cells: "
+                    f"{results['guarded_core_acceptance']['successful_cells']}/"
+                    f"{results['guarded_core_acceptance']['expected_cells']} "
+                    f"(minimum {results['guarded_core_acceptance']['minimum_successful_cells']})."
+                ),
+                (
+                    "Procedure-mode completion: "
+                    f"{results['guarded_core_acceptance']['procedure_completion']['successful_cells']}/"
+                    f"{results['guarded_core_acceptance']['procedure_completion']['expected_cells']}."
+                ),
+                "Compatibility cells and global activation remain advisory and are reported below.",
+            ]
+            if "guarded_core_acceptance" in results
             else []
         ),
         *(
@@ -3671,7 +3956,7 @@ def execute_benchmark(
     matrix = load_matrix(matrix_path)
     if (
         not report_only
-        and matrix.get("run_kind") == "release-candidate"
+        and matrix.get("run_kind") in RELEASE_RUN_KINDS
         and not attest_no_prior_candidate_output
     ):
         raise RuntimeError(
@@ -3842,6 +4127,9 @@ def build_parser():
 
 
 def benchmark_accepted(results):
+    if results.get("matrix", {}).get("run_kind") == GUARDED_CORE_RUN_KIND:
+        guarded_core = results.get("guarded_core_acceptance")
+        return isinstance(guarded_core, dict) and guarded_core.get("accepted") is True
     acceptance = results.get("objective_acceptance", results.get("semantic_acceptance"))
     procedure = results.get(
         "objective_procedure_acceptance",

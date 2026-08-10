@@ -19,6 +19,8 @@ Schema v3 adds hybrid semantic evaluation without changing schema-v1/v2 evidence
 
 Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios cannot serve as unseen release evidence. All retained release candidates failed and remain frozen. Commit any future preregistration snapshot before development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
 
+Prospective runner support now defines a guarded-core release contract; it does not create a candidate config or change historical evidence. See [`docs/guarded-core-release-contract.md`](../docs/guarded-core-release-contract.md). Future guarded-core evidence is limited to `openai-codex/gpt-5.6-sol:high`, `github-copilot/claude-sonnet-5:high`, and `github-copilot/claude-opus-4.6:high`. Guarded gates release; native and baseline remain attempted, visible, and advisory.
+
 ## Active files
 
 - `run_pi_bench.py`: generation, resume, provenance, deterministic scoring, and reports.
@@ -99,7 +101,7 @@ Exit 0 means matrix complete with accepted condition-integrity and semantic gate
 
 Schema-v1 archive conditions remain frozen as baseline, native-skill, and direct-prompt.
 
-Schema-v2/v3 run kinds separate one-repetition `development-smoke`, three-repetition `development-probe`, and preregistered `release-candidate` evidence. Development probes require explicit fail-closed policy markers and cannot count as release evidence.
+Schema-v2/v3 run kinds separate one-repetition `development-smoke`, three-repetition `development-probe`, preregistered `release-candidate`, and prospective `guarded-core-release-candidate` evidence. Development probes require explicit fail-closed policy markers and cannot count as release evidence. Guarded-core matrices gate only declared guarded cohorts; native and baseline evidence stays visible and advisory.
 
 Schema v2 uses:
 
@@ -135,6 +137,14 @@ Reports place semantic and output-contract results before style. Semantic failur
 Positive automatic activation requires at least two loads across three repetitions. The structured-output negative requires zero loads. Applicable-cell completeness, model identity, routing safety, native and guarded semantics, applicable procedures, gated output contracts, and guard integrity each require 100%. Diagnostic routing-control serialization is reported separately. Exact thresholds are machine-validated from the preregistered matrix.
 
 `failures.json` retains missing, stale, malformed, routing-invalid, and otherwise rejected cells. Incomplete matrix blocks aggregate claims.
+
+## Prospective guarded-core gate
+
+Additive schema-v3 run kind `guarded-core-release-candidate` requires an exact fail-closed `guarded_core` contract: five prose scenarios, three supported models, three repetitions, 45 expected guarded cells, at least 44 successes, at least two successes per model-scenario group, and complete procedure-mode guarded cells. All successful core cells require model identity, applicable routing safety, objective protected contracts, applicable objective procedure, gated output contracts, and correlated guard integrity at 100%. Compatibility cells and global activation remain reported but do not veto this core gate. `benchmark_accepted` uses only `guarded_core_acceptance` for this run kind; existing run kinds are unchanged.
+
+Additive judge schema v4 uses baseline-versus-guarded blind pairs and gates guarded only. It binds the same model cohort, expects 45 unique core candidates, requires at least 44 covered, permits zero `not_equivalent`, at most one `uncertain`, zero conflicts, at most one guarded-core review-required outcome corresponding to that uncertainty, and zero guarded findings in every blocking category. Baseline findings remain advisory. Source authority is `guarded_core_acceptance`, not advisory global aggregates. Wilson 95% intervals describe observed equivalence only and provide no population guarantee.
+
+No future config or held-out fixture has been created. One final genuinely new held-out cycle excludes all candidate models from held-out fixture/config authorship and preregistration review before generation; this does not bar blinded cross-provider quality judging afterward. It cannot rescore old evidence. Failure stops automatic further candidates. Passing is not semantic-safe or ASD-STE100 certification. Publication requires separate explicit approval.
 
 ## Blind quality judge
 
