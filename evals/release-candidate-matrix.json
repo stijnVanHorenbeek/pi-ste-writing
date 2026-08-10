@@ -2,12 +2,16 @@
   "schema_version": 2,
   "run_kind": "release-candidate",
   "matrix_id": "first-release-candidate",
-  "version": 1,
+  "version": 2,
   "description": "Preregistered first-release evidence matrix. The routing/control cohort compares baseline with native auto-routing on every scenario. The rewrite-path cohort compares baseline, native skill, and guarded /clear-write only on canonical, task-equivalent prose rewrites. Native-versus-guarded is an end-to-end package-path comparison, not an isolated verifier effect.",
   "amendments": [
     {
       "version": 1,
       "reason": "Initial schema-v2 preregistration before any release-candidate generation."
+    },
+    {
+      "version": 2,
+      "reason": "Re-freeze before release-candidate generation after the development smoke showed that Pi JSON print mode terminates on an accepted tool result without a follow-up assistant message. Runner version 6 now treats only the exactly linked accepted tool-result text as the terminal print artifact."
     }
   ],
   "scenario_ids": [

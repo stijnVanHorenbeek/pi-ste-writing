@@ -92,7 +92,7 @@ A guarded success requires all of the following:
 - one job ID is used throughout;
 - attempts are contiguous;
 - statuses are zero or more `retry` values followed by exactly one `accepted`;
-- accepted call draft, result detail draft, result text, and final assistant text match byte-for-byte;
+- accepted call draft, result-detail draft, result text, and terminal print artifact match byte-for-byte; when Pi emits no follow-up assistant message after accepted `toolUse`, the trusted accepted tool-result text is the terminal print artifact;
 - no direct output, unauthorized tool, malformed, dangling, blocked, verifier-error, or post-acceptance event;
 - guard isolation flags are present;
 - submitted source and draft text are not retained in guard telemetry; only hashes, byte counts, statuses, attempts, and provider metadata are stored.

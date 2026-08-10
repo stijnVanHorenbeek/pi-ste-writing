@@ -2,12 +2,16 @@
   "schema_version": 2,
   "run_kind": "development-smoke",
   "matrix_id": "development-guard-smoke",
-  "version": 1,
+  "version": 2,
   "description": "Development-only three-call guarded smoke on a previously used regression fixture. This run validates extension loading, submit evidence, parsing, deterministic scoring, resume, bounded provider concurrency, and provider-reported cost capture. It is not release evidence.",
   "amendments": [
     {
       "version": 1,
       "reason": "Initial development smoke plan before the first schema-v2 release-candidate run."
+    },
+    {
+      "version": 2,
+      "reason": "Rerun after runner version 6 added exact accepted tool-result handling for Pi JSON print mode. The first smoke retained three terminal failures and produced no release-candidate evidence."
     }
   ],
   "scenario_ids": ["release-facts-and-causes"],

@@ -495,7 +495,7 @@ class ReleaseCandidateMatrixTest(unittest.TestCase):
         cells = list(run_pi_bench.iter_cells(matrix, scenarios))
 
         self.assertEqual(matrix["schema_version"], 2)
-        self.assertEqual(matrix["version"], 1)
+        self.assertEqual(matrix["version"], 2)
         self.assertEqual(
             matrix["models"],
             [
@@ -870,7 +870,7 @@ class PiJsonEventParsingTest(unittest.TestCase):
                 "unauthorized_tool_calls": 0,
                 "unmatched_tool_events": 0,
                 "ambient_resources_disabled": True,
-                "final_message_valid": True,
+                "terminal_artifact_valid": True,
                 "same_job_id": True,
                 "attempts_contiguous": True,
                 "passed": True,
@@ -1101,16 +1101,20 @@ class PiJsonEventParsingTest(unittest.TestCase):
 
         for name, events in cases.items():
             with self.subTest(name=name):
-                response = run_pi_bench.parse_pi_json_events(
-                    "\n".join(json.dumps(event) for event in events),
-                    expect_guard=True,
-                )
-                self.assertFalse(response["guard"]["passed"])
-                self.assertFalse(
-                    run_pi_bench.routing_safety_passed(
-                        {"condition": "guarded"}, response
+                try:
+                    response = run_pi_bench.parse_pi_json_events(
+                        "\n".join(json.dumps(event) for event in events),
+                        expect_guard=True,
                     )
-                )
+                    guard = response["guard"]
+                    self.assertFalse(
+                        run_pi_bench.routing_safety_passed(
+                            {"condition": "guarded"}, response
+                        )
+                    )
+                except run_pi_bench.PiEventParseError as error:
+                    guard = error.guard_failure
+                self.assertFalse(guard["passed"])
 
     def test_native_progressive_reference_read_passes_routing_integrity(self):
         entrypoint = run_pi_bench.SKILL_PATH
@@ -1389,6 +1393,49 @@ class PiInvocationTest(unittest.TestCase):
         self.assertEqual(observed["env"]["PI_TELEMETRY"], "0")
         self.assertEqual(observed["env"]["PI_SKIP_VERSION_CHECK"], "1")
         self.assertFalse(observed["check"])
+
+    def test_accepted_guard_tool_result_is_terminal_print_artifact(self):
+        draft = "accepted draft"
+        events = guarded_event_stream(("accepted",), draft)[:-1]
+        command = [
+            "pi",
+            "--extension",
+            str(run_pi_bench.GUARD_EXTENSION_PATH),
+            "--no-extensions",
+            "--no-skills",
+            "--no-builtin-tools",
+            "--no-prompt-templates",
+            "--no-themes",
+            "--no-context-files",
+            "--no-session",
+            "--no-approve",
+            "--offline",
+            "TASK",
+        ]
+
+        def fake_run(_command, **_kwargs):
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout="\n".join(json.dumps(event) for event in events),
+                stderr="",
+            )
+
+        clock = iter((1.0, 1.1))
+        result = run_pi_bench.invoke_pi(
+            command,
+            5,
+            run_command=fake_run,
+            monotonic=lambda: next(clock),
+        )
+
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["response"]["text"], draft)
+        self.assertEqual(result["response"]["stop_reason"], "toolUse")
+        self.assertTrue(result["response"]["guard"]["passed"])
+        self.assertTrue(
+            result["response"]["guard"]["terminal_artifact_valid"]
+        )
 
     def test_guard_submission_without_final_text_preserves_terminal_guard_evidence(self):
         events = guarded_event_stream(("blocked",), "blocked marker")[:-1]
@@ -1740,7 +1787,7 @@ class ResumableCellTest(unittest.TestCase):
                 "unauthorized_tool_calls": 0,
                 "unmatched_tool_events": 0,
                 "ambient_resources_disabled": True,
-                "final_message_valid": True,
+                "terminal_artifact_valid": True,
                 "same_job_id": True,
                 "attempts_contiguous": True,
                 "passed": False,
@@ -3305,7 +3352,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "5")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "6")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],

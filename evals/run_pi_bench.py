@@ -34,7 +34,7 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "5"
+RUNNER_VERSION = "6"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -616,6 +616,7 @@ def parse_pi_json_events(
     guard_submission_messages = {}
     guard_starts = {}
     guard_submissions = []
+    accepted_tool_artifact = None
     guard_unmatched_tool_events = 0
     tool_calls = 0
     non_read_tool_calls = 0
@@ -800,6 +801,18 @@ def parse_pi_json_events(
                 and isinstance(details.get("draft"), str)
                 else None
             )
+            result_status = (
+                details.get("status")
+                if isinstance(details, dict)
+                and isinstance(details.get("status"), str)
+                else "invalid"
+            )
+            if (
+                result_status == "accepted"
+                and result_draft == start["draft"]
+                and result_text == start["draft"]
+            ):
+                accepted_tool_artifact = result_text
             guard_submissions.append(
                 {
                     "sequence": len(guard_submissions) + 1,
@@ -813,12 +826,7 @@ def parse_pi_json_events(
                         start["draft"].encode("utf-8")
                     ).hexdigest(),
                     "draft_bytes": len(start["draft"].encode("utf-8")),
-                    "result_status": (
-                        details.get("status")
-                        if isinstance(details, dict)
-                        and isinstance(details.get("status"), str)
-                        else "invalid"
-                    ),
+                    "result_status": result_status,
                     "result_attempt": (
                         details.get("attempt")
                         if isinstance(details, dict)
@@ -861,12 +869,17 @@ def parse_pi_json_events(
         for part in final_content
         if isinstance(part, dict) and part.get("type") == "text"
     )
+    used_accepted_tool_artifact = (
+        not has_final_text and accepted_tool_artifact is not None
+    )
+    if used_accepted_tool_artifact:
+        text = accepted_tool_artifact
     final_text_parts = [
         part
         for part in final_content
         if isinstance(part, dict) and part.get("type") == "text"
     ]
-    final_message_valid = (
+    final_assistant_message_valid = (
         len(final_text_parts) == 1
         and isinstance(final_text_parts[0].get("text"), str)
         and bool(final_text_parts[0]["text"])
@@ -875,6 +888,9 @@ def parse_pi_json_events(
             and part.get("type") in {"thinking", "text"}
             for part in final_content
         )
+    )
+    terminal_artifact_valid = (
+        final_assistant_message_valid or used_accepted_tool_artifact
     )
     input_tokens = sum_usage(assistant_messages, "input")
     output_tokens = sum_usage(assistant_messages, "output")
@@ -963,7 +979,7 @@ def parse_pi_json_events(
         and unauthorized_tool_calls == 0
         and guard_unmatched_tool_events == 0
         and guard_isolation_passed
-        and final_message_valid
+        and terminal_artifact_valid
         and same_job_id
         and attempts_contiguous
         and exact_accepted_output
@@ -1037,12 +1053,12 @@ def parse_pi_json_events(
             "unauthorized_tool_calls": unauthorized_tool_calls,
             "unmatched_tool_events": guard_unmatched_tool_events,
             "ambient_resources_disabled": guard_isolation_passed,
-            "final_message_valid": final_message_valid,
+            "terminal_artifact_valid": terminal_artifact_valid,
             "same_job_id": same_job_id,
             "attempts_contiguous": attempts_contiguous,
             "passed": guard_passed,
         }
-    if not has_final_text:
+    if not terminal_artifact_valid:
         raise PiEventParseError(
             "Pi benchmark call returned no final assistant text",
             guard_failure=response.get("guard"),
@@ -1362,7 +1378,11 @@ def invoke_pi(
             "duration_ms": duration_ms,
             "error": {"kind": "output", "message": error},
         }
-    if response["stop_reason"] != "stop":
+    guarded_terminal_stop = (
+        response["stop_reason"] == "toolUse"
+        and response.get("guard", {}).get("passed") is True
+    )
+    if response["stop_reason"] != "stop" and not guarded_terminal_stop:
         return {
             "status": "failure",
             "duration_ms": duration_ms,
@@ -1547,7 +1567,7 @@ def guard_evidence_error(guard):
         "unauthorized_tool_calls",
         "unmatched_tool_events",
         "ambient_resources_disabled",
-        "final_message_valid",
+        "terminal_artifact_valid",
         "same_job_id",
         "attempts_contiguous",
         "passed",
@@ -1576,7 +1596,7 @@ def guard_evidence_error(guard):
             for key in (
                 "exact_accepted_output",
                 "ambient_resources_disabled",
-                "final_message_valid",
+                "terminal_artifact_valid",
                 "same_job_id",
                 "attempts_contiguous",
                 "passed",
@@ -1665,7 +1685,7 @@ def guard_evidence_error(guard):
         and guard["unauthorized_tool_calls"] == 0
         and guard["unmatched_tool_events"] == 0
         and guard["ambient_resources_disabled"]
-        and guard["final_message_valid"]
+        and guard["terminal_artifact_valid"]
         and same_job_id
         and attempts_contiguous
         and exact_accepted_output
@@ -1708,8 +1728,13 @@ def response_error(response, name, require_stop=False):
     for key in ("text", "provider", "model", "stop_reason"):
         if not isinstance(response.get(key), str) or not response[key]:
             return f"{name} {key} must be nonempty text"
-    if require_stop and response["stop_reason"] != "stop":
-        return f"{name} stop_reason must be stop"
+    guarded_terminal_stop = (
+        response["stop_reason"] == "toolUse"
+        and isinstance(response.get("guard"), dict)
+        and response["guard"].get("passed") is True
+    )
+    if require_stop and response["stop_reason"] != "stop" and not guarded_terminal_stop:
+        return f"{name} stop_reason must be stop or accepted guarded toolUse"
     if response.get("response_model") is not None and (
         not isinstance(response["response_model"], str)
         or not response["response_model"]
