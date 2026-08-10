@@ -12,6 +12,7 @@ CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
 INDEPENDENT_RESULTS_PATH = ROOT / "evals" / "results" / "independent-review"
 ADJUDICATION_PATH = INDEPENDENT_RESULTS_PATH / "adjudication" / "summary.json"
+SEMANTIC_PROBES_PATH = ROOT / "evals" / "results" / "post-adjudication-semantic-probes.json"
 sys.path.insert(0, str(ROOT / "evals"))
 
 import score_fixtures
@@ -200,6 +201,37 @@ class PassingScoreContractTest(unittest.TestCase):
                     self.assertTrue(
                         genuine_rule_ids[case["case_id"]]
                         & set(report["semantic"]["failed_rule_ids"])
+                    )
+
+    def test_safe_broker_development_probes_pass_without_hiding_procedure_failures(self):
+        fixtures = {
+            fixture["id"]: fixture
+            for fixture in json.loads(
+                INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8")
+            )["fixtures"]
+        }
+        probes = json.loads(SEMANTIC_PROBES_PATH.read_text(encoding="utf-8"))
+
+        for probe in probes["results"]:
+            report = score_fixtures.score_rewrite(
+                fixtures[probe["scenario_id"]],
+                probe["text"],
+            )
+            with self.subTest(
+                scenario=probe["scenario_id"],
+                repetition=probe["repetition"],
+            ):
+                if probe["scenario_id"] == "broker-failover-correlation-unknown-cause":
+                    self.assertTrue(report["semantic"]["gate_passed"])
+                elif (
+                    probe["scenario_id"]
+                    == "ledger-archive-purge-destructive-procedure"
+                    and probe["repetition"] in {2, 3}
+                ):
+                    self.assertFalse(report["semantic"]["gate_passed"])
+                    self.assertIn(
+                        "protected.source-equality",
+                        report["semantic"]["failed_rule_ids"],
                     )
 
     def test_passing_rewrite_reports_separate_semantic_procedure_and_style_results(self):

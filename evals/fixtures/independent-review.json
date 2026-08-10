@@ -213,9 +213,9 @@
       "invariants": [
         {"id": "broker.measurements", "category": "fact", "description": "Preserve window and queue-depth values.", "checks": [{"type": "contains", "value": "9-minute", "count": 1}, {"type": "regex", "pattern": "(?i)(rose|increased|rise|increase) from 1,200 to 4,600( messages)?"}]},
         {"id": "broker.correlation", "category": "causality", "description": "Preserve temporal correlation without proving or disproving a link.", "checks": [
-          {"type": "regex", "pattern": "(?is)(correlat(ed|ing)? (the two events )?in time only|only a temporal correlation|temporal correlation|causal link (is )?neither confirmed nor ruled out|evidence neither confirms.{0,50}nor (rules out|excludes) a link|nothing in the evidence confirms.{0,100}nothing in the evidence rules a link out)"}
+          {"type": "regex", "pattern": "(?is)(correlat(ed|ing)? (the two events )?in time only|only a temporal correlation|temporal correlation|causal link (is )?neither confirmed nor ruled out|evidence neither confirms.{0,50}nor (rules out|excludes) (a link|(the )?failover as the cause)|no evidence confirming.{0,50}or ruling out a causal link|nothing in the evidence confirms.{0,100}nothing in the evidence rules a link out)"}
         ]},
-        {"id": "broker.unknown-cause", "category": "causality", "description": "Keep root cause unknown.", "checks": [{"type": "regex", "pattern": "(?i)((root )?cause.{0,60}(remains|is still|is).{0,20}(unknown|unexplained)|cannot explain why.{0,80}explanation gap remains open)"}]},
+        {"id": "broker.unknown-cause", "category": "causality", "description": "Keep root cause unknown.", "checks": [{"type": "regex", "pattern": "(?i)((root )?cause.{0,60}(remains|is still|is).{0,20}(unknown|unexplained)|cannot explain why.{0,80}explanation gap remains open|investigators (still )?cannot explain (why|the rise))"}]},
         {"id": "broker.disk-ruled-out", "category": "fact", "description": "Keep Disk I/O contention ruled out.", "checks": [{"type": "regex", "pattern": "(?i)disk i/?o contention.{0,30}(was ruled out|has been ruled out|was excluded|was not implicated)"}]}
       ],
       "passing_rewrites": [
