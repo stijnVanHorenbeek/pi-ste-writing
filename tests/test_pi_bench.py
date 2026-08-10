@@ -18,6 +18,9 @@ HYBRID_RELEASE_MATRIX_PATH = ROOT / "evals" / "hybrid-release-candidate-matrix.j
 DEVELOPMENT_SMOKE_MATRIX_PATH = (
     ROOT / "evals" / "development-guard-smoke-matrix.json"
 )
+HARDENING_RELIABILITY_MATRIX_PATH = (
+    ROOT / "evals" / "development-hardening-reliability-matrix.json"
+)
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 RELEASE_CANDIDATE_CORPUS_PATH = ROOT / "evals" / "fixtures" / "release-candidate.json"
 RELEASE_CANDIDATE_SCENARIOS_PATH = ROOT / "evals" / "release-candidate-scenarios.json"
@@ -169,6 +172,76 @@ class MatrixLoadingTest(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "at least 3 repetitions"):
                 run_pi_bench.load_matrix(path)
+
+    def test_development_probe_requires_exactly_three_repetitions(self):
+        matrix = json.loads(
+            SEMANTIC_BOUNDARY_MATRIX_PATH.read_text(encoding="utf-8")
+        )
+        matrix["run_kind"] = "development-probe"
+        matrix["repetitions"] = 3
+        matrix["acceptance_thresholds"]["activation_applicable"] = False
+        matrix["semantic_review"]["config_path"] = None
+        matrix.pop("judge_config_path")
+        matrix.pop("prerequisite_smoke")
+        matrix["evidence_policy"] = {
+            "development_only": True,
+            "must_not_count_as_release_evidence": True,
+            "frozen_release_evidence_must_not_change": True,
+            "new_held_out_work_blocked_until_probe_review": True,
+        }
+
+        run_pi_bench.validate_matrix(matrix)
+
+        for repetitions in (1, 2, 4):
+            with self.subTest(repetitions=repetitions):
+                invalid = json.loads(json.dumps(matrix))
+                invalid["repetitions"] = repetitions
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "development probe requires exactly 3 repetitions",
+                ):
+                    run_pi_bench.validate_matrix(invalid)
+
+    def test_development_hardening_probe_has_18_bounded_cells(self):
+        matrix = run_pi_bench.load_matrix(HARDENING_RELIABILITY_MATRIX_PATH)
+        fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
+        cells = list(run_pi_bench.iter_cells(matrix, scenarios))
+
+        self.assertEqual(matrix["schema_version"], 3)
+        self.assertEqual(matrix["run_kind"], "development-probe")
+        self.assertEqual(matrix["repetitions"], 3)
+        self.assertEqual(len(cells), 18)
+        self.assertEqual(len(matrix["scenario_ids"]), 2)
+        self.assertTrue(set(matrix["scenario_ids"]).issubset(fixtures))
+        self.assertEqual(
+            sorted(matrix["conditions_by_scenario"].values()),
+            [["guarded"], ["native-skill"]],
+        )
+        self.assertNotIn("judge_config_path", matrix)
+        self.assertNotIn("prerequisite_smoke", matrix)
+        self.assertIsNone(matrix["semantic_review"]["config_path"])
+        self.assertTrue(matrix["evidence_policy"]["development_only"])
+        self.assertTrue(
+            matrix["evidence_policy"]["must_not_count_as_release_evidence"]
+        )
+        self.assertEqual(matrix["max_parallel_calls"], 3)
+        self.assertEqual(
+            matrix["max_parallel_calls_by_provider"],
+            {"openai-codex": 1, "github-copilot": 2},
+        )
+
+    def test_development_probe_requires_fail_closed_evidence_policy(self):
+        matrix = run_pi_bench.load_matrix(HARDENING_RELIABILITY_MATRIX_PATH)
+
+        for key in matrix["evidence_policy"]:
+            with self.subTest(key=key):
+                invalid = json.loads(json.dumps(matrix))
+                invalid["evidence_policy"][key] = False
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "development probe evidence_policy",
+                ):
+                    run_pi_bench.validate_matrix(invalid)
 
     def test_matrix_rejects_ambiguous_or_unsupported_dimensions(self):
         original = json.loads(MATRIX_PATH.read_text(encoding="utf-8"))
@@ -3535,7 +3608,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "10")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "11")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -3713,7 +3786,7 @@ class HybridSchemaV3Test(unittest.TestCase):
     def test_v3_matrix_accepts_hybrid_contract_and_rejects_open_regex(self):
         matrix = schema_v3_matrix()
         run_pi_bench.validate_matrix(matrix)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "10")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "11")
         self.assertEqual(run_pi_bench.evidence_schema_version(matrix), 2)
 
         invalid = json.loads(json.dumps(matrix))

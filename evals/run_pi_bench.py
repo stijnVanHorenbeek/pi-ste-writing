@@ -34,7 +34,7 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "10"
+RUNNER_VERSION = "11"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -182,12 +182,28 @@ def validate_matrix(matrix):
     if schema_version in {2, 3} and run_kind not in {
         "release-candidate",
         "development-smoke",
+        "development-probe",
     }:
         raise ValueError(
-            "matrix schema-v2 run_kind must be release-candidate or development-smoke"
+            "matrix schema-v2/v3 run_kind must be release-candidate, "
+            "development-smoke, or development-probe"
         )
     if schema_version == 1 and run_kind is not None:
         raise ValueError("matrix schema-v1 does not support run_kind")
+    if run_kind == "development-probe":
+        evidence_policy = matrix.get("evidence_policy")
+        required_policy = {
+            "development_only",
+            "must_not_count_as_release_evidence",
+            "frozen_release_evidence_must_not_change",
+            "new_held_out_work_blocked_until_probe_review",
+        }
+        if (
+            not isinstance(evidence_policy, dict)
+            or set(evidence_policy) != required_policy
+            or any(evidence_policy.get(key) is not True for key in required_policy)
+        ):
+            raise ValueError("development probe evidence_policy is invalid")
     if not isinstance(matrix.get("version"), int) or matrix["version"] < 1:
         raise ValueError("matrix version must be a positive integer")
     amendments = matrix.get("amendments")
@@ -363,12 +379,18 @@ def validate_matrix(matrix):
             and repetitions != 1
         )
         or (
+            schema_version in {2, 3}
+            and run_kind == "development-probe"
+            and repetitions != 3
+        )
+        or (
             (schema_version == 1 or run_kind == "release-candidate")
             and repetitions < 3
         )
     ):
         raise ValueError(
-            "release benchmark requires at least 3 repetitions; development smoke requires exactly 1"
+            "release benchmark requires at least 3 repetitions; development smoke "
+            "requires exactly 1; development probe requires exactly 3 repetitions"
         )
     if not isinstance(matrix.get("retry_limit"), int) or matrix["retry_limit"] < 1:
         raise ValueError("matrix retry_limit must be at least 1")

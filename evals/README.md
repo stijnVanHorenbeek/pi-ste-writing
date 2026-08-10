@@ -27,6 +27,7 @@ Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios c
 - `fixtures/`: current regression fixtures, including schema-v3 semantic-boundary regressions.
 - `benchmark-scenarios.json`: original scenario definitions retained for regression work.
 - `development-guard-smoke-matrix.json`: required three-call guarded smoke on known development evidence.
+- `development-hardening-reliability-matrix.json`: 18-cell, three-repetition probe over known guard and routing regressions; never release evidence.
 - `release-candidate-matrix.json`: 153-cell schema-v2 ragged release matrix.
 - `fixtures/release-candidate.json`: five unseen prose fixtures.
 - `release-candidate-scenarios.json`: unseen exact-CSV routing control.
@@ -93,6 +94,8 @@ Exit 0 means matrix complete with accepted condition-integrity and semantic gate
 ## Conditions
 
 Schema-v1 archive conditions remain frozen as baseline, native-skill, and direct-prompt.
+
+Schema-v2/v3 run kinds separate one-repetition `development-smoke`, three-repetition `development-probe`, and preregistered `release-candidate` evidence. Development probes require explicit fail-closed policy markers and cannot count as release evidence.
 
 Schema v2 uses:
 
