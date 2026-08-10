@@ -1,0 +1,161 @@
+{
+  "schema_version": 3,
+  "run_kind": "release-candidate",
+  "matrix_id": "hardening-release-candidate",
+  "version": 1,
+  "description": "Preregistered hardening release evidence matrix.",
+  "amendments": [
+    {
+      "version": 1,
+      "reason": "Initial schema-v3 hardening preregistration before candidate generation."
+    }
+  ],
+  "scenario_ids": [
+    "obsidian-sonar-anomaly",
+    "zenith-cryovalve-obligation",
+    "titan-deorbit-sequence",
+    "cedar-ventilation-threshold",
+    "prism-eventbus-pipeline",
+    "tungsten-register-structured"
+  ],
+  "conditions": [
+    "baseline",
+    "native-skill",
+    "guarded"
+  ],
+  "conditions_by_scenario": {
+    "obsidian-sonar-anomaly": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "zenith-cryovalve-obligation": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "titan-deorbit-sequence": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "cedar-ventilation-threshold": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "prism-eventbus-pipeline": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "tungsten-register-structured": [
+      "baseline",
+      "native-skill"
+    ]
+  },
+  "models": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium"
+    }
+  ],
+  "repetitions": 3,
+  "retry_limit": 2,
+  "timeout_seconds": 300,
+  "inter_call_delay_seconds": 2,
+  "max_parallel_calls": 3,
+  "max_parallel_calls_by_provider": {
+    "openai-codex": 1,
+    "github-copilot": 2
+  },
+  "system_prompt": "Return only the final output requested by the user. Do not include analysis, rule commentary, or a preface.",
+  "acceptance_thresholds": {
+    "applicable_cell_completeness": 1.0,
+    "model_identity": 1.0,
+    "routing_safety": 1.0,
+    "output_contract": 1.0,
+    "guard_integrity": 1.0,
+    "positive_activation_minimum_fraction": {
+      "numerator": 2,
+      "denominator": 3
+    },
+    "negative_activation_maximum_loaded": 0,
+    "activation_applicable": true,
+    "objective_contract": 1.0,
+    "objective_procedure": 1.0
+  },
+  "isolation": {
+    "tools_by_condition": {
+      "baseline": [],
+      "native-skill": [
+        "read"
+      ],
+      "guarded": []
+    },
+    "extensions": false,
+    "skills": "explicit-only",
+    "prompt_templates": false,
+    "themes": false,
+    "context_files": false,
+    "session_persistence": false,
+    "project_trust": false,
+    "startup_network": false
+  },
+  "output_contract": {
+    "type": "text",
+    "forbidden_patterns": [
+      "(?is)^\\s*here(?:'s| is| are)\\b",
+      "(?is)^\\s*(?:rewritten|revised) (?:text|version)\\s*:"
+    ]
+  },
+  "corpus_path": "fixtures/hardening-release-candidate.json",
+  "benchmark_scenarios_path": "hardening-release-candidate-scenarios.json",
+  "judge_config_path": "hardening-release-candidate-quality-judge.json",
+  "prerequisite_smoke": {
+    "matrix_path": "development-guard-smoke-matrix.json",
+    "results_directory": "results/hardening-release-candidate-development-smoke"
+  },
+  "evidence_policy": {
+    "development_smoke_required_before_unseen_generation": true,
+    "clean_git_tree_required": true,
+    "immutable_skill_and_extension_snapshot_required": true,
+    "no_repairs_based_on_release_candidate_outputs": true,
+    "failed_partial_and_transport_evidence_remains_visible": true,
+    "publication_requires_explicit_user_approval": true,
+    "no_prior_candidate_output_required": true,
+    "blind_semantic_review_required": true
+  },
+  "objective_gate_conditions": [
+    "native-skill",
+    "guarded"
+  ],
+  "acceptance_model": "hybrid-semantic-v1",
+  "semantic_review": {
+    "config_path": "hardening-release-candidate-quality-judge.json",
+    "applicability_field": "semantic_review_applicable",
+    "gated_conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "required_unique_candidate_coverage": 1.0,
+    "accepted_label": "equivalent",
+    "adverse_labels": [
+      "not_equivalent",
+      "uncertain"
+    ],
+    "conflict_policy": "fail",
+    "manual_override": false
+  }
+}

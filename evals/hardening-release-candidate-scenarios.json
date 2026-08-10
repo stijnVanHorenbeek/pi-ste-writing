@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "description": "Preregistered machine-output routing control for hardening release candidate.",
+  "scenarios": [
+    {
+      "id": "tungsten-register-structured",
+      "mode": "structured",
+      "task": "Return exactly one JSON object with fields \"station\" (string) and \"sensors\" (array of strings): station is \"Tungsten-East\", sensors are `SEN-801`, `SEN-802`, `SEN-803`. Do not output markdown block, commentary, or multiple objects.",
+      "source": "Equipment register for Tungsten-East station includes sensors SEN-801, SEN-802, and SEN-803.",
+      "expect_skill_loaded": false,
+      "output_contract": {
+        "type": "exact_text",
+        "value": "{\"station\":\"Tungsten-East\",\"sensors\":[\"SEN-801\",\"SEN-802\",\"SEN-803\"]}",
+        "allow_terminal_newline": true
+      },
+      "output_contract_gate": false
+    }
+  ]
+}

@@ -1,0 +1,346 @@
+{
+  "schema_version": 3,
+  "description": "Preregistered schema-v3 hardening release candidate corpus. Required literals preserve unique protected container values at least once; ordered literals cover only immutable procedure tokens. Open prose meaning requires source-relative semantic review.",
+  "fixtures": [
+    {
+      "id": "obsidian-sonar-anomaly",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "During a 42-minute survey pass on 2046-07-11, Obsidian Platform sonar array recorded seabed reflectance rising from 0.31 to 0.78. Sediment core analysis confirmed biite mineral intrusion as the cause of 17 anomalous returns. The cause of the remaining 8 anomalous returns is unknown. The analysis does not establish tidal bore refraction as the cause of those returns, nor does it exclude tidal bore refraction. Current velocity at 3.2 knots coincided with the reflectance peak. Hydrocarbon seepage was ruled out as a contributing factor.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "obsidian.biite",
+          "risk": "essential",
+          "proposition": "Biite mineral intrusion was confirmed as the cause of 17 anomalous returns."
+        },
+        {
+          "id": "obsidian.remainder",
+          "risk": "essential",
+          "proposition": "The cause of the remaining 8 anomalous returns is unknown."
+        },
+        {
+          "id": "obsidian.tidal",
+          "risk": "essential",
+          "proposition": "Tidal bore refraction is neither established as the cause of the remaining 8 anomalous returns nor excluded."
+        },
+        {
+          "id": "obsidian.hydrocarbon",
+          "risk": "essential",
+          "proposition": "Hydrocarbon seepage was ruled out as a contributing factor."
+        },
+        {
+          "id": "obsidian.observation",
+          "risk": "essential",
+          "proposition": "Obsidian Platform sonar array recorded seabed reflectance rising from 0.31 to 0.78 during a 42-minute survey pass on 2046-07-11."
+        },
+        {
+          "id": "obsidian.current",
+          "risk": "essential",
+          "proposition": "Current velocity at 3.2 knots coincided with the reflectance peak."
+        }
+      ]
+    },
+    {
+      "id": "zenith-cryovalve-obligation",
+      "mode": "strict",
+      "task": "Rewrite following source in strict mode. Return only rewritten text.",
+      "source": "Launch-pad supervisors must inspect the Zenith cryovalve assembly every 14 days. They should flush residual helium before each propellant transfer. Ground crew can override the thermal interlock via the Apex Console. An override may delay the next scheduled purge cycle. Re-pressurization after override might take up to 55 seconds. With firmware `v3.4.8`, older actuators could open the bleed port without completing a seal check.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "v3.4.8"
+          }
+        ],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "zenith.inspect",
+          "risk": "essential",
+          "proposition": "Inspection of the Zenith cryovalve assembly every 14 days is mandatory for launch-pad supervisors."
+        },
+        {
+          "id": "zenith.flush",
+          "risk": "essential",
+          "proposition": "Flushing residual helium before each propellant transfer is recommended, not mandatory."
+        },
+        {
+          "id": "zenith.override",
+          "risk": "essential",
+          "proposition": "Ground crew have the capability to override the thermal interlock via the Apex Console."
+        },
+        {
+          "id": "zenith.delay",
+          "risk": "essential",
+          "proposition": "An override may delay the next scheduled purge cycle, not certain."
+        },
+        {
+          "id": "zenith.repressurize",
+          "risk": "essential",
+          "proposition": "Re-pressurization after override might take up to 55 seconds, with uncertainty retained."
+        },
+        {
+          "id": "zenith.firmware",
+          "risk": "essential",
+          "proposition": "With firmware v3.4.8, older actuators could open the bleed port without completing a seal check as a conditional possibility."
+        }
+      ]
+    },
+    {
+      "id": "titan-deorbit-sequence",
+      "mode": "procedure",
+      "task": "Rewrite following source in procedure mode. Return only rewritten text.",
+      "source": "This initiates the terminal deorbit burn for satellite `SAT-19`. It does not affect co-orbital relay `SAT-20`. Verify that clearance `DECOM-7734` is current, satellite `SAT-19` thruster status shows **Armed**, and all payload links indicate `severed`. Execute `satctl preflight SAT-19 --constellation titan`. Continue only if output shows `thrust=nominal orbit=decaying`. WARNING: The following step commits satellite `SAT-19` to irreversible atmospheric re-entry. Recovery after burn ignition is not possible. Execute `satctl deorbit SAT-19 --clearance DECOM-7734 --confirm ignite`. After burn completes, run `satctl verify SAT-19` and confirm output is `orbit=terminal beacon=active`.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "SAT-19"
+          },
+          {
+            "kind": "inline_code",
+            "value": "SAT-20"
+          },
+          {
+            "kind": "inline_code",
+            "value": "DECOM-7734"
+          },
+          {
+            "kind": "bold_text",
+            "value": "Armed"
+          },
+          {
+            "kind": "inline_code",
+            "value": "severed"
+          },
+          {
+            "kind": "inline_code",
+            "value": "satctl preflight SAT-19 --constellation titan"
+          },
+          {
+            "kind": "inline_code",
+            "value": "thrust=nominal orbit=decaying"
+          },
+          {
+            "kind": "inline_code",
+            "value": "satctl deorbit SAT-19 --clearance DECOM-7734 --confirm ignite"
+          },
+          {
+            "kind": "inline_code",
+            "value": "satctl verify SAT-19"
+          },
+          {
+            "kind": "inline_code",
+            "value": "orbit=terminal beacon=active"
+          }
+        ],
+        "ordered_literals": [
+          [
+            {
+              "kind": "inline_code",
+              "value": "satctl preflight SAT-19 --constellation titan"
+            },
+            {
+              "kind": "inline_code",
+              "value": "thrust=nominal orbit=decaying"
+            },
+            {
+              "kind": "inline_code",
+              "value": "satctl deorbit SAT-19 --clearance DECOM-7734 --confirm ignite"
+            },
+            {
+              "kind": "inline_code",
+              "value": "satctl verify SAT-19"
+            },
+            {
+              "kind": "inline_code",
+              "value": "orbit=terminal beacon=active"
+            }
+          ]
+        ]
+      },
+      "semantic_claims": [
+        {
+          "id": "titan.scope",
+          "risk": "essential",
+          "proposition": "The deorbit burn procedure affects satellite SAT-19 but does not affect co-orbital relay SAT-20."
+        },
+        {
+          "id": "titan.preconditions",
+          "risk": "essential",
+          "proposition": "Before deorbit, verify clearance DECOM-7734 is current, satellite SAT-19 thruster status shows Armed, all payload links indicate severed, and satctl preflight SAT-19 --constellation titan shows thrust=nominal orbit=decaying."
+        },
+        {
+          "id": "titan.warning",
+          "risk": "essential",
+          "proposition": "The deorbit step commits satellite SAT-19 to irreversible atmospheric re-entry and recovery after burn ignition is not possible."
+        },
+        {
+          "id": "titan.verification",
+          "risk": "essential",
+          "proposition": "After burn completes, running satctl verify SAT-19 must confirm output is orbit=terminal beacon=active."
+        }
+      ]
+    },
+    {
+      "id": "cedar-ventilation-threshold",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "At Cedar Deep mine, the shift controller must activate emergency extraction fans when methane concentration exceeds `450 ppm`. While concentration stays below `450 ppm`, the shift controller may reduce fan speed only if sensor array `GAS-R12` reports `stable`. The shift controller is not obligated to reduce fan speed even when authorized. If seismic monitors show activity above `2.1 Ml`, the rescue team should evacuate level 4 before any ventilation change. Environmental officers can view real-time gas readings on the Pithead Dashboard, but they must not modify fan parameters or override `GAS-R12` readings.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "450 ppm"
+          },
+          {
+            "kind": "inline_code",
+            "value": "GAS-R12"
+          },
+          {
+            "kind": "inline_code",
+            "value": "stable"
+          },
+          {
+            "kind": "inline_code",
+            "value": "2.1 Ml"
+          }
+        ],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "cedar.activate",
+          "risk": "essential",
+          "proposition": "At Cedar Deep mine, the shift controller must activate emergency extraction fans when methane concentration exceeds 450 ppm."
+        },
+        {
+          "id": "cedar.reduce",
+          "risk": "essential",
+          "proposition": "While concentration stays below 450 ppm, the shift controller may reduce fan speed only if sensor array GAS-R12 reports stable."
+        },
+        {
+          "id": "cedar.no_obligation",
+          "risk": "essential",
+          "proposition": "The shift controller is not obligated to reduce fan speed even when authorized."
+        },
+        {
+          "id": "cedar.rescue",
+          "risk": "essential",
+          "proposition": "If seismic monitors show activity above 2.1 Ml, the rescue team should evacuate level 4 before any ventilation change."
+        },
+        {
+          "id": "cedar.officers",
+          "risk": "essential",
+          "proposition": "Environmental officers can view real-time gas readings on the Pithead Dashboard but must not modify fan parameters or override GAS-R12 readings."
+        }
+      ]
+    },
+    {
+      "id": "prism-eventbus-pipeline",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "In the Prism event bus, `ingest` designates raw event capture, `transform` designates schema normalization, and `dispatch` designates downstream delivery. The `PipelineOrchestrator` transitions from `ingest` to `transform` when callback `onBatch()` returns `BATCH_SEALED`. It transitions from `transform` to `dispatch` when `emit()` is invoked via `orchestrator.flush()`. Pipeline configuration is at [Prism Event Spec v6](https://docs.prism.invalid/v6) under **Ingestion Phases**. Dead-letter handling is at [DLQ Reference](https://docs.prism.invalid/dlq) under **Retry Policies**. The system must preserve diagnostic `ERR_PRISM illegal transition ingest->dispatch`.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "ingest"
+          },
+          {
+            "kind": "inline_code",
+            "value": "transform"
+          },
+          {
+            "kind": "inline_code",
+            "value": "dispatch"
+          },
+          {
+            "kind": "inline_code",
+            "value": "PipelineOrchestrator"
+          },
+          {
+            "kind": "inline_code",
+            "value": "onBatch()"
+          },
+          {
+            "kind": "inline_code",
+            "value": "BATCH_SEALED"
+          },
+          {
+            "kind": "inline_code",
+            "value": "emit()"
+          },
+          {
+            "kind": "inline_code",
+            "value": "orchestrator.flush()"
+          },
+          {
+            "kind": "markdown_link",
+            "value": [
+              "Prism Event Spec v6",
+              "https://docs.prism.invalid/v6"
+            ]
+          },
+          {
+            "kind": "bold_text",
+            "value": "Ingestion Phases"
+          },
+          {
+            "kind": "markdown_link",
+            "value": [
+              "DLQ Reference",
+              "https://docs.prism.invalid/dlq"
+            ]
+          },
+          {
+            "kind": "bold_text",
+            "value": "Retry Policies"
+          },
+          {
+            "kind": "inline_code",
+            "value": "ERR_PRISM illegal transition ingest->dispatch"
+          }
+        ],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "prism.terms",
+          "risk": "essential",
+          "proposition": "In the Prism event bus, ingest designates raw event capture, transform designates schema normalization, and dispatch designates downstream delivery."
+        },
+        {
+          "id": "prism.transitions",
+          "risk": "essential",
+          "proposition": "PipelineOrchestrator transitions from ingest to transform when onBatch() returns BATCH_SEALED, and from transform to dispatch when emit() is invoked via orchestrator.flush()."
+        },
+        {
+          "id": "prism.specs",
+          "risk": "essential",
+          "proposition": "Pipeline configuration is at https://docs.prism.invalid/v6 under Ingestion Phases and dead-letter handling is at https://docs.prism.invalid/dlq under Retry Policies."
+        },
+        {
+          "id": "prism.diagnostic",
+          "risk": "essential",
+          "proposition": "The system must preserve the diagnostic ERR_PRISM illegal transition ingest->dispatch."
+        }
+      ]
+    }
+  ]
+}

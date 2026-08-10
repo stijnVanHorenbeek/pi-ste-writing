@@ -36,6 +36,10 @@ Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios c
 - `fixtures/semantic-boundary-release-candidate.json`: five held-out prose fixtures, now development regressions.
 - `semantic-boundary-release-candidate-scenarios.json`: structured negative-routing control.
 - `semantic-boundary-release-candidate-quality-judge.json`: frozen 90-cell blind judge config; judge did not run.
+- `hardening-release-candidate-matrix.json`: 153-cell schema-v3 hardening release matrix.
+- `fixtures/hardening-release-candidate.json`: five held-out prose fixtures for hardening cycle.
+- `hardening-release-candidate-scenarios.json`: structured negative-routing control for hardening.
+- `hardening-release-candidate-quality-judge.json`: 90-cell blind judge config for hardening.
 
 Runner output defaults to ignored development paths under `evals/results/`. Commit evidence only after explicit review.
 
