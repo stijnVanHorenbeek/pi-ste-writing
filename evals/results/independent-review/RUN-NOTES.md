@@ -34,6 +34,17 @@ This exceeds the earlier `$5–$6` estimate by approximately `$1.23`; repeated i
 
 No hidden reasoning content is stored. `reasoning_tokens` fields contain provider-reported counts only.
 
+## Post-run blinded adjudication
+
+Eighteen deterministic failures where the native skill loaded received blinded cross-provider review. Two package-contract disputes received separate arbitration.
+
+- Genuine release-blocking failures: 6.
+- Deterministic evaluator false positives: 12.
+- Ambiguous: 0.
+- Additional provider-reported adjudication cost: approximately `$0.728698`.
+
+Genuine failures were two inline-to-fenced command moves, three protected occurrence-count changes, and one omitted unknown-root-cause fact. False positives came from narrow patterns for safe causal, modal, measurement, and unknown-cause paraphrases. Adjudication does not retroactively change the preregistered result; it makes the failed scenarios development evidence for later revisions. See `adjudication/summary.json`.
+
 ## Decision
 
 Independent evidence does not support V1 release under the declared contract. Package remains unpublished. Further tuning against these scenarios would invalidate their role as unseen independent evidence and risk benchmark overfitting.

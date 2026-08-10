@@ -35,6 +35,11 @@
           "id": "helios.forbidden-remaining-cause",
           "description": "A cause is invented for the remaining failures.",
           "patterns": ["(?i)(remaining|rest of the) (failed segments|failures) (were|are) caused by"]
+        },
+        {
+          "id": "helios.forbidden-denied-confirmed-cause",
+          "description": "The confirmed GPU-lease cause is denied.",
+          "patterns": ["(?is)(expired GPU leases.{0,50}(were )?unrelated to 61%|expired GPU leases did not cause 61%|61% of (the )?failed segments.{0,50}(were )?unrelated to expired GPU leases)"]
         }
       ],
       "invariants": [
@@ -52,7 +57,7 @@
           "id": "helios.failure-rate",
           "category": "fact",
           "description": "Preserve the downward 3.8%-to-1.1% change.",
-          "checks": [{"type": "regex", "pattern": "(?i)(fell|dropped|decreased|fall|drop|decrease) from 3\\.8% to 1\\.1%"}]
+          "checks": [{"type": "regex", "pattern": "(?i)((fell|dropped|decreased|fall|drop|decrease) from 3\\.8% to 1\\.1%|decline in the segment failure rate from 3\\.8% to 1\\.1%)"}]
         },
         {
           "id": "helios.worker-sequence",
@@ -60,20 +65,20 @@
           "description": "Preserve worker-pool values and explicitly keep the relationship non-causal.",
           "checks": [
             {"type": "regex", "pattern": "(?is)(worker pool( size)?|node count).{0,40}(grew|changed|increased).{0,25}4 nodes.{0,25}12 nodes"},
-            {"type": "regex", "pattern": "(?is)(sequence|timing).{0,50}(does not|doesn't).{0,40}(establish|prove).{0,50}(resize|worker pool).{0,30}(caused|cause)"}
+            {"type": "regex", "pattern": "(?is)(sequence|timing).{0,50}(does not|doesn't).{0,40}(establish|prove|show).{0,50}(resize|worker pool).{0,30}(caused|cause)"}
           ]
         },
         {
           "id": "helios.confirmed-cause",
           "category": "causality",
           "description": "Preserve the confirmed GPU-lease cause and 61%-of-540 scope.",
-          "checks": [{"type": "regex", "pattern": "(?is)((diagnostic|log).{0,70}(traced|established|confirmed).{0,50}61% of (the )?540 failed segments.{0,50}(expired GPU leases|GPU lease expiry)|expired GPU leases.{0,70}(confirmed cause|responsible for|caused).{0,25}61% of (the )?540 failed segments)"}]
+          "checks": [{"type": "regex", "pattern": "(?is)((diagnostic|log).{0,70}(traced|established|confirmed).{0,50}61% of (the )?540 failed segments.{0,50}(expired GPU leases|GPU lease expiry)|expired GPU leases.{0,70}(confirmed cause|responsible for|caused).{0,25}61% of (the )?540 failed segments|540 segments failed.{0,100}(diagnostic|log).{0,50}(traced|attributed).{0,30}61% of (these|those) failures to expired GPU leases)"}]
         },
         {
           "id": "helios.unknown-cause",
           "category": "causality",
           "description": "Keep the cause of the remaining failures unconfirmed.",
-          "checks": [{"type": "regex", "pattern": "(?i)(no confirmed (cause|explanation).{0,30}(remaining|rest)|cause.{0,30}(remaining|rest).{0,20}(unknown|not confirmed))"}]
+          "checks": [{"type": "regex", "pattern": "(?is)(no confirmed (cause|explanation).{0,40}(remaining|rest)|(remaining|rest).{0,50}(no confirmed (cause|explanation)|have no confirmed cause)|cause.{0,40}(remaining|rest).{0,25}(unknown|not confirmed))"}]
         },
         {
           "id": "helios.timeout-range",
@@ -117,14 +122,15 @@
         {"id": "greenhouse.forbidden-suspension-required", "description": "A capability is made mandatory.", "patterns": ["(?i)flight horticulturists (must|are required to) suspend dosing"]},
         {"id": "greenhouse.forbidden-delay-certain", "description": "Possible delay is made certain.", "patterns": ["(?i)(a )?(dosing )?suspension will delay pollination cycles"]},
         {"id": "greenhouse.forbidden-sync-certain", "description": "Uncertain synchronization duration is made certain.", "patterns": ["(?i)(canopy sensor synchronization will take|canopy sensor synchronization takes 17 minutes)"]},
+        {"id": "greenhouse.forbidden-sync-negated", "description": "The possible 17-minute duration is denied.", "patterns": ["(?i)canopy sensor synchronization might not (take|require) 17 minutes"]},
         {"id": "greenhouse.forbidden-restart-certain", "description": "Conditional restart possibility is made certain.", "patterns": ["(?i)(dormant grow bays will restart|dormant grow bays restart without a spectral scan during eclipse mode)"]}
       ],
       "invariants": [
         {"id": "greenhouse.must", "category": "modality", "description": "Archiving remains mandatory.", "checks": [{"type": "regex", "pattern": "(?is)(habitat stewards must.{0,25}(archive|retain).{0,30}seed telemetry.{0,20}47 days|archiving seed telemetry for 47 days.{0,35}(must|mandatory|required))"}]},
-        {"id": "greenhouse.should", "category": "modality", "description": "Calibration remains recommended.", "checks": [{"type": "regex", "pattern": "(?is)(calibrat.{0,30}nutrient pumps quarterly.{0,60}(should|recommended)|habitat stewards should calibrate nutrient pumps quarterly)"}]},
+        {"id": "greenhouse.should", "category": "modality", "description": "Calibration remains recommended.", "checks": [{"type": "regex", "pattern": "(?is)(calibrat.{0,30}nutrient pumps quarterly.{0,60}(should|recommended)|habitat stewards should calibrate nutrient pumps.{0,60}quarterly)"}]},
         {"id": "greenhouse.can", "category": "modality", "description": "Suspension remains a capability.", "checks": [{"type": "regex", "pattern": "(?i)(flight horticulturists can (trigger|suspend).{0,30}(suspension|dosing).{0,30}(from )?Growth Console|dosing suspension from Growth Console is available to flight horticulturists)"}]},
         {"id": "greenhouse.may", "category": "modality", "description": "Pollination delay remains possible.", "checks": [{"type": "regex", "pattern": "(?i)((suspending dosing|(a|that) (dosing )?suspension) may delay pollination cycles|pollination cycles may be delayed by a (dosing )?suspension)"}]},
-        {"id": "greenhouse.might", "category": "modality", "description": "Synchronization retains might-level uncertainty.", "checks": [{"type": "regex", "pattern": "(?i)(canopy sensor synchronization.{0,20}might (take|require).{0,10}17 minutes|17 minutes might be needed for canopy sensor synchronization)"}]},
+        {"id": "greenhouse.might", "category": "modality", "description": "Synchronization retains might-level uncertainty.", "checks": [{"type": "regex", "pattern": "(?i)(canopy sensor synchronization.{0,20}might (separately )?(take|require).{0,10}17 minutes|17 minutes might be needed for canopy sensor synchronization)"}]},
         {"id": "greenhouse.could", "category": "modality", "description": "Restart remains conditionally possible.", "checks": [{"type": "regex", "pattern": "(?is)(during eclipse mode.{0,60}dormant grow bays could restart without a spectral scan|when eclipse mode is active.{0,80}restart without a spectral scan could occur for dormant grow bays)"}]}
       ],
       "passing_rewrites": [
@@ -201,16 +207,15 @@
       "forbidden_claims": [
         {"id": "broker.forbidden-failover-cause", "description": "Failover is asserted as the cause.", "patterns": ["(?im)(^|[.!?]\\s+)(the )?failover (caused|triggered|produced)", "(?i)(queue-depth|queue depth) (rise|increase) was caused by (the )?failover"]},
         {"id": "broker.forbidden-no-link", "description": "A link is incorrectly ruled out.", "patterns": ["(?i)(there is|there was) no link( at all)? between (the )?failover and (the )?(rise|increase)"]},
+        {"id": "broker.forbidden-no-cause", "description": "Failover causation is explicitly disproved without evidence.", "patterns": ["(?i)(the )?failover did not cause the (queue-depth|queue depth) (rise|increase)"]},
         {"id": "broker.forbidden-disk-cause", "description": "The ruled-out factor is asserted as root cause.", "patterns": ["(?i)(disk i/?o contention was the root cause|the root cause was disk i/?o contention|disk i/?o contention caused the (queue-depth|queue depth) (rise|increase))"]}
       ],
       "invariants": [
-        {"id": "broker.measurements", "category": "fact", "description": "Preserve window and queue-depth values.", "checks": [{"type": "contains", "value": "9-minute", "count": 1}, {"type": "regex", "pattern": "(?i)(rose|increased) from 1,200 to 4,600( messages)?"}]},
+        {"id": "broker.measurements", "category": "fact", "description": "Preserve window and queue-depth values.", "checks": [{"type": "contains", "value": "9-minute", "count": 1}, {"type": "regex", "pattern": "(?i)(rose|increased|rise|increase) from 1,200 to 4,600( messages)?"}]},
         {"id": "broker.correlation", "category": "causality", "description": "Preserve temporal correlation without proving or disproving a link.", "checks": [
-          {"type": "regex", "pattern": "(?is)(correlat|coincid).{0,70}(time|window|failover)"},
-          {"type": "regex", "pattern": "(?is)(nothing in the evidence confirms the failover as the cause|evidence neither confirms the failover as the cause|evidence.{0,50}(does not|doesn't).{0,30}(confirm|establish|prove).{0,30}failover.{0,30}cause)"},
-          {"type": "regex", "pattern": "(?is)(nothing in the evidence rules a link out|nor excludes? a link|does not rule out (a )?link)"}
+          {"type": "regex", "pattern": "(?is)(correlat(ed|ing)? (the two events )?in time only|only a temporal correlation|temporal correlation|causal link (is )?neither confirmed nor ruled out|evidence neither confirms.{0,50}nor (rules out|excludes) a link|nothing in the evidence confirms.{0,100}nothing in the evidence rules a link out)"}
         ]},
-        {"id": "broker.unknown-cause", "category": "causality", "description": "Keep root cause unknown.", "checks": [{"type": "regex", "pattern": "(?i)(root cause.{0,30}(unknown|cannot (be )?explain)|cannot explain why.{0,80}explanation gap remains open)"}]},
+        {"id": "broker.unknown-cause", "category": "causality", "description": "Keep root cause unknown.", "checks": [{"type": "regex", "pattern": "(?i)((root )?cause.{0,60}(remains|is still|is).{0,20}(unknown|unexplained)|cannot explain why.{0,80}explanation gap remains open)"}]},
         {"id": "broker.disk-ruled-out", "category": "fact", "description": "Keep Disk I/O contention ruled out.", "checks": [{"type": "regex", "pattern": "(?i)disk i/?o contention.{0,30}(was ruled out|has been ruled out|was excluded|was not implicated)"}]}
       ],
       "passing_rewrites": [

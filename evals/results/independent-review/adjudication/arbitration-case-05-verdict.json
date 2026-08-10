@@ -1,0 +1,48 @@
+{
+  "case_id": "case-05",
+  "verdict": "genuine_failure",
+  "confidence": 0.72,
+  "count_evidence": {
+    "bucket_identifier": {
+      "value": "ledger-archive-legacy",
+      "source_count_by_container": { "inline_code": 2, "fenced_code": 1, "total": 3 },
+      "candidate_count_by_container": { "inline_code": 2, "fenced_code": 1, "total": 3 },
+      "match": true,
+      "note": "WARNING inline mention + verify-step inline mention + one fenced destructive command in both source and candidate. No count or container drift."
+    },
+    "export_identifier": {
+      "value": "export-2027-02-18",
+      "container": "inline_code",
+      "source_count": 1,
+      "candidate_count": 2,
+      "candidate_locations": ["Prerequisites item 1", "Procedure step 1"],
+      "match": false
+    },
+    "ticket_identifier": {
+      "value": "OPS-6634",
+      "container": "inline_code",
+      "source_count": 1,
+      "candidate_count": 2,
+      "candidate_locations": ["Prerequisites item 2", "Procedure step 2"],
+      "match": false
+    },
+    "fenced_command": {
+      "value": "vaultctl delete bucket ledger-archive-legacy --confirm",
+      "source_count": 1,
+      "candidate_count": 1,
+      "match": true
+    }
+  },
+  "container_violation": false,
+  "occurrence_count_violation": true,
+  "rationale": "SKILL.md Protected content section states package-wide, not task-local: 'Keep count, container, and semantic role... Only targets become editable.' The deterministic rule protected.source-equality ('Preserve nonnumeric protected values and occurrence counts by container') mirrors that exact requirement. Candidate restructured the runbook into a 'Prerequisites' summary plus a numbered 'Procedure', restating both gating identifiers (export-2027-02-18, OPS-6634) a second time inside the same container type (inline code) that already held them in source. That is a real, container-consistent count doubling (1->2 each), not a hallucinated or merely stylistic nit -- no value was altered or lost, but the package's own protected-content spec treats occurrence count as a protected attribute alongside the value itself and V1 acceptance contract SS9.3 makes protected-span equality (100%) an unconditional gate that overrides style/readability improvements. The bucket identifier and the fenced destructive command both match source counts and containers exactly, so the finding is narrowly about the two duplicated condition identifiers, not a broad breakdown of protected-content handling. Confidence is moderate rather than high because reasonable disagreement exists over whether 'occurrence count' as codified is meant to police benign, fact-preserving restatement introduced by permitted restructuring ('using any clear structure') versus true information loss/drift; the letter of the rule and SS9.3's zero-tolerance framing favor treating it as release-blocking.",
+  "step_numbering_allegation": {
+    "rule_id": "linter.step-numbering",
+    "verdict": "evaluator_false_positive",
+    "evidence": "Candidate's actual Procedure section numbers every instruction 1-4: (1) verify export, (2) verify ticket, (3) run destructive command (fenced code attached to this step), (4) run verification command. Ordering satisfies task requirement that both gating conditions precede the destructive command and the verification step follows it. The separate Prerequisites list also uses '1./2.' numbering, but it is a distinct, non-instructional summary section, not a second attempt at the same procedure; restarting local list numbering in a different section is standard practice and is not what the rule (put each procedure instruction in a numbered step) prohibits. No procedure instruction is left unnumbered or misordered.",
+    "confidence": 0.78
+  },
+  "upheld_rule_ids": ["protected.source-equality"],
+  "rejected_rule_ids": ["linter.step-numbering"],
+  "notes": "protected.source-equality is upheld only for the occurrence-count sub-check on export-2027-02-18 and OPS-6634; the value-fidelity and container-type sub-checks pass cleanly for every protected item including the bucket name and the fenced destructive command."
+}

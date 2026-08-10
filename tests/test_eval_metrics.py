@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "evals" / "score_fixtures.py"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
+INDEPENDENT_RESULTS_PATH = ROOT / "evals" / "results" / "independent-review"
+ADJUDICATION_PATH = INDEPENDENT_RESULTS_PATH / "adjudication" / "summary.json"
 sys.path.insert(0, str(ROOT / "evals"))
 
 import score_fixtures
@@ -129,6 +131,21 @@ class PassingScoreContractTest(unittest.TestCase):
                 "greenhouse.forbidden-restart-certain",
                 "Dormant grow bays restart without a spectral scan during eclipse mode.",
             ),
+            (
+                "helios-transcoder-confirmed-and-unconfirmed-cause",
+                "helios.forbidden-denied-confirmed-cause",
+                "Expired GPU leases were unrelated to 61% of the failed segments.",
+            ),
+            (
+                "orbital-greenhouse-modal-policy",
+                "greenhouse.forbidden-sync-negated",
+                "Canopy sensor synchronization might not require 17 minutes.",
+            ),
+            (
+                "broker-failover-correlation-unknown-cause",
+                "broker.forbidden-no-cause",
+                "The failover did not cause the queue-depth increase.",
+            ),
         ]
 
         for fixture_id, rule_id, contradiction in cases:
@@ -137,6 +154,53 @@ class PassingScoreContractTest(unittest.TestCase):
             with self.subTest(fixture=fixture_id, rule=rule_id):
                 report = score_fixtures.score_rewrite(fixture, rewrite)
                 self.assertIn(rule_id, report["semantic"]["failed_rule_ids"])
+
+    def test_adjudicated_false_positives_pass_and_genuine_failures_still_fail(self):
+        fixtures = {
+            fixture["id"]: fixture
+            for fixture in json.loads(
+                INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8")
+            )["fixtures"]
+        }
+        adjudication = json.loads(ADJUDICATION_PATH.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            adjudication["counts"],
+            {
+                "total": 18,
+                "genuine_failure": 6,
+                "evaluator_false_positive": 12,
+                "ambiguous": 0,
+            },
+        )
+        genuine_rule_ids = {
+            "case-03": {"protected.source-equality", "purge.verify-command"},
+            "case-04": {"protected.source-equality", "purge.verify-command"},
+            "case-05": {"protected.source-equality"},
+            "case-07": {"protected.source-equality", "vesper.protected-identifier"},
+            "case-08": {"protected.source-equality", "vesper.protected-repeated-path"},
+            "case-09": {"broker.unknown-cause"},
+        }
+        for case in adjudication["cases"]:
+            raw = json.loads(
+                (INDEPENDENT_RESULTS_PATH / "raw" / case["raw_file"]).read_text(
+                    encoding="utf-8"
+                )
+            )
+            report = score_fixtures.score_rewrite(
+                fixtures[case["scenario_id"]],
+                raw["response"]["text"],
+                candidate=case["case_id"],
+            )
+            with self.subTest(case=case["case_id"], verdict=case["verdict"]):
+                if case["verdict"] == "evaluator_false_positive":
+                    self.assertTrue(report["semantic"]["gate_passed"])
+                else:
+                    self.assertFalse(report["semantic"]["gate_passed"])
+                    self.assertTrue(
+                        genuine_rule_ids[case["case_id"]]
+                        & set(report["semantic"]["failed_rule_ids"])
+                    )
 
     def test_passing_rewrite_reports_separate_semantic_procedure_and_style_results(self):
         fixture = fixture_by_id("repository-terms-and-protected-spans")

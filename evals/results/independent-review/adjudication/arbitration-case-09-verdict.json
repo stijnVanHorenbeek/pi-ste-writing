@@ -1,0 +1,39 @@
+{
+  "case_id": "case-09",
+  "verdict": "release-blocking loss (on the omission); correlation handling correct",
+  "confidence": 0.85,
+  "rules": {
+    "upheld": [
+      {
+        "rule_id": "broker.correlation",
+        "finding": "not violated",
+        "note": "Candidate states events are 'correlated in time only' and 'evidence neither confirms nor rules out a link'. Matches source: 'the two events are correlated in time; nothing in the evidence confirms the failover as the cause, and nothing in the evidence rules a link out either.' No cause invented, no link ruled out. Consistent with semantic-preservation.md Causality section ('A correlates with B does not mean A caused B') and coding-agent example 'Correlation versus causation'."
+      }
+    ],
+    "rejected": [
+      {
+        "rule_id": "broker.unknown-cause",
+        "finding": "violated by omission",
+        "note": "Candidate never states the root cause is unknown or that investigators still cannot explain the rise. It silently drops: 'Root cause investigators still cannot explain why queue depth rose from 1,200 to 4,600 messages, and that explanation gap remains open.' This is a required source fact (evidence/causality ledger item: unknown cause + open investigation status), not filler. Its absence lets a reader infer the matter is settled or unremarkable, which is exactly the silent-inference risk semantic-preservation.md prohibits under 'Missing, ambiguous, or conflicting information': 'Do not infer approval, successful execution, root cause, compatibility, or safety from silence.' The reference's own worked example ('Missing information') requires an explicit unknown-cause statement in the safe rewrite, not omission."
+      }
+    ]
+  },
+  "evidence": {
+    "source_fact_omitted": "Root cause investigators still cannot explain why queue depth rose from 1,200 to 4,600 messages, and that explanation gap remains open.",
+    "candidate_text": "Queue depth rose from 1,200 to 4,600 messages during the 9-minute failover window. These events are correlated in time only; evidence neither confirms nor rules out a link. Disk I/O contention was ruled out after review.",
+    "candidate_correlation_handling": "These events are correlated in time only; evidence neither confirms nor rules out a link.",
+    "deterministic_findings_from_case_file": [
+      { "rule_id": "broker.correlation", "description": "Preserve temporal correlation without proving or disproving a link." },
+      { "rule_id": "broker.unknown-cause", "description": "Keep root cause unknown." }
+    ],
+    "contract_citations": [
+      "docs/v1-acceptance-contract.md §3 'Decision priority', item 2: 'Preserve source facts and meaning.'",
+      "docs/v1-acceptance-contract.md §9.3: 'Required enumerated fact retention: 100%.' and 'Any native-skill semantic failure blocks V1 regardless of readability, linter, or preference scores.'",
+      "skills/clear-technical-writing/references/semantic-preservation.md, 'Preserve evidence and causality': 'An unknown cause remains unknown.'",
+      "skills/clear-technical-writing/references/semantic-preservation.md, 'Missing, ambiguous, or conflicting information': 'Do not infer approval, successful execution, root cause, compatibility, or safety from silence.'",
+      "skills/clear-technical-writing/references/semantic-preservation.md, 'Missing information' worked example: safe rewrite explicitly states 'The cause of the remaining failures is unknown' rather than omitting it."
+    ]
+  },
+  "rationale": "Two distinct claims must be judged separately per the task. (1) Correlation allegation: candidate correctly preserves temporal-only correlation, invents no cause, and does not rule out a link either. This matches broker.correlation and the skill's causality guidance exactly; no defect here. (2) Root-cause-unknown omission: the source contains an explicit, load-bearing evidence-status fact — investigators still cannot explain the rise and the explanation gap remains open — which the case's own deterministic_findings flags as a rule to keep (broker.unknown-cause: 'Keep root cause unknown'). The candidate is not merely silent on an incidental detail; it drops the only sentence asserting the investigation is unresolved, while keeping an adjacent resolved-investigation fact (disk I/O ruled out). Juxtaposing 'ruled out after review' with no companion statement that the primary cause remains open creates an asymmetry: a reader can plausibly infer the queue-depth question is also settled or non-urgent, which is precisely the unsupported inference semantic-preservation.md's missing-information clause forbids. Under the package-wide semantic ledger, causality/evidence status is an enumerated fact category (not stylistic filler), and the acceptance contract treats 100% required-fact retention as a hard, non-preference-overridable gate (§9.3). Therefore this omission is a genuine release-blocking semantic loss, not a safe condensation, even though the correlation-only handling in the same candidate is fully correct.",
+  "summary_disposition": "Uphold broker.correlation as satisfied. Uphold broker.unknown-cause as violated due to omission of the 'still cannot explain' / 'explanation gap remains open' fact. Net case verdict: blocking failure on the omitted fact; correlation-only handling is not at fault and should not be cited as a defect."
+}

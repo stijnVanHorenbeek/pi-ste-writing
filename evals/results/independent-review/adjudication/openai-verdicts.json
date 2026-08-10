@@ -1,0 +1,345 @@
+{
+  "cases": [
+    {
+      "case_id": "case-01",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "`helios.worker-sequence` is unsupported: candidate keeps `4 nodes to 12 nodes` and says `this sequence alone does not show that the pool resize caused the failure-rate drop`."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "helios.worker-sequence",
+          "upheld": false,
+          "reason": "Worker values and explicit non-causal sequence both remain."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Candidate preserves all required facts and exact `200-800 ms` text."
+    },
+    {
+      "case_id": "case-02",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "`helios.unknown-cause` is unsupported: candidate states `For the remaining failed segments, no confirmed cause exists yet.`"
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "helios.unknown-cause",
+          "upheld": false,
+          "reason": "Unconfirmed-remainder distinction is explicit and unchanged."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Candidate satisfies meaning, uncertainty, values, and output contract."
+    },
+    {
+      "case_id": "case-03",
+      "verdict": "genuine_failure",
+      "confidence": "high",
+      "candidate_preserves_source": false,
+      "issues": [
+        {
+          "category": "protected",
+          "evidence": "Source verification command is inline code, but candidate renders `vaultctl describe bucket ledger-archive-legacy` in a fenced `bash` block, violating explicit container requirement."
+        },
+        {
+          "category": "evaluation",
+          "evidence": "`purge.scope` is false: candidate preserves expired-export scope and says `It does not affect active ledger snapshots.`"
+        },
+        {
+          "category": "evaluation",
+          "evidence": "`linter.step-numbering` imposes numbering not required by `using any clear structure`; candidate structure remains clear."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "purge.verify-command",
+          "upheld": true,
+          "reason": "Exact verification text remains, but no longer in required inline container."
+        },
+        {
+          "rule_id": "protected.source-equality",
+          "upheld": true,
+          "reason": "Inline verification value was moved to fenced code; candidate also adds an inline bucket identifier in heading."
+        },
+        {
+          "rule_id": "purge.scope",
+          "upheld": false,
+          "reason": "Scope and active-snapshot exclusion are preserved."
+        },
+        {
+          "rule_id": "linter.step-numbering",
+          "upheld": false,
+          "reason": "Task permits any clear structure and does not require every instruction to be numbered."
+        }
+      ],
+      "recommended_action": "mixed",
+      "rationale": "Candidate needs container-preservation fix; scorer also produced unsupported scope and numbering findings."
+    },
+    {
+      "case_id": "case-04",
+      "verdict": "genuine_failure",
+      "confidence": "high",
+      "candidate_preserves_source": false,
+      "issues": [
+        {
+          "category": "protected",
+          "evidence": "Candidate changes inline verification command into fenced `bash` code despite `Keep source inline code inline`."
+        },
+        {
+          "category": "evaluation",
+          "evidence": "`purge.scope` is unsupported: `removes expired ledger exports` and `does not affect active ledger snapshots` preserve both scope facts."
+        },
+        {
+          "category": "evaluation",
+          "evidence": "Numbering is not a hard task requirement; headings plus numbered gates form clear procedure."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "purge.verify-command",
+          "upheld": true,
+          "reason": "Verification follows deletion but violates required inline container."
+        },
+        {
+          "rule_id": "protected.source-equality",
+          "upheld": true,
+          "reason": "Verification inline-code value became fenced code, and heading adds another inline bucket value."
+        },
+        {
+          "rule_id": "purge.scope",
+          "upheld": false,
+          "reason": "Candidate retains both positive scope and exclusion."
+        },
+        {
+          "rule_id": "linter.step-numbering",
+          "upheld": false,
+          "reason": "Task explicitly permits any clear structure."
+        }
+      ],
+      "recommended_action": "mixed",
+      "rationale": "Real protected-container failure coexists with false-positive scope and numbering allegations."
+    },
+    {
+      "case_id": "case-05",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "`protected.source-equality` relies on duplicate inline identifiers, but task requires source inline code to remain inline—not unchanged occurrence counts. Repeated prerequisites preserve meaning and container."
+        },
+        {
+          "category": "evaluation",
+          "evidence": "`linter.step-numbering` is unsupported: procedure actions are numbered 1–4, and prerequisite conditions are also numbered."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "protected.source-equality",
+          "upheld": false,
+          "reason": "All source protected values remain in their required container; this task does not require occurrence-count equality."
+        },
+        {
+          "rule_id": "linter.step-numbering",
+          "upheld": false,
+          "reason": "Candidate numbers prerequisite conditions and all four procedure steps."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Safe repetition does not change conditions or violate stated protected-container contract."
+    },
+    {
+      "case_id": "case-06",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "`greenhouse.might` is unsupported: candidate says `Canopy sensor synchronization might separately take up to 17 minutes.`"
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "greenhouse.might",
+          "upheld": false,
+          "reason": "Might-level uncertainty, separate status, and 17-minute upper bound all remain."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Candidate preserves could/might/may/can/should/must modalities, roles, conditions, durations, and product term."
+    },
+    {
+      "case_id": "case-07",
+      "verdict": "genuine_failure",
+      "confidence": "high",
+      "candidate_preserves_source": false,
+      "issues": [
+        {
+          "category": "protected",
+          "evidence": "Task requires every inline-code value's occurrence count. Source has one inline `ForgeProof`; candidate has two—heading `Before You Call ForgeProof` and body `calling ForgeProof`."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "vesper.protected-identifier",
+          "upheld": true,
+          "reason": "Candidate duplicates protected inline `ForgeProof`."
+        },
+        {
+          "rule_id": "protected.source-equality",
+          "upheld": true,
+          "reason": "Explicit inline-code occurrence-count contract is violated."
+        }
+      ],
+      "recommended_action": "skill",
+      "rationale": "Candidate should avoid adding protected inline values while restructuring."
+    },
+    {
+      "case_id": "case-08",
+      "verdict": "genuine_failure",
+      "confidence": "high",
+      "candidate_preserves_source": false,
+      "issues": [
+        {
+          "category": "protected",
+          "evidence": "Source contains two inline occurrences of `/var/lib/vesper/anchor.ron`; candidate collapses reader and writer references into one inline occurrence, violating explicit count requirement."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "vesper.protected-repeated-path",
+          "upheld": true,
+          "reason": "Required two inline shared-path occurrences became one."
+        },
+        {
+          "rule_id": "protected.source-equality",
+          "upheld": true,
+          "reason": "Explicit inline-code occurrence-count equality is violated."
+        }
+      ],
+      "recommended_action": "skill",
+      "rationale": "Meaning remains, but protected count is a hard output constraint."
+    },
+    {
+      "case_id": "case-09",
+      "verdict": "evaluator_false_positive",
+      "confidence": "medium",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "`broker.correlation` is directly contradicted by candidate wording: `correlated in time only; evidence neither confirms nor rules out a link`."
+        },
+        {
+          "category": "evaluation",
+          "evidence": "`broker.unknown-cause` overreads task. Task says not to invent a root cause; candidate invents none and preserves open failover-link uncertainty."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "broker.correlation",
+          "upheld": false,
+          "reason": "Temporal-only correlation and neither-confirmed-nor-ruled-out link are explicit."
+        },
+        {
+          "rule_id": "broker.unknown-cause",
+          "upheld": false,
+          "reason": "Condensation need not restate general explanation gap; candidate makes no root-cause claim."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Candidate satisfies expressly required correlation, causal neutrality, measurements, and ruled-out fact."
+    },
+    {
+      "case_id": "case-10",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "Candidate explicitly says events are `correlated in time only` and `the root cause remains unexplained`."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "broker.correlation",
+          "upheld": false,
+          "reason": "Temporal-only relation remains without proving or disproving causation."
+        },
+        {
+          "rule_id": "broker.unknown-cause",
+          "upheld": false,
+          "reason": "Unknown root cause is explicit."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "All required measurements, uncertainty, and disk-I/O exclusion remain."
+    },
+    {
+      "case_id": "case-11",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "Candidate retains `1,200 to 4,600`, `9-minute`, `cause ... remains unexplained`, and `correlating the two events in time only`."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "broker.measurements",
+          "upheld": false,
+          "reason": "Both queue-depth endpoints and failover-window duration remain."
+        },
+        {
+          "rule_id": "broker.correlation",
+          "upheld": false,
+          "reason": "Candidate expressly limits relation to time correlation."
+        },
+        {
+          "rule_id": "broker.unknown-cause",
+          "upheld": false,
+          "reason": "Candidate expressly says cause remains unexplained."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Candidate satisfies every hard requirement and keeps ruled-out disk contention."
+    },
+    {
+      "case_id": "case-12",
+      "verdict": "evaluator_false_positive",
+      "confidence": "high",
+      "candidate_preserves_source": true,
+      "issues": [
+        {
+          "category": "evaluation",
+          "evidence": "`helios.confirmed-cause` is unsupported: candidate states `540 segments failed`, `61% of these failures`, and `expired GPU leases, establishing a confirmed cause`."
+        }
+      ],
+      "deterministic_disposition": [
+        {
+          "rule_id": "helios.confirmed-cause",
+          "upheld": false,
+          "reason": "Confirmed lease cause and exact 61%-of-540 scope remain."
+        }
+      ],
+      "recommended_action": "scorer",
+      "rationale": "Candidate preserves all facts, causal distinctions, values, and exact timeout range."
+    }
+  ]
+}
