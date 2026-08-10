@@ -18,11 +18,37 @@ DEVELOPMENT_SMOKE_MATRIX_PATH = (
     ROOT / "evals" / "development-guard-smoke-matrix.json"
 )
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
+RELEASE_CANDIDATE_CORPUS_PATH = ROOT / "evals" / "fixtures" / "release-candidate.json"
+RELEASE_CANDIDATE_SCENARIOS_PATH = ROOT / "evals" / "release-candidate-scenarios.json"
 BENCHMARK_SCENARIOS_PATH = ROOT / "evals" / "benchmark-scenarios.json"
 EVALS_DIR = ROOT / "evals"
 sys.path.insert(0, str(EVALS_DIR))
 
 import run_pi_bench
+
+
+def schema_v3_matrix():
+    matrix = json.loads(RELEASE_CANDIDATE_MATRIX_PATH.read_text(encoding="utf-8"))
+    matrix["schema_version"] = 3
+    matrix["acceptance_model"] = "hybrid-semantic-v1"
+    matrix["objective_gate_conditions"] = matrix.pop("semantic_gate_conditions")
+    matrix["acceptance_thresholds"]["objective_contract"] = matrix[
+        "acceptance_thresholds"
+    ].pop("semantic")
+    matrix["acceptance_thresholds"]["objective_procedure"] = matrix[
+        "acceptance_thresholds"
+    ].pop("procedure")
+    matrix["semantic_review"] = {
+        "config_path": matrix["judge_config_path"],
+        "applicability_field": "semantic_review_applicable",
+        "gated_conditions": ["native-skill", "guarded"],
+        "required_unique_candidate_coverage": 1.0,
+        "accepted_label": "equivalent",
+        "adverse_labels": ["not_equivalent", "uncertain"],
+        "conflict_policy": "fail",
+        "manual_override": False,
+    }
+    return matrix
 
 
 def guarded_event_stream(statuses=("accepted",), final_text="accepted draft"):
@@ -3352,7 +3378,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "6")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "7")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -3483,6 +3509,117 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         )
         self.assertEqual(matrix["output_contract"]["type"], "text")
         self.assertTrue(matrix["output_contract"]["forbidden_patterns"])
+
+
+class HybridSchemaV3Test(unittest.TestCase):
+    def test_v3_matrix_accepts_hybrid_contract_and_rejects_open_regex(self):
+        matrix = schema_v3_matrix()
+        run_pi_bench.validate_matrix(matrix)
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "7")
+        self.assertEqual(run_pi_bench.evidence_schema_version(matrix), 2)
+
+        invalid = json.loads(json.dumps(matrix))
+        invalid["semantic_review"]["accepted_label"] = "preferred"
+        with self.assertRaisesRegex(ValueError, "semantic_review"):
+            run_pi_bench.validate_matrix(invalid)
+
+        invalid = json.loads(json.dumps(matrix))
+        invalid["objective_gate_conditions"] = ["guarded"]
+        invalid["semantic_review"]["gated_conditions"] = ["guarded"]
+        with self.assertRaisesRegex(ValueError, "semantic_review"):
+            run_pi_bench.validate_matrix(invalid)
+
+    def test_v3_requires_fixture_corpus_schema_v2(self):
+        with self.assertRaisesRegex(ValueError, "schema-v3.*corpus schema_version 2"):
+            run_pi_bench.load_fixtures(
+                RELEASE_CANDIDATE_CORPUS_PATH,
+                expected_schema_version=2,
+            )
+
+    def test_fixture_skill_expectation_is_not_hardcoded(self):
+        fixtures = {
+            "negative": {
+                "id": "negative",
+                "mode": "clear",
+                "task": "Return CSV.",
+                "source": "x",
+                "expect_skill_loaded": False,
+            }
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(json.dumps({"schema_version": 1, "scenarios": []}))
+            scenarios = run_pi_bench.load_scenarios(fixtures, path)
+        self.assertFalse(scenarios["negative"]["expect_skill_loaded"])
+
+    def test_v3_external_exact_output_scenario_has_objective_evaluation(self):
+        scenario = {
+            "id": "structured-control",
+            "mode": "structured",
+            "task": "Return exact text.",
+            "source": "value",
+            "expect_skill_loaded": False,
+            "output_contract": {
+                "type": "exact_text",
+                "value": "expected",
+                "allow_terminal_newline": False,
+            },
+        }
+        evaluation = run_pi_bench.evaluate_scenario(
+            scenario,
+            "expected",
+            {"type": "text", "forbidden_patterns": []},
+            "candidate.json",
+            objective_mode=True,
+        )
+        self.assertTrue(evaluation["objective_contract"]["passed"])
+        aggregate = run_pi_bench.aggregate_objective(
+            [{"evaluation": evaluation}]
+        )
+        self.assertEqual(aggregate["samples_passed"], 1)
+
+        failed = run_pi_bench.evaluate_scenario(
+            scenario,
+            "wrong",
+            {"type": "text", "forbidden_patterns": []},
+            "candidate.json",
+            objective_mode=True,
+        )
+        self.assertFalse(failed["objective_contract"]["passed"])
+        self.assertTrue(failed["objective_contract"]["failures"])
+
+    def test_v3_aggregate_uses_objective_acceptance_only(self):
+        matrix = schema_v3_matrix()
+        fixtures = run_pi_bench.load_fixtures(RELEASE_CANDIDATE_CORPUS_PATH)
+        scenarios = run_pi_bench.load_scenarios(
+            fixtures, RELEASE_CANDIDATE_SCENARIOS_PATH
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            results = run_pi_bench.aggregate_results(
+                matrix,
+                scenarios,
+                {"matrix_sha256": "hash"},
+                Path(directory),
+            )
+
+        self.assertEqual(results["schema_version"], 2)
+        self.assertIn("objective_acceptance", results)
+        self.assertNotIn("semantic_acceptance", results)
+        self.assertEqual(
+            results["objective_acceptance"]["conditions"],
+            matrix["objective_gate_conditions"],
+        )
+
+    def test_v3_benchmark_acceptance_uses_objective_keys(self):
+        results = {
+            "completeness": {"complete": True},
+            "condition_integrity": {"accepted": True},
+            "objective_acceptance": {"accepted": True},
+            "objective_procedure_acceptance": {"accepted": True},
+            "output_contract_acceptance": {"accepted": True},
+            "guard_integrity": {"accepted": True},
+        }
+        self.assertTrue(run_pi_bench.benchmark_accepted(results))
 
 
 if __name__ == "__main__":

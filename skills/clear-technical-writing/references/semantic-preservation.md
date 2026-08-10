@@ -136,6 +136,18 @@ When the user explicitly requests a factual or protected-value change, treat tha
 as editable. Recheck dependent claims and update them only when the request requires it.
 Ask before proceeding if the change creates a contradiction or unsafe procedure.
 
+## Final claim-by-claim check
+
+Before returning a rewrite:
+
+1. Match each assigned actor to the same responsibility in the draft.
+2. Preserve the source modal verb when equivalent force is not certain.
+3. Keep each factual assertion factual; do not turn it into an instruction.
+4. Keep each causal threshold separate, including confirmed cause, unconfirmed cause,
+   and possible contribution that evidence does not exclude.
+5. Compare every source proposition with the final draft.
+6. If exact force cannot be proved, retain the source clause.
+
 ## Safe rewrite workflow
 
 1. Identify requested mode, audience, and output contract.

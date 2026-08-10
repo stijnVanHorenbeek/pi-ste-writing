@@ -104,6 +104,50 @@ def schema_v2_design():
     return matrix, config
 
 
+def schema_v3_design():
+    matrix, config = schema_v2_design()
+    matrix["schema_version"] = 3
+    matrix["acceptance_model"] = "hybrid-semantic-v1"
+    matrix["objective_gate_conditions"] = matrix.pop("semantic_gate_conditions")
+    matrix["acceptance_thresholds"]["objective_contract"] = matrix[
+        "acceptance_thresholds"
+    ].pop("semantic")
+    matrix["acceptance_thresholds"]["objective_procedure"] = matrix[
+        "acceptance_thresholds"
+    ].pop("procedure")
+    matrix["semantic_review"] = {
+        "config_path": matrix["judge_config_path"],
+        "applicability_field": "semantic_review_applicable",
+        "gated_conditions": ["native-skill", "guarded"],
+        "required_unique_candidate_coverage": 1.0,
+        "accepted_label": "equivalent",
+        "adverse_labels": ["not_equivalent", "uncertain"],
+        "conflict_policy": "fail",
+        "manual_override": False,
+    }
+    config["schema_version"] = 3
+    config["verdict_schema_version"] = 2
+    config["semantic_gate"] = {
+        "enabled": True,
+        "gated_conditions": ["native-skill", "guarded"],
+        "applicability_field": "semantic_review_applicable",
+        "accepted_label": "equivalent",
+        "adverse_labels": ["not_equivalent", "uncertain"],
+        "require_all_observations_accepted": True,
+        "manual_override": False,
+    }
+    config["acceptance_thresholds"] = {
+        "judge_completeness": 1.0,
+        "cross_provider_mapping": 1.0,
+        "semantic_candidate_coverage": 1.0,
+        "maximum_not_equivalent": 0,
+        "maximum_uncertain": 0,
+        "maximum_conflicts": 0,
+        "maximum_review_required": 0,
+    }
+    return matrix, config
+
+
 class JudgeConfigTest(unittest.TestCase):
     def test_default_judge_reads_default_benchmark_output(self):
         self.assertEqual(
@@ -127,7 +171,7 @@ class JudgeConfigTest(unittest.TestCase):
             ],
         )
         self.assertEqual(config["version"], 2)
-        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "3")
+        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "4")
         self.assertEqual(config["source_repetitions_minimum"], 3)
         self.assertEqual(
             [comparison["id"] for comparison in config["comparisons"]],
@@ -307,11 +351,14 @@ def valid_verdict(config):
         }
         for dimension in config["dimensions"]
     }
+    candidate = {"scores": copy.deepcopy(scores), "blocking_issues": []}
+    if config["schema_version"] == 3:
+        candidate["semantic_fidelity"] = {"label": "equivalent", "issues": []}
     return {
-        "schema_version": 1,
+        "schema_version": 2 if config["schema_version"] == 3 else 1,
         "candidates": {
-            "A": {"scores": copy.deepcopy(scores), "blocking_issues": []},
-            "B": {"scores": copy.deepcopy(scores), "blocking_issues": []},
+            "A": copy.deepcopy(candidate),
+            "B": copy.deepcopy(candidate),
         },
         "preference": "A",
         "confidence": "medium",
@@ -1327,6 +1374,221 @@ class AuthorityAndInvocationTest(unittest.TestCase):
         self.assertIn("--no-approve", command)
         self.assertIn("--offline", command)
         self.assertEqual(command[-1], prompt)
+
+
+class HybridSemanticJudgeTest(unittest.TestCase):
+    def test_schema_v3_judges_only_semantic_applicable_scenarios(self):
+        matrix, config = schema_v3_design()
+        selected = matrix["scenario_ids"][0]
+        scenarios = {
+            scenario_id: {
+                "fixture": {
+                    "semantic_review_applicable": scenario_id == selected,
+                }
+            }
+            for scenario_id in matrix["scenario_ids"]
+        }
+        cells = list(
+            run_quality_judge.iter_judge_cells(matrix, config, scenarios)
+        )
+        self.assertTrue(cells)
+        self.assertEqual({cell["scenario_id"] for cell in cells}, {selected})
+
+    def test_schema_v3_config_and_verdict_contract(self):
+        matrix, config = schema_v3_design()
+        run_quality_judge.validate_judge_matrix(config, matrix)
+        verdict = valid_verdict(config)
+        self.assertIsNone(run_quality_judge.judge_output_error(verdict, config))
+
+        equivalent_with_issue = copy.deepcopy(verdict)
+        equivalent_with_issue["candidates"]["A"]["semantic_fidelity"]["issues"] = [
+            {
+                "category": "modality",
+                "claim_id": "claim-1",
+                "source_evidence": "must",
+                "candidate_evidence": "should",
+                "explanation": "Obligation weakened.",
+            }
+        ]
+        self.assertIn(
+            "equivalent semantic fidelity must have no issues",
+            run_quality_judge.judge_output_error(equivalent_with_issue, config),
+        )
+
+        adverse_without_issue = copy.deepcopy(verdict)
+        adverse_without_issue["candidates"]["B"]["semantic_fidelity"]["label"] = "uncertain"
+        self.assertIn(
+            "adverse semantic fidelity needs issues",
+            run_quality_judge.judge_output_error(adverse_without_issue, config),
+        )
+
+    def test_adverse_semantic_label_overrides_preference(self):
+        _matrix, config = schema_v3_design()
+        verdict = valid_verdict(config)
+        verdict["preference"] = "A"
+        verdict["candidates"]["A"]["semantic_fidelity"] = {
+            "label": "not_equivalent",
+            "issues": [
+                {
+                    "category": "actor",
+                    "claim_id": "actor-1",
+                    "source_evidence": "Operators must approve.",
+                    "candidate_evidence": "Approval is required.",
+                    "explanation": "Assigned actor omitted.",
+                }
+            ],
+        }
+        outcome = run_quality_judge.authoritative_outcome(
+            "native-skill",
+            "guarded",
+            {"objective_gate_passed": True},
+            {"objective_gate_passed": True},
+            verdict,
+            {"A": "native-skill", "B": "guarded"},
+        )
+        self.assertIsNone(outcome["winner"])
+        self.assertEqual(outcome["basis"], "semantic-fidelity-adverse")
+        self.assertTrue(outcome["review_required"])
+
+    def test_ungated_baseline_adverse_label_does_not_block_native_preference(self):
+        _matrix, config = schema_v3_design()
+        verdict = valid_verdict(config)
+        verdict["preference"] = "B"
+        verdict["candidates"]["A"]["semantic_fidelity"] = {
+            "label": "not_equivalent",
+            "issues": [{
+                "category": "omission",
+                "claim_id": "claim-1",
+                "source_evidence": "required fact",
+                "candidate_evidence": "different text",
+                "explanation": "Baseline omitted the fact.",
+            }],
+        }
+        verdict["candidates"]["A"]["blocking_issues"] = [{
+            "category": "semantic",
+            "evidence": "Baseline omitted the required fact.",
+        }]
+        outcome = run_quality_judge.authoritative_outcome(
+            "baseline",
+            "native-skill",
+            {"objective_gate_passed": True},
+            {"objective_gate_passed": True},
+            verdict,
+            {"A": "baseline", "B": "native-skill"},
+            semantic_gated_conditions={"native-skill", "guarded"},
+        )
+        self.assertEqual(outcome["winner"], "native-skill")
+        self.assertFalse(outcome["review_required"])
+
+    def test_semantic_issue_evidence_must_match_claim_source_and_candidate(self):
+        _matrix, config = schema_v3_design()
+        scenario = {
+            "source": "Operators must approve the change.",
+            "fixture": {
+                "semantic_review_applicable": True,
+                "semantic_claims": [{
+                    "id": "approval",
+                    "risk": "actor",
+                    "proposition": "Operators approve the change.",
+                }],
+            },
+        }
+        candidates = {
+            "native-skill": "Approval is required.",
+            "guarded": "Operators must approve the change.",
+        }
+        assignment = {"A": "native-skill", "B": "guarded"}
+        verdict = valid_verdict(config)
+        verdict["candidates"]["A"]["semantic_fidelity"] = {
+            "label": "not_equivalent",
+            "issues": [{
+                "category": "actor",
+                "claim_id": "unknown",
+                "source_evidence": "Operators must approve the change.",
+                "candidate_evidence": "Approval is required.",
+                "explanation": "Actor omitted.",
+            }],
+        }
+        self.assertIn(
+            "claim_id",
+            run_quality_judge.semantic_attestation_evidence_error(
+                verdict, config, scenario, candidates, assignment
+            ),
+        )
+        verdict["candidates"]["A"]["semantic_fidelity"]["issues"][0][
+            "claim_id"
+        ] = "approval"
+        verdict["candidates"]["A"]["semantic_fidelity"]["issues"][0][
+            "candidate_evidence"
+        ] = "invented excerpt"
+        self.assertIn(
+            "candidate evidence",
+            run_quality_judge.semantic_attestation_evidence_error(
+                verdict, config, scenario, candidates, assignment
+            ),
+        )
+
+    def test_all_inapplicable_semantic_set_cannot_pass_vacuously(self):
+        matrix, config = schema_v3_design()
+        scenarios = {
+            scenario_id: {"semantic_review_applicable": False}
+            for scenario_id in matrix["scenario_ids"]
+        }
+        semantic = run_quality_judge.summarize_semantic_attestations(
+            [], matrix, config, scenarios
+        )
+        self.assertEqual(semantic["expected_unique_candidates"], 0)
+        self.assertFalse(semantic["accepted"])
+
+    def test_unique_candidate_conflict_and_adverse_observation_fail(self):
+        matrix, config = schema_v3_design()
+        source_model = matrix["models"][0]
+        judge = config["judges_by_source_provider"][source_model["provider"]]
+        scenario_id = matrix["scenario_ids"][0]
+        documents = []
+        for comparison_id, label in (
+            ("baseline-vs-native", "equivalent"),
+            ("native-vs-guarded", "uncertain"),
+        ):
+            verdict = valid_verdict(config)
+            issue = []
+            if label == "uncertain":
+                issue = [{
+                    "category": "scope",
+                    "claim_id": "scope-1",
+                    "source_evidence": "all nodes",
+                    "candidate_evidence": "nodes",
+                    "explanation": "Scope is ambiguous.",
+                }]
+            verdict["candidates"]["A"]["semantic_fidelity"] = {
+                "label": label,
+                "issues": issue,
+            }
+            documents.append({
+                "cell": {
+                    "source_model": source_model,
+                    "judge": judge,
+                    "comparison_id": comparison_id,
+                    "scenario_id": scenario_id,
+                    "source_repetition": 1,
+                },
+                "blind_assignment": {
+                    "A": "native-skill",
+                    "B": "baseline" if comparison_id == "baseline-vs-native" else "guarded",
+                },
+                "verdict": verdict,
+            })
+        scenarios = {
+            scenario_id: {"semantic_review_applicable": True}
+        }
+        semantic = run_quality_judge.summarize_semantic_attestations(
+            documents, matrix, config, scenarios
+        )
+        self.assertEqual(semantic["expected_unique_candidates"], 2 * len(matrix["models"]) * matrix["repetitions"])
+        self.assertEqual(semantic["covered_unique_candidates"], 2)
+        self.assertEqual(semantic["uncertain_observations"], 1)
+        self.assertEqual(semantic["conflicts"], 1)
+        self.assertFalse(semantic["accepted"])
 
 
 if __name__ == "__main__":

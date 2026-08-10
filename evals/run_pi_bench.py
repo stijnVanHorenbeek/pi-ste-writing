@@ -34,7 +34,7 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "6"
+RUNNER_VERSION = "7"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -105,7 +105,7 @@ def collect_provenance(matrix_path, run_command=subprocess.run):
         "pi_version": output(["pi", "--version"]),
     }
     matrix = strict_json_loads(Path(matrix_path).read_text(encoding="utf-8"))
-    if matrix.get("schema_version") == 2:
+    if matrix.get("schema_version") in {2, 3}:
         provenance["extension_sha256"] = tree_sha256(ROOT / "extensions")
         provenance.update(evaluation_resource_hashes(matrix))
         if matrix.get("judge_config_path") is not None:
@@ -170,12 +170,16 @@ def validate_output_contract(contract, context="benchmark"):
         raise ValueError(f"{prefix} JSON schema is invalid")
 
 
+def evidence_schema_version(matrix):
+    return 2 if matrix.get("schema_version") == 3 else 1
+
+
 def validate_matrix(matrix):
-    if not isinstance(matrix, dict) or matrix.get("schema_version") not in {1, 2}:
-        raise ValueError("matrix schema_version must be 1 or 2")
+    if not isinstance(matrix, dict) or matrix.get("schema_version") not in {1, 2, 3}:
+        raise ValueError("matrix schema_version must be 1, 2, or 3")
     schema_version = matrix["schema_version"]
     run_kind = matrix.get("run_kind")
-    if schema_version == 2 and run_kind not in {
+    if schema_version in {2, 3} and run_kind not in {
         "release-candidate",
         "development-smoke",
     }:
@@ -210,7 +214,7 @@ def validate_matrix(matrix):
             )
     elif conditions != ["baseline", "native-skill", "guarded"]:
         raise ValueError(
-            "matrix schema-v2 conditions must be baseline, native-skill, and guarded"
+            "matrix schema-v2/v3 conditions must be baseline, native-skill, and guarded"
         )
     scenarios = matrix.get("scenario_ids")
     if (
@@ -260,7 +264,7 @@ def validate_matrix(matrix):
     max_parallel_calls = matrix.get("max_parallel_calls")
     provider_limits = matrix.get("max_parallel_calls_by_provider")
     provider_model_counts = Counter(model["provider"] for model in models)
-    if schema_version == 2 and (
+    if schema_version in {2, 3} and (
         not isinstance(max_parallel_calls, int)
         or isinstance(max_parallel_calls, bool)
         or not 1 <= max_parallel_calls <= len(models)
@@ -268,7 +272,7 @@ def validate_matrix(matrix):
         raise ValueError(
             "matrix max_parallel_calls must be between 1 and the model count"
         )
-    if schema_version == 2 and (
+    if schema_version in {2, 3} and (
         not isinstance(provider_limits, dict)
         or set(provider_limits) != set(provider_model_counts)
         or any(
@@ -300,7 +304,7 @@ def validate_matrix(matrix):
         "negative_activation_maximum_loaded",
         "activation_applicable",
     }
-    if schema_version == 2:
+    if schema_version in {2, 3}:
         fraction = (
             thresholds.get("positive_activation_minimum_fraction")
             if isinstance(thresholds, dict)
@@ -308,15 +312,26 @@ def validate_matrix(matrix):
         )
         if (
             not isinstance(thresholds, dict)
-            or set(thresholds) != expected_threshold_fields
+            or set(thresholds) != (
+                expected_threshold_fields
+                if schema_version == 2
+                else (
+                    expected_threshold_fields
+                    - {"semantic", "procedure"}
+                    | {"objective_contract", "objective_procedure"}
+                )
+            )
             or any(
                 thresholds.get(key) != 1.0
                 for key in (
                     "applicable_cell_completeness",
                     "model_identity",
                     "routing_safety",
-                    "semantic",
-                    "procedure",
+                    *(
+                        ("semantic", "procedure")
+                        if schema_version == 2
+                        else ("objective_contract", "objective_procedure")
+                    ),
                     "output_contract",
                     "guard_integrity",
                 )
@@ -334,7 +349,7 @@ def validate_matrix(matrix):
             or thresholds.get("activation_applicable")
             is not (run_kind == "release-candidate")
         ):
-            raise ValueError("matrix schema-v2 acceptance thresholds are invalid")
+            raise ValueError("matrix schema-v2/v3 acceptance thresholds are invalid")
     elif thresholds is not None:
         raise ValueError("matrix schema-v1 does not support acceptance thresholds")
 
@@ -343,7 +358,7 @@ def validate_matrix(matrix):
         not isinstance(repetitions, int)
         or isinstance(repetitions, bool)
         or (
-            schema_version == 2
+            schema_version in {2, 3}
             and run_kind == "development-smoke"
             and repetitions != 1
         )
@@ -365,7 +380,10 @@ def validate_matrix(matrix):
     if not isinstance(matrix.get("system_prompt"), str) or not matrix["system_prompt"].strip():
         raise ValueError("matrix system_prompt must be nonempty")
 
-    gate_conditions = matrix.get("semantic_gate_conditions")
+    gate_field = (
+        "objective_gate_conditions" if schema_version == 3 else "semantic_gate_conditions"
+    )
+    gate_conditions = matrix.get(gate_field)
     if (
         not isinstance(gate_conditions, list)
         or not gate_conditions
@@ -373,7 +391,30 @@ def validate_matrix(matrix):
         or len(gate_conditions) != len(set(gate_conditions))
         or not set(gate_conditions).issubset(conditions)
     ):
-        raise ValueError("matrix semantic gate conditions must be unique conditions")
+        raise ValueError(f"matrix {gate_field} must be unique conditions")
+    if schema_version == 3:
+        review = matrix.get("semantic_review")
+        if (
+            gate_conditions != ["native-skill", "guarded"]
+            or matrix.get("acceptance_model") != "hybrid-semantic-v1"
+            or not isinstance(review, dict)
+            or set(review) != {
+                "config_path", "applicability_field", "gated_conditions",
+                "required_unique_candidate_coverage", "accepted_label",
+                "adverse_labels", "conflict_policy", "manual_override",
+            }
+            or review.get("config_path") != matrix.get("judge_config_path")
+            or review.get("applicability_field") != "semantic_review_applicable"
+            or review.get("gated_conditions") != gate_conditions
+            or review.get("required_unique_candidate_coverage") != 1.0
+            or review.get("accepted_label") != "equivalent"
+            or review.get("adverse_labels") != ["not_equivalent", "uncertain"]
+            or review.get("conflict_policy") != "fail"
+            or review.get("manual_override") is not False
+        ):
+            raise ValueError("matrix schema-v3 semantic_review is invalid")
+    elif "acceptance_model" in matrix or "objective_gate_conditions" in matrix or "semantic_review" in matrix:
+        raise ValueError("matrix schema-v1/v2 does not support hybrid semantic fields")
 
     isolation = matrix.get("isolation")
     if not isinstance(isolation, dict) or isolation.get("skills") != "explicit-only":
@@ -406,16 +447,16 @@ def validate_matrix(matrix):
         if value is not None:
             evals_relative_path(value, f"matrix {key}")
     judge_config_path = matrix.get("judge_config_path")
-    if schema_version == 2 and run_kind == "release-candidate":
+    if schema_version in {2, 3} and run_kind == "release-candidate":
         evals_relative_path(judge_config_path, "matrix judge_config_path")
     elif judge_config_path is not None:
         raise ValueError(
-            "matrix judge_config_path is only supported for schema-v2 release candidates"
+            "matrix judge_config_path is only supported for schema-v2/v3 release candidates"
         )
     prerequisite = matrix.get("prerequisite_smoke")
     if prerequisite is not None:
         if (
-            schema_version != 2
+            schema_version not in {2, 3}
             or run_kind != "release-candidate"
             or not isinstance(prerequisite, dict)
             or set(prerequisite) != {"matrix_path", "results_directory"}
@@ -431,8 +472,16 @@ def load_matrix(path=DEFAULT_MATRIX_PATH):
     return matrix
 
 
-def load_fixtures(path=DEFAULT_CORPUS_PATH):
+def load_fixtures(path=DEFAULT_CORPUS_PATH, expected_schema_version=None):
     corpus = strict_json_loads(Path(path).read_text(encoding="utf-8"))
+    if (
+        expected_schema_version is not None
+        and corpus.get("schema_version") != expected_schema_version
+    ):
+        raise ValueError(
+            f"schema-v3 matrix requires fixture corpus schema_version {expected_schema_version}"
+        )
+    score_fixtures.validate_corpus(corpus)
     return {fixture["id"]: fixture for fixture in corpus["fixtures"]}
 
 
@@ -462,7 +511,7 @@ def canonical_rewrite_task(mode):
 
 
 def validate_scenario_applicability(matrix, scenarios):
-    if matrix["schema_version"] != 2:
+    if matrix["schema_version"] not in {2, 3}:
         return
     for scenario_id in matrix["scenario_ids"]:
         scenario = scenarios[scenario_id]
@@ -486,7 +535,8 @@ def validate_scenario_applicability(matrix, scenarios):
 
 def load_matrix_scenarios(matrix):
     fixtures = load_fixtures(
-        matrix_data_path(matrix, "corpus_path", DEFAULT_CORPUS_PATH)
+        matrix_data_path(matrix, "corpus_path", DEFAULT_CORPUS_PATH),
+        expected_schema_version=2 if matrix["schema_version"] == 3 else None,
     )
     scenarios = load_scenarios(
         fixtures,
@@ -511,7 +561,7 @@ def load_scenarios(
             "task": fixture["task"],
             "source": fixture["source"],
             "fixture": fixture,
-            "expect_skill_loaded": True,
+            "expect_skill_loaded": fixture.get("expect_skill_loaded", True),
         }
         for fixture_id, fixture in fixtures.items()
     }
@@ -1201,6 +1251,22 @@ def evaluate_output_contract(text, contract):
 def evaluate_candidate(fixture, text, output_contract, candidate):
     score = score_fixtures.score_rewrite(fixture, text, candidate)
     contract = evaluate_output_contract(text, output_contract)
+    if score["schema_version"] == 2:
+        return {
+            "objective_contract": score["objective_contract"],
+            "objective_procedure": score["objective_procedure"],
+            "output_contract": contract,
+            "objective_gate_passed": (
+                score["objective_contract"]["passed"] and contract["passed"]
+            ),
+            "style": {
+                "advisory": True,
+                "warning_count": 0,
+                "warnings_by_rule": {},
+                "findings": [],
+            },
+            "disclaimer": score["disclaimer"],
+        }
     return {
         "semantic": score["semantic"],
         "procedure": score["procedure"],
@@ -1213,7 +1279,13 @@ def evaluate_candidate(fixture, text, output_contract, candidate):
     }
 
 
-def evaluate_scenario(scenario, text, default_contract, candidate):
+def evaluate_scenario(
+    scenario,
+    text,
+    default_contract,
+    candidate,
+    objective_mode=False,
+):
     fixture = (
         scenario
         if "invariants" in scenario
@@ -1231,6 +1303,34 @@ def evaluate_scenario(scenario, text, default_contract, candidate):
         "repository_term_preservation",
     )
     output_contract = evaluate_output_contract(text, contract)
+    if objective_mode:
+        failures = [] if output_contract["passed"] else list(
+            output_contract["violations"]
+        )
+        return {
+            "objective_contract": {
+                "passed": output_contract["passed"],
+                "failed_rule_ids": (
+                    [] if output_contract["passed"] else ["output-contract"]
+                ),
+                "failures": failures,
+            },
+            "objective_procedure": {
+                "applicable": False,
+                "passed": None,
+                "failed_rule_ids": [],
+                "failures": [],
+            },
+            "output_contract": output_contract,
+            "objective_gate_passed": output_contract["passed"],
+            "style": {
+                "advisory": True,
+                "warning_count": 0,
+                "warnings_by_rule": {},
+                "findings": [],
+            },
+            "disclaimer": score_fixtures.DISCLAIMER,
+        }
     return {
         "semantic": {
             "gate_passed": True,
@@ -1476,6 +1576,32 @@ def metric_error(metric, name):
 def evaluation_error(evaluation):
     if not isinstance(evaluation, dict):
         return "evaluation must be an object"
+    if "objective_contract" in evaluation:
+        objective = evaluation.get("objective_contract")
+        procedure = evaluation.get("objective_procedure")
+        contract = evaluation.get("output_contract")
+        if (
+            set(evaluation) != {
+                "objective_contract", "objective_procedure", "output_contract",
+                "objective_gate_passed", "style", "disclaimer",
+            }
+            or not isinstance(evaluation.get("objective_gate_passed"), bool)
+            or not isinstance(objective, dict)
+            or not isinstance(objective.get("passed"), bool)
+            or not isinstance(objective.get("failed_rule_ids"), list)
+            or not isinstance(objective.get("failures"), list)
+            or not isinstance(procedure, dict)
+            or not isinstance(procedure.get("applicable"), bool)
+            or procedure.get("passed") not in {True, False, None}
+            or not isinstance(procedure.get("failed_rule_ids"), list)
+            or not isinstance(procedure.get("failures"), list)
+            or not isinstance(contract, dict)
+            or not isinstance(contract.get("passed"), bool)
+            or evaluation["objective_gate_passed"]
+            != (objective["passed"] and contract["passed"])
+        ):
+            return "objective evaluation is invalid"
+        return None
     semantic = evaluation.get("semantic")
     procedure = evaluation.get("procedure")
     contract = evaluation.get("output_contract")
@@ -1975,6 +2101,7 @@ def raw_evidence_error(
             response["text"],
             matrix["output_contract"],
             raw_result_name(cell),
+            objective_mode=matrix["schema_version"] == 3,
         )
         if attempt.get("partial_evaluation") != expected_evaluation:
             return "partial evaluation does not match completed output"
@@ -1986,6 +2113,7 @@ def raw_evidence_error(
         response["text"],
         matrix["output_contract"],
         raw_result_name(cell),
+        objective_mode=matrix["schema_version"] == 3,
     )
     if document.get("evaluation") != expected_evaluation:
         return "evaluation does not match completed output"
@@ -1998,11 +2126,13 @@ def raw_evidence_error(
     return None
 
 
-def raw_document_error(document):
+def raw_document_error(document, expected_schema_version=None):
     if not isinstance(document, dict):
         return "root must be an object"
-    if document.get("schema_version") != 1:
-        return "schema_version must be 1"
+    schema_version = document.get("schema_version")
+    allowed = {expected_schema_version} if expected_schema_version is not None else {1, 2}
+    if schema_version not in allowed:
+        return "schema_version does not match evidence schema"
     if document.get("status") not in {"success", "failure"}:
         return "status must be success or failure"
     common_keys = {
@@ -2128,7 +2258,7 @@ def run_cell(
             existing = strict_json_loads(raw_path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, ValueError) as error:
             raise RuntimeError(f"invalid raw result cannot be reused: {raw_path}: {error}") from error
-        if error := raw_document_error(existing):
+        if error := raw_document_error(existing, evidence_schema_version(matrix)):
             raise RuntimeError(
                 f"invalid raw result cannot be reused: {raw_path}: {error}"
             )
@@ -2173,7 +2303,7 @@ def run_cell(
         guard_extension_path=guard_extension_path,
     )
     document = {
-        "schema_version": 1,
+        "schema_version": evidence_schema_version(matrix),
         "status": "failure",
         "cell": cell,
         "provenance": provenance,
@@ -2200,6 +2330,7 @@ def run_cell(
                     call["partial_response"]["text"],
                     matrix["output_contract"],
                     raw_result_name(cell),
+                    objective_mode=matrix["schema_version"] == 3,
                 )
             document["attempts"].append(attempt)
             document["last_error"] = call["error"]
@@ -2232,6 +2363,7 @@ def run_cell(
             response["text"],
             matrix["output_contract"],
             raw_result_name(cell),
+            objective_mode=matrix["schema_version"] == 3,
         )
         if (
             not condition_integrity["model_identity_passed"]
@@ -2442,6 +2574,30 @@ def aggregate_semantic(rows):
     }
 
 
+def aggregate_objective(rows):
+    contracts = [row["evaluation"]["objective_contract"] for row in rows]
+    procedures = [row["evaluation"]["objective_procedure"] for row in rows]
+    applicable = [report for report in procedures if report["applicable"]]
+    output_contracts = [row["evaluation"]["output_contract"] for row in rows]
+    return {
+        "samples_passed": sum(row["evaluation"]["objective_gate_passed"] for row in rows),
+        "samples_failed": sum(not row["evaluation"]["objective_gate_passed"] for row in rows),
+        "contracts": {
+            "passed_samples": sum(report["passed"] for report in contracts),
+            "failed_samples": sum(not report["passed"] for report in contracts),
+        },
+        "procedure": {
+            "applicable_samples": len(applicable),
+            "passed_samples": sum(report["passed"] is True for report in applicable),
+            "failed_samples": sum(report["passed"] is False for report in applicable),
+        },
+        "output_contract": {
+            "passed_samples": sum(report["passed"] for report in output_contracts),
+            "failed_samples": sum(not report["passed"] for report in output_contracts),
+        },
+    }
+
+
 def aggregate_style(rows):
     warning_counts = Counter()
     for row in rows:
@@ -2510,7 +2666,7 @@ def aggregate_operations(rows):
 
 def aggregate_activation(matrix, fixtures, successes):
     if (
-        matrix["schema_version"] == 2
+        matrix["schema_version"] in {2, 3}
         and not matrix["acceptance_thresholds"]["activation_applicable"]
     ):
         return {
@@ -2540,7 +2696,7 @@ def aggregate_activation(matrix, fixtures, successes):
             loaded = sum(
                 row["response"]["routing"]["skill_loaded"] for row in rows
             )
-            if matrix["schema_version"] == 2:
+            if matrix["schema_version"] in {2, 3}:
                 thresholds = matrix["acceptance_thresholds"]
                 fraction = thresholds["positive_activation_minimum_fraction"]
                 required = (
@@ -2595,6 +2751,9 @@ def semantic_axis_passed(evaluation):
 
 
 def scenario_procedure_applicable(scenario):
+    fixture = scenario.get("fixture", scenario)
+    if "objective_contract" in fixture:
+        return bool(fixture["objective_contract"]["ordered_anchors"])
     return scenario.get("mode") == "procedure" or any(
         invariant.get("category") == "procedure"
         for invariant in scenario.get("invariants", [])
@@ -2630,7 +2789,7 @@ def aggregate_results(
                 {"kind": "invalid", "cell": cell, "error": str(error)}
             )
             continue
-        if error := raw_document_error(document):
+        if error := raw_document_error(document, evidence_schema_version(matrix)):
             counts["invalid"] += 1
             unresolved.append(
                 {"kind": "invalid", "cell": cell, "error": error}
@@ -2702,7 +2861,13 @@ def aggregate_results(
                     "thinking": model["thinking"],
                     "condition": condition,
                     "runs": len(rows),
-                    "semantic": aggregate_semantic(rows),
+                    (
+                        "objective" if matrix["schema_version"] == 3 else "semantic"
+                    ): (
+                        aggregate_objective(rows)
+                        if matrix["schema_version"] == 3
+                        else aggregate_semantic(rows)
+                    ),
                     "style": aggregate_style(rows),
                     "operations": aggregate_operations(rows),
                 }
@@ -2718,14 +2883,23 @@ def aggregate_results(
         "invalid": counts["invalid"],
         "complete": counts["successful"] == expected,
     }
-    gate_conditions = matrix["semantic_gate_conditions"]
+    gate_conditions = matrix.get(
+        "objective_gate_conditions", matrix.get("semantic_gate_conditions")
+    )
     gate_rows = [
         row for row in successes if row["cell"]["condition"] in gate_conditions
     ]
     expected_gate_samples = sum(
         cell["condition"] in gate_conditions for cell in cells
     )
-    if matrix["schema_version"] == 2:
+    if matrix["schema_version"] == 3:
+        passed_gate_samples = sum(
+            row["evaluation"]["objective_contract"]["passed"] for row in gate_rows
+        )
+        failed_gate_samples = sum(
+            not row["evaluation"]["objective_contract"]["passed"] for row in gate_rows
+        )
+    elif matrix["schema_version"] == 2:
         passed_gate_samples = sum(
             semantic_axis_passed(row["evaluation"]) for row in gate_rows
         )
@@ -2739,7 +2913,7 @@ def aggregate_results(
         failed_gate_samples = sum(
             not row["evaluation"]["semantic_gate_passed"] for row in gate_rows
         )
-    semantic_acceptance = {
+    deterministic_acceptance = {
         "conditions": gate_conditions,
         "expected_samples": expected_gate_samples,
         "successful_samples": len(gate_rows),
@@ -2752,7 +2926,9 @@ def aggregate_results(
     procedure_gate_rows = [
         row
         for row in gate_rows
-        if row["evaluation"]["procedure"]["applicable"]
+        if row["evaluation"][
+            "objective_procedure" if matrix["schema_version"] == 3 else "procedure"
+        ]["applicable"]
     ]
     expected_procedure_samples = sum(
         cell["condition"] in gate_conditions
@@ -2760,11 +2936,15 @@ def aggregate_results(
         for cell in cells
     )
     procedure_passed_samples = sum(
-        row["evaluation"]["procedure"]["passed"] is True
+        row["evaluation"][
+            "objective_procedure" if matrix["schema_version"] == 3 else "procedure"
+        ]["passed"] is True
         for row in procedure_gate_rows
     )
     procedure_failed_samples = sum(
-        row["evaluation"]["procedure"]["passed"] is not True
+        row["evaluation"][
+            "objective_procedure" if matrix["schema_version"] == 3 else "procedure"
+        ]["passed"] is not True
         for row in procedure_gate_rows
     )
     procedure_acceptance = {
@@ -2893,7 +3073,7 @@ def aggregate_results(
                     }
                 )
     results = {
-        "schema_version": 1,
+        "schema_version": evidence_schema_version(matrix),
         "generated_at": generated_at or utc_now(),
         "provenance": provenance,
         "matrix": {
@@ -2904,13 +3084,21 @@ def aggregate_results(
         },
         "completeness": completeness,
         "condition_integrity": condition_integrity,
-        "semantic_acceptance": semantic_acceptance,
+        (
+            "objective_acceptance"
+            if matrix["schema_version"] == 3
+            else "semantic_acceptance"
+        ): deterministic_acceptance,
         "condition_results": condition_results,
         "partial_outputs": partial_outputs,
         "unresolved": unresolved,
     }
-    if matrix["schema_version"] == 2:
-        results["procedure_acceptance"] = procedure_acceptance
+    if matrix["schema_version"] in {2, 3}:
+        results[
+            "objective_procedure_acceptance"
+            if matrix["schema_version"] == 3
+            else "procedure_acceptance"
+        ] = procedure_acceptance
         results["output_contract_acceptance"] = output_contract_acceptance
         results["guard_integrity"] = guard_integrity
         results["applicability"] = {"groups": applicability_groups}
@@ -2945,6 +3133,13 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
     completeness = results["completeness"]
     status = "COMPLETE" if completeness["complete"] else "INCOMPLETE"
     provenance = results["provenance"]
+    objective_mode = "objective_acceptance" in results
+    acceptance_key = "objective_acceptance" if objective_mode else "semantic_acceptance"
+    procedure_key = (
+        "objective_procedure_acceptance"
+        if objective_mode
+        else "procedure_acceptance"
+    )
     lines = [
         "# Pi benchmark results",
         "",
@@ -3036,8 +3231,8 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
         ),
         "",
         (
-            "**Semantic acceptance: "
-            + ("ACCEPTED" if results["semantic_acceptance"]["accepted"] else "NOT ACCEPTED")
+            f"**{'Objective' if objective_mode else 'Semantic'} acceptance: "
+            + ("ACCEPTED" if results[acceptance_key]["accepted"] else "NOT ACCEPTED")
             + ".**"
         ),
         *(
@@ -3046,7 +3241,7 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
                     "**Applicable procedure acceptance: "
                     + (
                         "ACCEPTED"
-                        if results["procedure_acceptance"]["accepted"]
+                        if results[procedure_key]["accepted"]
                         else "NOT ACCEPTED"
                     )
                     + ".**"
@@ -3061,7 +3256,7 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
                     + ".**"
                 ),
             ]
-            if "procedure_acceptance" in results
+            if procedure_key in results
             else []
         ),
         "",
@@ -3069,7 +3264,7 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
         "|---|---|---:|---:|---:|---:|",
     ]
     for row in results["condition_results"]:
-        semantic = row["semantic"]
+        semantic = row["objective" if objective_mode else "semantic"]
         procedure = semantic["procedure"]
         contract = semantic["output_contract"]
         model = f"{row['provider']}/{row['model']}:{row['thinking']}"
@@ -3083,7 +3278,7 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
     metric_rows = []
     for row in results["condition_results"]:
         model = f"{row['provider']}/{row['model']}:{row['thinking']}"
-        for name, metric in row["semantic"]["metrics"].items():
+        for name, metric in row.get("semantic", {}).get("metrics", {}).items():
             metric_rows.append(
                 f"| `{model}` | {row['condition']} | `{name}` | "
                 f"{metric['rules_total']} | {metric['rules_failed']} | "
@@ -3463,11 +3658,16 @@ def build_parser():
 
 
 def benchmark_accepted(results):
+    acceptance = results.get("objective_acceptance", results.get("semantic_acceptance"))
+    procedure = results.get(
+        "objective_procedure_acceptance",
+        results.get("procedure_acceptance", {"accepted": True}),
+    )
     return (
         results["completeness"]["complete"]
         and results["condition_integrity"]["accepted"]
-        and results["semantic_acceptance"]["accepted"]
-        and results.get("procedure_acceptance", {"accepted": True})["accepted"]
+        and acceptance["accepted"]
+        and procedure["accepted"]
         and results.get("output_contract_acceptance", {"accepted": True})[
             "accepted"
         ]

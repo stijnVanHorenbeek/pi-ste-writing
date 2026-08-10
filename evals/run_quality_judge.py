@@ -23,7 +23,7 @@ DEFAULT_CONFIG_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-quality-judge.js
 DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.json"
 DEFAULT_BENCHMARK_RESULTS_DIR = run_pi_bench.DEFAULT_RESULTS_DIR
 DEFAULT_JUDGE_RESULTS_DIR = HERE / "results" / "current-judge"
-JUDGE_RUNNER_VERSION = "3"
+JUDGE_RUNNER_VERSION = "4"
 REQUIRED_DIMENSIONS = (
     "factual_semantic_fidelity",
     "task_completion",
@@ -100,8 +100,8 @@ def source_compatibility_error(
 
 
 def validate_judge_config(config):
-    if not isinstance(config, dict) or config.get("schema_version") not in {1, 2}:
-        raise ValueError("judge config schema_version must be 1 or 2")
+    if not isinstance(config, dict) or config.get("schema_version") not in {1, 2, 3}:
+        raise ValueError("judge config schema_version must be 1, 2, or 3")
     schema_version = config["schema_version"]
     if not isinstance(config.get("version"), int) or config["version"] < 1:
         raise ValueError("judge config version must be a positive integer")
@@ -248,18 +248,55 @@ def validate_judge_config(config):
             or config.get("preference_claim") != "descriptive-only"
             or not isinstance(thresholds, dict)
             or set(thresholds)
-            != {
-                "judge_completeness",
-                "cross_provider_mapping",
-                "maximum_review_required",
-            }
+            != (
+                {
+                    "judge_completeness",
+                    "cross_provider_mapping",
+                    "maximum_review_required",
+                }
+                if schema_version == 2
+                else {
+                    "judge_completeness", "cross_provider_mapping",
+                    "semantic_candidate_coverage", "maximum_not_equivalent",
+                    "maximum_uncertain", "maximum_conflicts",
+                    "maximum_review_required",
+                }
+            )
             or thresholds.get("judge_completeness") != 1.0
             or thresholds.get("cross_provider_mapping") != 1.0
             or thresholds.get("maximum_review_required") != 0
+            or (
+                schema_version == 3
+                and (
+                    thresholds.get("semantic_candidate_coverage") != 1.0
+                    or thresholds.get("maximum_not_equivalent") != 0
+                    or thresholds.get("maximum_uncertain") != 0
+                    or thresholds.get("maximum_conflicts") != 0
+                )
+            )
         ):
             raise ValueError(
-                "judge schema-v2 requires bounded provider parallelism and descriptive-only preference"
+                "judge schema-v2/v3 requires bounded provider parallelism and descriptive-only preference"
             )
+        if schema_version == 3:
+            gate = config.get("semantic_gate")
+            if (
+                config.get("verdict_schema_version") != 2
+                or not isinstance(gate, dict)
+                or set(gate) != {
+                    "enabled", "gated_conditions", "applicability_field",
+                    "accepted_label", "adverse_labels",
+                    "require_all_observations_accepted", "manual_override",
+                }
+                or gate.get("enabled") is not True
+                or gate.get("gated_conditions") != ["native-skill", "guarded"]
+                or gate.get("applicability_field") != "semantic_review_applicable"
+                or gate.get("accepted_label") != "equivalent"
+                or gate.get("adverse_labels") != ["not_equivalent", "uncertain"]
+                or gate.get("require_all_observations_accepted") is not True
+                or gate.get("manual_override") is not False
+            ):
+                raise ValueError("judge schema-v3 semantic gate is invalid")
 
 
 def load_judge_config(path=DEFAULT_CONFIG_PATH):
@@ -277,6 +314,22 @@ def validate_judge_matrix(config, matrix):
         raise ValueError("judge source matrix ID does not match")
     if matrix["repetitions"] < config["source_repetitions_minimum"]:
         raise ValueError("source matrix has insufficient repetitions for judging")
+    if matrix["schema_version"] == 3:
+        review = matrix["semantic_review"]
+        gate = config["semantic_gate"]
+        thresholds = config["acceptance_thresholds"]
+        if (
+            gate["gated_conditions"] != review["gated_conditions"]
+            or gate["applicability_field"] != review["applicability_field"]
+            or gate["accepted_label"] != review["accepted_label"]
+            or gate["adverse_labels"] != review["adverse_labels"]
+            or thresholds["semantic_candidate_coverage"]
+            != review["required_unique_candidate_coverage"]
+            or gate["require_all_observations_accepted"] is not True
+            or review["conflict_policy"] != "fail"
+            or gate["manual_override"] != review["manual_override"]
+        ):
+            raise ValueError("judge semantic gate does not match matrix semantic review")
     conditions = set(matrix["conditions"])
     if any(
         comparison["left_condition"] not in conditions
@@ -284,7 +337,7 @@ def validate_judge_matrix(config, matrix):
         for comparison in config["comparisons"]
     ):
         raise ValueError("judge comparison references an unknown source condition")
-    if matrix["schema_version"] == 2:
+    if matrix["schema_version"] in {2, 3}:
         for comparison in config["comparisons"]:
             matched = [
                 scenario_id
@@ -319,7 +372,7 @@ def validate_preregistered_judge_config(
     matrix,
     source_provenance,
 ):
-    if matrix["schema_version"] != 2:
+    if matrix["schema_version"] not in {2, 3}:
         return
     expected_path = run_pi_bench.evals_relative_path(
         matrix["judge_config_path"], "matrix judge_config_path"
@@ -337,7 +390,10 @@ def validate_preregistered_judge_config(
 
 
 def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MATRIX_PATH):
-    if not isinstance(results, dict) or results.get("schema_version") != 1:
+    if (
+        not isinstance(results, dict)
+        or results.get("schema_version") != run_pi_bench.evidence_schema_version(matrix)
+    ):
         raise ValueError("source benchmark results schema is invalid")
     source_matrix = results.get("matrix")
     if (
@@ -352,13 +408,22 @@ def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MA
     integrity = results.get("condition_integrity")
     if not isinstance(integrity, dict) or integrity.get("accepted") is not True:
         raise ValueError("source benchmark condition integrity is not accepted")
-    semantic = results.get("semantic_acceptance")
+    acceptance_key = (
+        "objective_acceptance"
+        if matrix["schema_version"] == 3
+        else "semantic_acceptance"
+    )
+    semantic = results.get(acceptance_key)
     if not isinstance(semantic, dict) or not isinstance(semantic.get("accepted"), bool):
-        raise ValueError("source benchmark semantic acceptance is invalid")
-    if matrix["schema_version"] == 2:
+        raise ValueError(f"source benchmark {acceptance_key} is invalid")
+    if matrix["schema_version"] in {2, 3}:
         if semantic.get("accepted") is not True:
-            raise ValueError("source benchmark semantic acceptance is not accepted")
-        procedure = results.get("procedure_acceptance")
+            raise ValueError(f"source benchmark {acceptance_key} is not accepted")
+        procedure = results.get(
+            "objective_procedure_acceptance"
+            if matrix["schema_version"] == 3
+            else "procedure_acceptance"
+        )
         if not isinstance(procedure, dict) or procedure.get("accepted") is not True:
             raise ValueError("source benchmark procedure acceptance is not accepted")
         output_contract = results.get("output_contract_acceptance")
@@ -379,7 +444,7 @@ def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MA
         or provenance.get("matrix_sha256") != expected_matrix_hash
     ):
         raise ValueError("source benchmark matrix provenance does not match")
-    if matrix["schema_version"] == 2:
+    if matrix["schema_version"] in {2, 3}:
         expected_judge_path = run_pi_bench.evals_relative_path(
             matrix["judge_config_path"], "matrix judge_config_path"
         )
@@ -412,15 +477,25 @@ def validate_source_evidence(
         Path(raw_directory),
         skill_text=skill_text,
     )
+    acceptance_key = (
+        "objective_acceptance"
+        if matrix["schema_version"] == 3
+        else "semantic_acceptance"
+    )
     authority_fields = [
         ("completeness", "completeness"),
         ("condition_integrity", "condition integrity"),
-        ("semantic_acceptance", "semantic acceptance"),
+        (acceptance_key, acceptance_key.replace("_", " ")),
     ]
-    if matrix["schema_version"] == 2:
+    if matrix["schema_version"] in {2, 3}:
         authority_fields.extend(
             (
-                ("procedure_acceptance", "procedure acceptance"),
+                (
+                    "objective_procedure_acceptance"
+                    if matrix["schema_version"] == 3
+                    else "procedure_acceptance",
+                    "procedure acceptance",
+                ),
                 ("output_contract_acceptance", "output-contract acceptance"),
                 ("guard_integrity", "guard integrity"),
                 ("applicability", "applicability denominators"),
@@ -498,17 +573,36 @@ def load_source_pair(
                     )
                 )
             }
+        elif matrix["schema_version"] == 3:
+            procedure = evaluation["objective_procedure"]
+            evaluation = evaluation | {
+                "objective_gate_passed": (
+                    evaluation["objective_contract"]["passed"]
+                    and evaluation["output_contract"]["passed"]
+                    and (
+                        not procedure["applicable"]
+                        or procedure["passed"] is True
+                    )
+                )
+            }
         evaluations[condition] = evaluation
     return candidates, evaluations
 
 
-def iter_judge_cells(matrix, config):
+def iter_judge_cells(matrix, config, scenarios=None):
     validate_judge_matrix(config, matrix)
     for source_model in matrix["models"]:
         judge = config["judges_by_source_provider"][source_model["provider"]]
         for comparison in config["comparisons"]:
             for scenario_id in matrix["scenario_ids"]:
-                if matrix["schema_version"] == 2 and not {
+                if config["schema_version"] == 3 and scenarios is not None:
+                    scenario = scenarios[scenario_id]
+                    fixture = scenario.get("fixture", scenario)
+                    if fixture.get(
+                        config["semantic_gate"]["applicability_field"]
+                    ) is not True:
+                        continue
+                if matrix["schema_version"] in {2, 3} and not {
                     comparison["left_condition"],
                     comparison["right_condition"],
                 }.issubset(
@@ -580,9 +674,7 @@ def blind_assignment(cell):
 
 
 def build_judge_prompt(config, scenario, candidates, assignment):
-    if set(assignment) != {"A", "B"} or set(assignment.values()) != set(
-        candidates
-    ):
+    if set(assignment) != {"A", "B"} or set(assignment.values()) != set(candidates):
         raise ValueError("blind assignment does not match candidates")
     rubric = "\n".join(
         f"- {item['id']} ({item['label']}): {item['instruction']}"
@@ -592,6 +684,35 @@ def build_judge_prompt(config, scenario, candidates, assignment):
     issue_categories = ", ".join(config["blocking_issue_categories"])
     minimum = config["score_range"]["minimum"]
     maximum = config["score_range"]["maximum"]
+    verdict_schema = 1
+    semantic_instructions = ""
+    semantic_shape = ""
+    if config["schema_version"] == 3:
+        verdict_schema = 2
+        fixture = scenario.get("fixture", scenario)
+        claims = fixture.get("semantic_claims", [])
+        claim_text = "\n".join(
+            f"- {claim['id']} ({claim['risk']}): {claim['proposition']}"
+            for claim in claims
+        ) or "- Review all source propositions."
+        semantic_instructions = (
+            "\n\nSemantic claims\n\n" + claim_text
+            + "\n\nAttest each candidate as equivalent, not_equivalent, or uncertain. "
+            "Equivalent requires empty issues. Adverse labels require structured "
+            "source-relative issues with exact evidence excerpts."
+        )
+        semantic_shape = (
+            ', "semantic_fidelity": {"label": "equivalent | not_equivalent | uncertain", '
+            '"issues": [{"category": "<semantic category>", "claim_id": "<claim ID>", '
+            '"source_evidence": "<exact excerpt>", "candidate_evidence": "<exact excerpt>", '
+            '"explanation": "<difference>"}]}'
+        )
+    candidate_shape = (
+        '{"scores": {<all dimension IDs>: {"applicable": <boolean>, '
+        '"score": <integer or null>, "evidence": "<concise evidence>"}}, '
+        '"blocking_issues": [{"category": "<category>", '
+        '"evidence": "<concise evidence>"}]' + semantic_shape + "}"
+    )
     return (
         "Evaluate two blinded candidates against one task and source.\n\n"
         f"Task\n\n{scenario['task']}\n\n"
@@ -599,7 +720,7 @@ def build_judge_prompt(config, scenario, candidates, assignment):
         f"Candidate A\n\n{candidates[assignment['A']]}\n\n"
         f"Candidate B\n\n{candidates[assignment['B']]}\n\n"
         "Rubric\n\n"
-        f"{rubric}\n\n"
+        f"{rubric}{semantic_instructions}\n\n"
         "Score each applicable dimension from "
         f"{minimum} (unacceptable) to {maximum} (excellent). For an inapplicable "
         "dimension, set applicable to false and score to null. Evidence must cite a "
@@ -607,14 +728,10 @@ def build_judge_prompt(config, scenario, candidates, assignment):
         "contract, terminology, modality, or safety defect.\n\n"
         "Return one JSON object with exactly this structure:\n"
         "{\n"
-        '  "schema_version": 1,\n'
+        f'  "schema_version": {verdict_schema},\n'
         '  "candidates": {\n'
-        '    "A": {"scores": {<all dimension IDs>: '
-        '{"applicable": <boolean>, "score": <integer or null>, '
-        '"evidence": "<concise evidence>"}}, "blocking_issues": '
-        '[{"category": "<category>", "evidence": "<concise evidence>"}]},\n'
-        '    "B": {"scores": {<same dimensions and fields>}, '
-        '"blocking_issues": [<same issue structure>]}\n'
+        f'    "A": {candidate_shape},\n'
+        f'    "B": {candidate_shape}\n'
         "  },\n"
         '  "preference": "A | B | tie",\n'
         '  "confidence": "low | medium | high",\n'
@@ -636,8 +753,9 @@ def judge_output_error(verdict, config):
     }
     if not isinstance(verdict, dict) or set(verdict) != root_fields:
         return "judge verdict fields are invalid"
-    if verdict["schema_version"] != 1:
-        return "judge verdict schema_version must be 1"
+    expected_verdict_schema = 2 if config["schema_version"] == 3 else 1
+    if verdict["schema_version"] != expected_verdict_schema:
+        return f"judge verdict schema_version must be {expected_verdict_schema}"
     if verdict["preference"] not in {"A", "B", "tie"}:
         return "judge preference is invalid"
     if verdict["confidence"] not in {"low", "medium", "high"}:
@@ -656,10 +774,10 @@ def judge_output_error(verdict, config):
     maximum = config["score_range"]["maximum"]
     categories = set(config["blocking_issue_categories"])
     for label, candidate in candidates.items():
-        if not isinstance(candidate, dict) or set(candidate) != {
-            "scores",
-            "blocking_issues",
-        }:
+        candidate_fields = {"scores", "blocking_issues"}
+        if config["schema_version"] == 3:
+            candidate_fields.add("semantic_fidelity")
+        if not isinstance(candidate, dict) or set(candidate) != candidate_fields:
             return f"candidate {label} fields are invalid"
         scores = candidate["scores"]
         if not isinstance(scores, dict) or set(scores) != dimension_ids:
@@ -688,6 +806,37 @@ def judge_output_error(verdict, config):
                 "evidence"
             ].strip():
                 return f"candidate {label} {dimension_id} evidence is invalid"
+        if config["schema_version"] == 3:
+            semantic = candidate["semantic_fidelity"]
+            if not isinstance(semantic, dict) or set(semantic) != {"label", "issues"}:
+                return f"candidate {label} semantic fidelity fields are invalid"
+            semantic_issues = semantic["issues"]
+            if semantic["label"] not in {"equivalent", "not_equivalent", "uncertain"}:
+                return f"candidate {label} semantic fidelity label is invalid"
+            if not isinstance(semantic_issues, list):
+                return f"candidate {label} semantic fidelity issues must be an array"
+            if semantic["label"] == "equivalent" and semantic_issues:
+                return f"candidate {label} equivalent semantic fidelity must have no issues"
+            if semantic["label"] != "equivalent" and not semantic_issues:
+                return f"candidate {label} adverse semantic fidelity needs issues"
+            semantic_categories = {
+                "omission", "invention", "actor", "scope", "modality",
+                "causality", "terminology", "procedure",
+            }
+            for issue in semantic_issues:
+                if not isinstance(issue, dict) or set(issue) != {
+                    "category", "claim_id", "source_evidence",
+                    "candidate_evidence", "explanation",
+                }:
+                    return f"candidate {label} semantic issue fields are invalid"
+                if issue["category"] not in semantic_categories or not all(
+                    isinstance(issue[key], str) and issue[key].strip()
+                    for key in (
+                        "claim_id", "source_evidence", "candidate_evidence",
+                        "explanation",
+                    )
+                ):
+                    return f"candidate {label} semantic issue is invalid"
         issues = candidate["blocking_issues"]
         if not isinstance(issues, list):
             return f"candidate {label} blocking issues must be an array"
@@ -714,6 +863,34 @@ def parse_judge_output(text, config):
     return verdict
 
 
+def semantic_attestation_evidence_error(
+    verdict,
+    config,
+    scenario,
+    candidates,
+    assignment,
+):
+    if config["schema_version"] != 3:
+        return None
+    fixture = scenario.get("fixture", scenario)
+    if fixture.get(config["semantic_gate"]["applicability_field"]) is not True:
+        return None
+    claim_ids = {
+        claim["id"] for claim in fixture.get("semantic_claims", [])
+    }
+    source = scenario["source"]
+    for blind_label, candidate in verdict["candidates"].items():
+        candidate_text = candidates[assignment[blind_label]]
+        for issue in candidate["semantic_fidelity"]["issues"]:
+            if issue["claim_id"] not in claim_ids:
+                return f"candidate {blind_label} semantic issue claim_id is unknown"
+            if issue["source_evidence"] not in source:
+                return f"candidate {blind_label} semantic source evidence is not exact"
+            if issue["candidate_evidence"] not in candidate_text:
+                return f"candidate {blind_label} semantic candidate evidence is not exact"
+    return None
+
+
 def authoritative_outcome(
     left_condition,
     right_condition,
@@ -721,38 +898,77 @@ def authoritative_outcome(
     right_evaluation,
     verdict,
     assignment,
+    semantic_gated_conditions=None,
+    semantic_gate_applies=True,
 ):
     condition_for_label = dict(assignment)
     preference = verdict["preference"]
     judge_preference = (
         "tie" if preference == "tie" else condition_for_label[preference]
     )
+    gated_conditions = (
+        set(condition_for_label.values())
+        if semantic_gated_conditions is None
+        else set(semantic_gated_conditions)
+    )
     blocking_conditions = sorted(
         condition_for_label[label]
         for label in ("A", "B")
         if verdict["candidates"][label]["blocking_issues"]
+        and (
+            semantic_gated_conditions is None
+            or (
+                semantic_gate_applies
+                and condition_for_label[label] in gated_conditions
+            )
+        )
+    )
+    objective_authority = (
+        "objective_gate_passed" in left_evaluation
+        or "objective_gate_passed" in right_evaluation
     )
     schema_v2_authority = (
         "deterministic_gate_passed" in left_evaluation
         or "deterministic_gate_passed" in right_evaluation
     )
-    left_passed = left_evaluation.get(
-        "deterministic_gate_passed",
-        left_evaluation["semantic_gate_passed"],
-    )
-    right_passed = right_evaluation.get(
-        "deterministic_gate_passed",
-        right_evaluation["semantic_gate_passed"],
+    def source_gate_passed(evaluation):
+        if "objective_gate_passed" in evaluation:
+            return evaluation["objective_gate_passed"]
+        if "deterministic_gate_passed" in evaluation:
+            return evaluation["deterministic_gate_passed"]
+        return evaluation["semantic_gate_passed"]
+
+    left_passed = source_gate_passed(left_evaluation)
+    right_passed = source_gate_passed(right_evaluation)
+    adverse_conditions = sorted(
+        condition_for_label[label]
+        for label in ("A", "B")
+        if semantic_gate_applies
+        and condition_for_label[label] in gated_conditions
+        and verdict["candidates"][label].get("semantic_fidelity", {}).get("label")
+        in {"not_equivalent", "uncertain"}
     )
 
     if left_passed != right_passed:
         winner = left_condition if left_passed else right_condition
+        if winner in adverse_conditions:
+            return {
+                "winner": None,
+                "basis": "semantic-fidelity-adverse",
+                "judge_preference": judge_preference,
+                "blocking_conditions": sorted(set(blocking_conditions + adverse_conditions)),
+                "review_required": True,
+            }
         return {
             "winner": winner,
             "basis": (
-                "deterministic-source-gates"
-                if schema_v2_authority
-                else "deterministic-semantic-gate"
+                "objective-source-gates"
+                if objective_authority
+                else (
+                    "deterministic-source-gates"
+                    if schema_v2_authority
+                    else "deterministic-semantic-gate"
+                )
             ),
             "judge_preference": judge_preference,
             "blocking_conditions": blocking_conditions,
@@ -764,6 +980,14 @@ def authoritative_outcome(
             "basis": "deterministic-both-failed",
             "judge_preference": judge_preference,
             "blocking_conditions": blocking_conditions,
+            "review_required": True,
+        }
+    if adverse_conditions:
+        return {
+            "winner": None,
+            "basis": "semantic-fidelity-adverse",
+            "judge_preference": judge_preference,
+            "blocking_conditions": sorted(set(blocking_conditions + adverse_conditions)),
             "review_required": True,
         }
     if blocking_conditions:
@@ -848,6 +1072,11 @@ def judge_evidence_error(
         return f"response verdict is invalid: {error}"
     if parsed_verdict != verdict:
         return "stored verdict does not match response verdict"
+    if error := semantic_attestation_evidence_error(
+        verdict, config, scenario, candidates, assignment
+    ):
+        return error
+    fixture = scenario.get("fixture", scenario)
     expected_outcome = authoritative_outcome(
         cell["left_condition"],
         cell["right_condition"],
@@ -855,6 +1084,16 @@ def judge_evidence_error(
         evaluations[cell["right_condition"]],
         verdict,
         assignment,
+        semantic_gated_conditions=(
+            set(config["semantic_gate"]["gated_conditions"])
+            if config["schema_version"] == 3
+            else None
+        ),
+        semantic_gate_applies=(
+            fixture.get(config["semantic_gate"]["applicability_field"]) is True
+            if config["schema_version"] == 3
+            else True
+        ),
     )
     if document.get("outcome") != expected_outcome:
         return "authoritative outcome does not match source semantic evidence"
@@ -880,7 +1119,8 @@ def judge_response_error(response, cell, require_stop=True):
 
 
 def judge_document_error(document, config):
-    if not isinstance(document, dict) or document.get("schema_version") != 1:
+    expected_schema = 2 if config["schema_version"] == 3 else 1
+    if not isinstance(document, dict) or document.get("schema_version") != expected_schema:
         return "judge document schema is invalid"
     if document.get("status") not in {"success", "failure"}:
         return "judge document status is invalid"
@@ -1088,6 +1328,75 @@ def summarize_judgments(documents, config):
     }
 
 
+def summarize_semantic_attestations(documents, matrix, config, scenarios):
+    gate = config["semantic_gate"]
+    gated_conditions = set(gate["gated_conditions"])
+    applicability_field = gate["applicability_field"]
+
+    def candidate_key(cell, condition):
+        source = cell["source_model"]
+        return (
+            source["provider"], source["model"], source["thinking"],
+            cell["scenario_id"], cell["source_repetition"], condition,
+        )
+
+    expected = set()
+    for source_model in matrix["models"]:
+        for scenario_id in matrix["scenario_ids"]:
+            scenario = scenarios.get(scenario_id, {})
+            fixture = scenario.get("fixture", scenario)
+            if fixture.get(applicability_field) is not True:
+                continue
+            for condition in run_pi_bench.conditions_for_scenario(matrix, scenario_id):
+                if condition not in gated_conditions:
+                    continue
+                for repetition in range(1, matrix["repetitions"] + 1):
+                    expected.add((
+                        source_model["provider"], source_model["model"],
+                        source_model["thinking"], scenario_id, repetition, condition,
+                    ))
+
+    observations = []
+    labels_by_candidate = {}
+    for document in documents:
+        cell = document["cell"]
+        scenario = scenarios.get(cell["scenario_id"], {})
+        fixture = scenario.get("fixture", scenario)
+        if fixture.get(applicability_field) is not True:
+            continue
+        assignment = document["blind_assignment"]
+        for blind_label, candidate in document["verdict"]["candidates"].items():
+            condition = assignment[blind_label]
+            if condition not in gated_conditions:
+                continue
+            semantic = candidate["semantic_fidelity"]
+            key = candidate_key(cell, condition)
+            observations.append((key, semantic["label"]))
+            labels_by_candidate.setdefault(key, set()).add(semantic["label"])
+
+    covered = set(labels_by_candidate)
+    conflicts = sum(len(labels) > 1 for labels in labels_by_candidate.values())
+    label_counts = Counter(label for _key, label in observations)
+    accepted = (
+        bool(expected)
+        and bool(observations)
+        and covered == expected
+        and label_counts["not_equivalent"] == 0
+        and label_counts["uncertain"] == 0
+        and conflicts == 0
+    )
+    return {
+        "expected_unique_candidates": len(expected),
+        "covered_unique_candidates": len(covered & expected),
+        "attestation_observations": len(observations),
+        "equivalent_observations": label_counts["equivalent"],
+        "not_equivalent_observations": label_counts["not_equivalent"],
+        "uncertain_observations": label_counts["uncertain"],
+        "conflicts": conflicts,
+        "accepted": accepted,
+    }
+
+
 def judge_raw_result_name(cell):
     source = cell["source_model"]
     judge = cell["judge"]
@@ -1119,7 +1428,7 @@ def aggregate_judge_results(
     documents = []
     unresolved = []
     counts = Counter()
-    cells = list(iter_judge_cells(matrix, config))
+    cells = list(iter_judge_cells(matrix, config, scenarios))
     for cell in cells:
         path = Path(raw_directory) / judge_raw_result_name(cell)
         if not path.exists():
@@ -1207,10 +1516,20 @@ def aggregate_judge_results(
         "invalid": counts["invalid"],
         "complete": counts["successful"] == expected,
     }
-    source_semantic_accepted = source_results["semantic_acceptance"]["accepted"]
+    source_acceptance_key = (
+        "objective_acceptance"
+        if matrix["schema_version"] == 3
+        else "semantic_acceptance"
+    )
+    source_semantic_accepted = source_results[source_acceptance_key]["accepted"]
     source_integrity_accepted = source_results["condition_integrity"]["accepted"]
     source_procedure_accepted = source_results.get(
-        "procedure_acceptance", {"accepted": True}
+        (
+            "objective_procedure_acceptance"
+            if matrix["schema_version"] == 3
+            else "procedure_acceptance"
+        ),
+        {"accepted": True},
     )["accepted"]
     source_output_contract_accepted = source_results.get(
         "output_contract_acceptance", {"accepted": True}
@@ -1222,7 +1541,14 @@ def aggregate_judge_results(
     for source_model in matrix["models"]:
         for comparison in config["comparisons"]:
             for scenario_id in matrix["scenario_ids"]:
-                if matrix["schema_version"] == 2 and not {
+                if config["schema_version"] == 3:
+                    scenario = (scenarios or {})[scenario_id]
+                    fixture = scenario.get("fixture", scenario)
+                    if fixture.get(
+                        config["semantic_gate"]["applicability_field"]
+                    ) is not True:
+                        continue
+                if matrix["schema_version"] in {2, 3} and not {
                     comparison["left_condition"],
                     comparison["right_condition"],
                 }.issubset(
@@ -1244,13 +1570,19 @@ def aggregate_judge_results(
                         "successful_judgments": successful_judgments,
                     }
                 )
+    semantic_acceptance = None
+    if config["schema_version"] == 3:
+        semantic_acceptance = summarize_semantic_attestations(
+            documents, matrix, config, scenarios or {}
+        )
     quality_acceptance = {
         "expected_judgments": expected,
         "successful_judgments": counts["successful"],
         "cross_provider_judgments": summary["cross_provider_judgments"],
         "review_required": summary["review_required"],
         "accepted": (
-            completeness["complete"]
+            expected > 0
+            and completeness["complete"]
             and source_semantic_accepted
             and source_integrity_accepted
             and source_procedure_accepted
@@ -1258,10 +1590,14 @@ def aggregate_judge_results(
             and source_guard_accepted
             and summary["cross_provider_judgments"] == expected
             and summary["review_required"] == 0
+            and (
+                semantic_acceptance is None
+                or semantic_acceptance["accepted"]
+            )
         ),
     }
     results = {
-        "schema_version": 1,
+        "schema_version": 2 if config["schema_version"] == 3 else 1,
         "generated_at": generated_at or run_pi_bench.utc_now(),
         "provenance": provenance,
         "judge": {
@@ -1276,15 +1612,21 @@ def aggregate_judge_results(
             "procedure_accepted": source_procedure_accepted,
             "output_contract_accepted": source_output_contract_accepted,
             "guard_integrity_accepted": source_guard_accepted,
-            "rule": "Deterministic semantic, output-contract, and guard-integrity failures override judge preference.",
+            "rule": (
+                "Objective contracts, semantic fidelity, output contracts, and guard integrity override preference."
+                if config["schema_version"] == 3
+                else "Deterministic semantic, output-contract, and guard-integrity failures override judge preference."
+            ),
         },
         "quality_acceptance": quality_acceptance,
         "summary": summary,
         "limitations": list(config["limitations"]),
         "unresolved": unresolved,
     }
-    if matrix["schema_version"] == 2:
+    if matrix["schema_version"] in {2, 3}:
         results["applicability"] = {"groups": applicability_groups}
+    if semantic_acceptance is not None:
+        results["semantic_acceptance"] = semantic_acceptance
     return results
 
 
@@ -1300,6 +1642,7 @@ def write_judge_reports(results, results_directory):
 
     completeness = results["completeness"]
     accepted = results["quality_acceptance"]["accepted"]
+    hybrid = "semantic_acceptance" in results
     lines = [
         "# Independent quality-judge results",
         "",
@@ -1311,7 +1654,7 @@ def write_judge_reports(results, results_directory):
         "## Semantic authority",
         "",
         (
-            "- Source deterministic semantic acceptance: "
+            f"- Source {'objective-contract' if hybrid else 'deterministic semantic'} acceptance: "
             + ("accepted" if results["semantic_authority"]["source_accepted"] else "not accepted")
             + "."
         ),
@@ -1351,10 +1694,28 @@ def write_judge_reports(results, results_directory):
             )
             + "."
         ),
-        "- Deterministic semantic, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference.",
+        (
+            "- Objective-contract, semantic-fidelity, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference."
+            if hybrid
+            else "- Deterministic semantic, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference."
+        ),
         (
             "- Judge blocking findings requiring review: "
             f"{results['quality_acceptance']['review_required']}."
+        ),
+        *(
+            [
+                "",
+                "## Semantic fidelity attestations",
+                "",
+                f"- Unique candidates covered: {results['semantic_acceptance']['covered_unique_candidates']}/{results['semantic_acceptance']['expected_unique_candidates']}.",
+                f"- Equivalent observations: {results['semantic_acceptance']['equivalent_observations']}.",
+                f"- Not-equivalent observations: {results['semantic_acceptance']['not_equivalent_observations']}.",
+                f"- Uncertain observations: {results['semantic_acceptance']['uncertain_observations']}.",
+                f"- Conflicts: {results['semantic_acceptance']['conflicts']}.",
+            ]
+            if hybrid
+            else []
         ),
         *(
             [
@@ -1499,7 +1860,7 @@ def run_judge_cell(
         now = run_pi_bench.utc_now
     command = build_judge_command(cell, config, prompt)
     document = {
-        "schema_version": 1,
+        "schema_version": 2 if config["schema_version"] == 3 else 1,
         "status": "failure",
         "cell": cell,
         "provenance": provenance,
@@ -1532,6 +1893,10 @@ def run_judge_cell(
                     verdict = parse_judge_output(response["text"], config)
                 except (ValueError, json.JSONDecodeError) as parse_error:
                     error = str(parse_error)
+            if error is None:
+                error = semantic_attestation_evidence_error(
+                    verdict, config, scenario, candidates, assignment
+                )
             if error is not None:
                 attempt["status"] = "failure"
                 attempt["error"] = {"kind": "verdict", "message": error}
@@ -1539,6 +1904,7 @@ def run_judge_cell(
             else:
                 attempt["status"] = "success"
                 document["attempts"].append(attempt)
+                fixture = scenario.get("fixture", scenario)
                 outcome = authoritative_outcome(
                     cell["left_condition"],
                     cell["right_condition"],
@@ -1546,6 +1912,18 @@ def run_judge_cell(
                     evaluations[cell["right_condition"]],
                     verdict,
                     assignment,
+                    semantic_gated_conditions=(
+                        set(config["semantic_gate"]["gated_conditions"])
+                        if config["schema_version"] == 3
+                        else None
+                    ),
+                    semantic_gate_applies=(
+                        fixture.get(
+                            config["semantic_gate"]["applicability_field"]
+                        ) is True
+                        if config["schema_version"] == 3
+                        else True
+                    ),
                 )
                 document.update(
                     status="success",
@@ -1623,11 +2001,11 @@ def execute_judging(
     raw_directory.mkdir(parents=True, exist_ok=True)
 
     if not report_only:
-        if config["schema_version"] == 2 or "skill_sha256" in provenance:
+        if config["schema_version"] in {2, 3} or "skill_sha256" in provenance:
             if error := source_compatibility_error(
                 source_provenance,
                 provenance,
-                require_same_commit=config["schema_version"] == 2,
+                require_same_commit=config["schema_version"] in {2, 3},
             ):
                 raise RuntimeError(error)
         skill_text = source_skill_text
@@ -1643,8 +2021,8 @@ def execute_judging(
             raise RuntimeError(
                 "judge generation requires the benchmark extension snapshot"
             )
-        cells = list(iter_judge_cells(matrix, config))
-        if config["schema_version"] == 2:
+        cells = list(iter_judge_cells(matrix, config, scenarios))
+        if config["schema_version"] in {2, 3}:
             cells = provider_bounded_order(
                 cells,
                 config["max_parallel_calls_by_provider"],

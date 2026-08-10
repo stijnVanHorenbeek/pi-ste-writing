@@ -1,10 +1,16 @@
 import json
 import re
+import sys
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "evals"))
+
+import score_fixtures
+
+
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
 RELEASE_CANDIDATE_CORPUS_PATH = (
@@ -345,6 +351,120 @@ class SemanticFixtureCorpusTest(unittest.TestCase):
                     self.assertTrue(expected)
                     self.assertLessEqual(expected, rule_ids)
                     self.assertEqual(violated_rules(fixture, baseline["rewrite"]), expected)
+
+
+class HybridObjectiveFixtureTest(unittest.TestCase):
+    def fixture(self):
+        return {
+            "id": "future-held-out",
+            "mode": "procedure",
+            "task": "Rewrite source.",
+            "source": (
+                "Run `inspect --safe` for NODE-7 on 2026-09-03.\n"
+                "Then run `purge --node NODE-7`."
+            ),
+            "expect_skill_loaded": True,
+            "semantic_review_applicable": True,
+            "objective_contract": {
+                "source_equality": {
+                    "kinds": ["inline_code", "identifier", "date"],
+                    "occurrence_count": "exact",
+                    "container": "exact",
+                },
+                "ordered_anchors": [
+                    ["`inspect --safe`", "`purge --node NODE-7`"],
+                ],
+            },
+            "semantic_claims": [
+                {
+                    "id": "actor",
+                    "risk": "actor",
+                    "proposition": "Operator performs both commands.",
+                }
+            ],
+        }
+
+    def test_schema_v2_rejects_free_prose_regex_and_window_checks(self):
+        for forbidden in (
+            {"semantic_regex": "(?i)operator"},
+            {"word_window": {"term": "operator", "words": 5}},
+            {"ordered_anchors": [{"before_pattern": "inspect", "after_pattern": "purge"}]},
+        ):
+            fixture = self.fixture()
+            fixture["objective_contract"].update(forbidden)
+            corpus = {"schema_version": 2, "fixtures": [fixture]}
+            with self.subTest(forbidden=next(iter(forbidden))):
+                with self.assertRaisesRegex(ValueError, "objective contract"):
+                    score_fixtures.validate_corpus(corpus)
+
+    def test_schema_v2_objective_failures_remain_json_serializable(self):
+        fixture = self.fixture()
+        fixture["source"] += " See [runbook](https://example.test/runbook)."
+        fixture["objective_contract"]["source_equality"]["kinds"].append(
+            "markdown_link"
+        )
+        report = score_fixtures.score_rewrite(
+            fixture,
+            fixture["source"].replace(
+                "https://example.test/runbook", "https://example.test/other"
+            ),
+        )
+        self.assertFalse(report["objective_contract"]["passed"])
+        json.dumps(report)
+
+    def test_schema_v2_unit_equality_detects_percentage_changes(self):
+        fixture = self.fixture()
+        fixture["source"] = "Keep humidity below 50%."
+        fixture["objective_contract"]["source_equality"]["kinds"] = ["unit"]
+        fixture["objective_contract"]["ordered_anchors"] = []
+        report = score_fixtures.score_rewrite(
+            fixture, "Keep humidity below 60%."
+        )
+        self.assertFalse(report["objective_contract"]["passed"])
+
+    def test_schema_v2_rejects_duplicate_anchor_without_distinct_occurrences(self):
+        fixture = self.fixture()
+        fixture["objective_contract"]["ordered_anchors"] = [
+            ["`inspect --safe`", "`inspect --safe`"],
+        ]
+        with self.assertRaisesRegex(ValueError, "source order"):
+            score_fixtures.validate_corpus(
+                {"schema_version": 2, "fixtures": [fixture]}
+            )
+
+    def test_schema_v2_requires_claims_for_semantic_review(self):
+        fixture = self.fixture()
+        fixture["semantic_claims"] = []
+        with self.assertRaisesRegex(ValueError, "semantic claims"):
+            score_fixtures.validate_corpus(
+                {"schema_version": 2, "fixtures": [fixture]}
+            )
+
+    def test_schema_v2_scores_exact_source_equality_and_ordered_anchors(self):
+        fixture = self.fixture()
+        corpus = {"schema_version": 2, "fixtures": [fixture]}
+        score_fixtures.validate_corpus(corpus)
+
+        equivalent = (
+            "For NODE-7 on 2026-09-03, first run `inspect --safe`.\n"
+            "After inspection, run `purge --node NODE-7`."
+        )
+        report = score_fixtures.score_rewrite(fixture, equivalent)
+        self.assertTrue(report["objective_contract"]["passed"])
+        self.assertNotIn("semantic", report)
+
+        reversed_anchors = (
+            "Run `purge --node NODE-7` after 2026-09-03.\n"
+            "Then run `inspect --safe`."
+        )
+        report = score_fixtures.score_rewrite(fixture, reversed_anchors)
+        self.assertFalse(report["objective_contract"]["passed"])
+        self.assertIn("ordered-anchor", report["objective_contract"]["failed_rule_ids"])
+
+        changed_container = equivalent.replace("`inspect --safe`", "inspect --safe")
+        report = score_fixtures.score_rewrite(fixture, changed_container)
+        self.assertFalse(report["objective_contract"]["passed"])
+        self.assertIn("source-equality.inline_code", report["objective_contract"]["failed_rule_ids"])
 
 
 if __name__ == "__main__":

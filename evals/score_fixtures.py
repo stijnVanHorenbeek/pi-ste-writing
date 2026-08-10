@@ -18,10 +18,182 @@ LINTER_PATH = (
     ROOT / "skills" / "clear-technical-writing" / "scripts" / "ste_lint.py"
 )
 FORMATS = ("json", "text")
+OBJECTIVE_SOURCE_KINDS = {
+    "inline_code",
+    "fenced_code",
+    "markdown_link",
+    "bold_text",
+    "identifier",
+    "number",
+    "date",
+    "version",
+    "unit",
+}
 DISCLAIMER = (
     "Deterministic checks cover only enumerated fixture rules; they do not prove "
     "full semantic equivalence or certify ASD-STE100 compliance."
 )
+
+
+def objective_values(text, kind):
+    if kind in {"inline_code", "fenced_code", "markdown_link", "bold_text"}:
+        return extracted_values(text, kind)
+    patterns = {
+        "identifier": r"(?<![A-Za-z0-9_])(?:[A-Z][A-Z0-9_]*[-_][A-Z0-9_-]+|[A-Z]{2,}[0-9]+)(?![A-Za-z0-9_])",
+        "number": r"(?<![A-Za-z0-9_])[-+]?\d+(?:[.,]\d+)?(?:%|‰)?(?![A-Za-z0-9_])",
+        "date": r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)",
+        "version": r"(?<![A-Za-z0-9])v?\d+\.\d+(?:\.\d+)*(?:[-+][A-Za-z0-9.-]+)?(?![A-Za-z0-9])",
+        "unit": r"(?<![A-Za-z0-9_])[-+]?\d+(?:\.\d+)?\s?(?:(?:ms|s|min|h|Hz|kHz|MHz|GHz|B|KB|MB|GB|TB|V|A|W|°C|°F)\b|%(?![A-Za-z0-9_]))",
+    }
+    if kind not in patterns:
+        raise ValueError(f"unsupported objective source kind: {kind}")
+    return re.findall(patterns[kind], text)
+
+
+def validate_corpus(corpus):
+    if not isinstance(corpus, dict) or corpus.get("schema_version") not in {1, 2}:
+        raise ValueError("fixture corpus schema_version must be 1 or 2")
+    fixtures = corpus.get("fixtures")
+    if not isinstance(fixtures, list) or not fixtures:
+        raise ValueError("fixture corpus fixtures must be nonempty")
+    if corpus["schema_version"] == 1:
+        return
+    fixture_ids = []
+    for fixture in fixtures:
+        if not isinstance(fixture, dict):
+            raise ValueError("schema-v2 fixture must be an object")
+        required = {
+            "id", "mode", "task", "source", "expect_skill_loaded",
+            "semantic_review_applicable", "objective_contract", "semantic_claims",
+        }
+        if set(fixture) != required:
+            raise ValueError("schema-v2 fixture fields are invalid")
+        fixture_ids.append(fixture.get("id"))
+        if not all(
+            isinstance(fixture.get(key), str) and fixture[key].strip()
+            for key in ("id", "mode", "task", "source")
+        ) or fixture["mode"] not in {"clear", "procedure", "strict"}:
+            raise ValueError("schema-v2 fixture identity is invalid")
+        if not isinstance(fixture["expect_skill_loaded"], bool) or not isinstance(
+            fixture["semantic_review_applicable"], bool
+        ):
+            raise ValueError("schema-v2 fixture applicability is invalid")
+        contract = fixture["objective_contract"]
+        if not isinstance(contract, dict) or set(contract) != {
+            "source_equality", "ordered_anchors"
+        }:
+            raise ValueError("schema-v2 objective contract fields are invalid")
+        equality = contract["source_equality"]
+        kinds = equality.get("kinds") if isinstance(equality, dict) else None
+        if (
+            not isinstance(equality, dict)
+            or set(equality) != {"kinds", "occurrence_count", "container"}
+            or not isinstance(kinds, list)
+            or len(kinds) != len(set(kinds))
+            or not all(kind in OBJECTIVE_SOURCE_KINDS for kind in kinds)
+            or equality.get("occurrence_count") != "exact"
+            or equality.get("container") != "exact"
+        ):
+            raise ValueError("schema-v2 objective contract source equality is invalid")
+        anchors = contract["ordered_anchors"]
+        if (
+            not isinstance(anchors, list)
+            or any(
+                not isinstance(group, list)
+                or len(group) < 2
+                or not all(isinstance(anchor, str) and anchor for anchor in group)
+                for group in anchors
+            )
+        ):
+            raise ValueError("schema-v2 objective contract ordered anchors are invalid")
+        for group in anchors:
+            cursor = -1
+            for anchor in group:
+                cursor = fixture["source"].find(anchor, cursor + 1)
+                if cursor < 0:
+                    raise ValueError(
+                        "schema-v2 objective contract anchors must occur in source order"
+                    )
+        claims = fixture["semantic_claims"]
+        if (
+            not isinstance(claims, list)
+            or (fixture["semantic_review_applicable"] and not claims)
+            or any(
+                not isinstance(claim, dict)
+                or set(claim) != {"id", "risk", "proposition"}
+                or not all(
+                    isinstance(claim[key], str) and claim[key].strip()
+                    for key in claim
+                )
+                for claim in claims
+            )
+        ):
+            raise ValueError("schema-v2 semantic claims are invalid")
+    if len(fixture_ids) != len(set(fixture_ids)):
+        raise ValueError("schema-v2 fixture IDs must be unique")
+
+
+def counter_records(counter):
+    return [
+        {
+            "value": list(value) if isinstance(value, tuple) else value,
+            "count": count,
+        }
+        for value, count in sorted(counter.items(), key=lambda item: repr(item[0]))
+    ]
+
+
+def score_objective_rewrite(fixture, rewrite, candidate):
+    source_failures = []
+    anchor_failures = []
+    contract = fixture["objective_contract"]
+    for kind in contract["source_equality"]["kinds"]:
+        expected = Counter(objective_values(fixture["source"], kind))
+        actual = Counter(objective_values(rewrite, kind))
+        if actual != expected:
+            source_failures.append({
+                "rule_id": f"source-equality.{kind}",
+                "kind": kind,
+                "expected": counter_records(expected),
+                "actual": counter_records(actual),
+            })
+    for index, anchors in enumerate(contract["ordered_anchors"], 1):
+        cursor = -1
+        passed = True
+        for anchor in anchors:
+            position = rewrite.find(anchor, cursor + 1)
+            if position < 0:
+                passed = False
+                break
+            cursor = position
+        if not passed:
+            anchor_failures.append({
+                "rule_id": "ordered-anchor",
+                "group": index,
+                "anchors": anchors,
+            })
+    return {
+        "schema_version": 2,
+        "fixture_id": fixture["id"],
+        "candidate": candidate,
+        "mode": fixture["mode"],
+        "objective_contract": {
+            "passed": not source_failures and not anchor_failures,
+            "failed_rule_ids": sorted({
+                failure["rule_id"]
+                for failure in source_failures + anchor_failures
+            }),
+            "failures": source_failures + anchor_failures,
+        },
+        "objective_procedure": {
+            "applicable": bool(contract["ordered_anchors"]),
+            "passed": not anchor_failures if contract["ordered_anchors"] else None,
+            "failed_rule_ids": sorted({failure["rule_id"] for failure in anchor_failures}),
+            "failures": anchor_failures,
+        },
+        "semantic_review_applicable": fixture["semantic_review_applicable"],
+        "disclaimer": DISCLAIMER,
+    }
 
 
 def extracted_values(text, check_type):
@@ -274,6 +446,8 @@ def add_source_protection(metric, source, lint_report, linter):
 
 
 def score_rewrite(fixture, rewrite, candidate="<candidate>"):
+    if "objective_contract" in fixture:
+        return score_objective_rewrite(fixture, rewrite, candidate)
     metrics = {
         "protected_span_equality": metric_from_invariants(
             fixture, rewrite, {"protected_span"}
@@ -378,6 +552,7 @@ def read_text(path):
 
 def load_fixture(fixture_id, corpus_path=DEFAULT_CORPUS_PATH):
     corpus = json.loads(Path(corpus_path).read_text(encoding="utf-8"))
+    validate_corpus(corpus)
     for fixture in corpus["fixtures"]:
         if fixture["id"] == fixture_id:
             return fixture

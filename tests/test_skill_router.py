@@ -61,6 +61,14 @@ class SkillRouterTest(unittest.TestCase):
             "documentation",
             "runbooks",
             "always auto-use",
+            "rewrite",
+            "revise",
+            "simplify",
+            "clarify",
+            "condense",
+            "restructure",
+            "audit",
+            "technical prose",
             "incident reports",
             "root-cause",
             "correlation findings",
@@ -131,6 +139,32 @@ class SkillRouterTest(unittest.TestCase):
         workflow = section(SKILL.read_text(), "Workflow").lower()
 
         self.assertIn("sequence does not prove cause", workflow)
+
+    def test_workflow_requires_final_claim_by_claim_fidelity_check(self):
+        workflow = " ".join(section(SKILL.read_text(), "Workflow").lower().split())
+
+        for requirement in (
+            "each source actor",
+            "preserve the source modal",
+            "keep factual claims factual",
+            "causal thresholds",
+            "retain the source clause",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, workflow)
+
+    def test_semantic_reference_separates_actor_modal_fact_and_causal_checks(self):
+        reference = " ".join(SEMANTIC_REFERENCE.read_text().lower().split())
+
+        for requirement in (
+            "assigned actor",
+            "source modal verb",
+            "factual assertion",
+            "causal threshold",
+            "retain the source clause",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, reference)
 
     def test_progressive_references_exist_and_have_narrow_loading_rules(self):
         text = SKILL.read_text()

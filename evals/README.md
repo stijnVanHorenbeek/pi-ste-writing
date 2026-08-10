@@ -15,6 +15,8 @@ Evaluation stack includes:
 - Blind cross-provider quality judgment.
 - Guarded-verifier development probes.
 
+Schema v3 adds hybrid semantic evaluation without changing schema-v1/v2 evidence: objective contracts use exact protected/source checks and ordered exact anchors; existing paired blind judgments attest open semantic fidelity. Any `not_equivalent`, `uncertain`, or conflicting attestation fails. Preference stays descriptive and cannot override objective or semantic gates. New v3 matrices, schema-v2 fixture corpora, and schema-v3 judge configs must use explicit paths; archived defaults remain unchanged.
+
 Development probes and archived scenarios cannot serve as unseen release evidence. The schema-v2 first-release design is frozen in [`RELEASE-CANDIDATE-PREREGISTRATION.md`](RELEASE-CANDIDATE-PREREGISTRATION.md). Commit the complete preregistration snapshot before the development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
 
 ## Active files
