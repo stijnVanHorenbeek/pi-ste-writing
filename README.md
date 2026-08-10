@@ -343,7 +343,7 @@ docs/                            Current guarded-verifier contract
 archive/pre-release/              Frozen pre-release contracts and evidence
 ```
 
-See current [`docs/guarded-verifier-contract.md`](docs/guarded-verifier-contract.md). Historical design labels and benchmark amendments live in [`archive/pre-release/`](archive/pre-release/README.md); none represents a published package release.
+See current [`docs/guarded-verifier-contract.md`](docs/guarded-verifier-contract.md) and the frozen first-release [`evaluation preregistration`](evals/RELEASE-CANDIDATE-PREREGISTRATION.md). Historical design labels and benchmark amendments live in [`archive/pre-release/`](archive/pre-release/README.md); none represents a published package release.
 
 ## Upstream, trademark, and limits
 

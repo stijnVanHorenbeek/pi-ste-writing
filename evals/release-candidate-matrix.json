@@ -1,0 +1,117 @@
+{
+  "schema_version": 2,
+  "run_kind": "release-candidate",
+  "matrix_id": "first-release-candidate",
+  "version": 1,
+  "description": "Preregistered first-release evidence matrix. The routing/control cohort compares baseline with native auto-routing on every scenario. The rewrite-path cohort compares baseline, native skill, and guarded /clear-write only on canonical, task-equivalent prose rewrites. Native-versus-guarded is an end-to-end package-path comparison, not an isolated verifier effect.",
+  "amendments": [
+    {
+      "version": 1,
+      "reason": "Initial schema-v2 preregistration before any release-candidate generation."
+    }
+  ],
+  "scenario_ids": [
+    "morrowglass-rejection-analysis",
+    "sablefen-drawer-access-policy",
+    "calder-anti-rollback-fuse-procedure",
+    "brineglass-role-ledger",
+    "mireglass-holdover-service-notice",
+    "hushvale-spore-transfer-csv"
+  ],
+  "conditions": [
+    "baseline",
+    "native-skill",
+    "guarded"
+  ],
+  "conditions_by_scenario": {
+    "morrowglass-rejection-analysis": ["baseline", "native-skill", "guarded"],
+    "sablefen-drawer-access-policy": ["baseline", "native-skill", "guarded"],
+    "calder-anti-rollback-fuse-procedure": ["baseline", "native-skill", "guarded"],
+    "brineglass-role-ledger": ["baseline", "native-skill", "guarded"],
+    "mireglass-holdover-service-notice": ["baseline", "native-skill", "guarded"],
+    "hushvale-spore-transfer-csv": ["baseline", "native-skill"]
+  },
+  "models": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low"
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium"
+    }
+  ],
+  "repetitions": 3,
+  "retry_limit": 2,
+  "timeout_seconds": 300,
+  "inter_call_delay_seconds": 2,
+  "max_parallel_calls": 3,
+  "max_parallel_calls_by_provider": {
+    "openai-codex": 1,
+    "github-copilot": 2
+  },
+  "system_prompt": "Return only the final output requested by the user. Do not include analysis, rule commentary, or a preface.",
+  "semantic_gate_conditions": [
+    "native-skill",
+    "guarded"
+  ],
+  "acceptance_thresholds": {
+    "applicable_cell_completeness": 1.0,
+    "model_identity": 1.0,
+    "routing_safety": 1.0,
+    "semantic": 1.0,
+    "procedure": 1.0,
+    "output_contract": 1.0,
+    "guard_integrity": 1.0,
+    "positive_activation_minimum_fraction": {
+      "numerator": 2,
+      "denominator": 3
+    },
+    "negative_activation_maximum_loaded": 0,
+    "activation_applicable": true
+  },
+  "isolation": {
+    "tools_by_condition": {
+      "baseline": [],
+      "native-skill": ["read"],
+      "guarded": []
+    },
+    "extensions": false,
+    "skills": "explicit-only",
+    "prompt_templates": false,
+    "themes": false,
+    "context_files": false,
+    "session_persistence": false,
+    "project_trust": false,
+    "startup_network": false
+  },
+  "output_contract": {
+    "type": "text",
+    "forbidden_patterns": [
+      "(?is)^\\s*here(?:'s| is| are)\\b",
+      "(?is)^\\s*(?:rewritten|revised) (?:text|version)\\s*:"
+    ]
+  },
+  "corpus_path": "fixtures/release-candidate.json",
+  "benchmark_scenarios_path": "release-candidate-scenarios.json",
+  "judge_config_path": "release-candidate-quality-judge.json",
+  "prerequisite_smoke": {
+    "matrix_path": "development-guard-smoke-matrix.json",
+    "results_directory": "results/development-guard-smoke"
+  },
+  "evidence_policy": {
+    "development_smoke_required_before_unseen_generation": true,
+    "clean_git_tree_required": true,
+    "immutable_skill_and_extension_snapshot_required": true,
+    "no_repairs_based_on_release_candidate_outputs": true,
+    "failed_partial_and_transport_evidence_remains_visible": true,
+    "publication_requires_explicit_user_approval": true
+  }
+}

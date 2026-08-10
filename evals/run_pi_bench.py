@@ -8,6 +8,7 @@ Licensed under the MIT License; see the repository root LICENSE file.
 """
 
 import argparse
+import concurrent.futures
 import datetime
 import hashlib
 import json
@@ -18,6 +19,7 @@ import shutil
 import statistics
 import subprocess
 import tempfile
+import threading
 import time
 from collections import Counter
 from pathlib import Path
@@ -32,11 +34,12 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "4"
-CONDITIONS = ("baseline", "native-skill", "direct-prompt")
+RUNNER_VERSION = "5"
+SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
 SKILL_PATH = SKILL_DIR / "SKILL.md"
+GUARD_EXTENSION_PATH = ROOT / "extensions" / "clear-writing-guard.ts"
 
 
 def tree_sha256(directory):
@@ -57,6 +60,31 @@ def tree_sha256(directory):
     return digest.hexdigest()
 
 
+def evaluation_resource_hashes(matrix):
+    corpus_path = matrix_data_path(matrix, "corpus_path", DEFAULT_CORPUS_PATH)
+    scenario_path = matrix_data_path(
+        matrix,
+        "benchmark_scenarios_path",
+        DEFAULT_BENCHMARK_SCENARIOS_PATH,
+    )
+    hashes = {
+        "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "scorer_sha256": hashlib.sha256(
+            (HERE / "score_fixtures.py").read_bytes()
+        ).hexdigest(),
+        "corpus_sha256": hashlib.sha256(corpus_path.read_bytes()).hexdigest(),
+        "scenario_sha256": hashlib.sha256(scenario_path.read_bytes()).hexdigest(),
+    }
+    if matrix.get("judge_config_path") is not None:
+        judge_config_path = evals_relative_path(
+            matrix["judge_config_path"], "matrix judge_config_path"
+        )
+        hashes["preregistered_judge_config_sha256"] = hashlib.sha256(
+            judge_config_path.read_bytes()
+        ).hexdigest()
+    return hashes
+
+
 def collect_provenance(matrix_path, run_command=subprocess.run):
     def output(command):
         process = run_command(
@@ -68,7 +96,7 @@ def collect_provenance(matrix_path, run_command=subprocess.run):
         )
         return process.stdout.strip()
 
-    return {
+    provenance = {
         "runner_version": RUNNER_VERSION,
         "matrix_sha256": hashlib.sha256(Path(matrix_path).read_bytes()).hexdigest(),
         "package_commit": output(["git", "rev-parse", "HEAD"]),
@@ -76,12 +104,22 @@ def collect_provenance(matrix_path, run_command=subprocess.run):
         "skill_sha256": tree_sha256(SKILL_DIR),
         "pi_version": output(["pi", "--version"]),
     }
+    matrix = strict_json_loads(Path(matrix_path).read_text(encoding="utf-8"))
+    if matrix.get("schema_version") == 2:
+        provenance["extension_sha256"] = tree_sha256(ROOT / "extensions")
+        provenance.update(evaluation_resource_hashes(matrix))
+        if matrix.get("judge_config_path") is not None:
+            provenance["preregistered_judge_config_path"] = matrix[
+                "judge_config_path"
+            ]
+    return provenance
 
 
 def validate_output_contract(contract, context="benchmark"):
     prefix = f"{context} output contract"
     if not isinstance(contract, dict) or contract.get("type") not in {
         "text",
+        "exact_text",
         "json_object",
     }:
         raise ValueError(f"{prefix} type is unsupported")
@@ -91,6 +129,15 @@ def validate_output_contract(contract, context="benchmark"):
                 re.compile(pattern)
         except (TypeError, re.error) as error:
             raise ValueError(f"{prefix} regex is invalid: {error}") from error
+        return
+    if contract["type"] == "exact_text":
+        if (
+            set(contract) != {"type", "value", "allow_terminal_newline"}
+            or not isinstance(contract.get("value"), str)
+            or not contract["value"]
+            or not isinstance(contract.get("allow_terminal_newline"), bool)
+        ):
+            raise ValueError(f"{prefix} exact text schema is invalid")
         return
 
     required = contract.get("required_keys", [])
@@ -124,8 +171,19 @@ def validate_output_contract(contract, context="benchmark"):
 
 
 def validate_matrix(matrix):
-    if not isinstance(matrix, dict) or matrix.get("schema_version") != 1:
-        raise ValueError("matrix schema_version must be 1")
+    if not isinstance(matrix, dict) or matrix.get("schema_version") not in {1, 2}:
+        raise ValueError("matrix schema_version must be 1 or 2")
+    schema_version = matrix["schema_version"]
+    run_kind = matrix.get("run_kind")
+    if schema_version == 2 and run_kind not in {
+        "release-candidate",
+        "development-smoke",
+    }:
+        raise ValueError(
+            "matrix schema-v2 run_kind must be release-candidate or development-smoke"
+        )
+    if schema_version == 1 and run_kind is not None:
+        raise ValueError("matrix schema-v1 does not support run_kind")
     if not isinstance(matrix.get("version"), int) or matrix["version"] < 1:
         raise ValueError("matrix version must be a positive integer")
     amendments = matrix.get("amendments")
@@ -145,9 +203,14 @@ def validate_matrix(matrix):
         )
 
     conditions = matrix.get("conditions")
-    if conditions != list(CONDITIONS):
+    if schema_version == 1:
+        if conditions != ["baseline", "native-skill", "direct-prompt"]:
+            raise ValueError(
+                "matrix schema-v1 conditions must remain baseline, native-skill, and direct-prompt"
+            )
+    elif conditions != ["baseline", "native-skill", "guarded"]:
         raise ValueError(
-            "matrix conditions must be baseline, native-skill, and direct-prompt"
+            "matrix schema-v2 conditions must be baseline, native-skill, and guarded"
         )
     scenarios = matrix.get("scenario_ids")
     if (
@@ -157,6 +220,25 @@ def validate_matrix(matrix):
         or len(scenarios) != len(set(scenarios))
     ):
         raise ValueError("matrix scenario IDs must be unique nonempty strings")
+
+    conditions_by_scenario = matrix.get("conditions_by_scenario")
+    if schema_version == 1:
+        if conditions_by_scenario is not None:
+            raise ValueError("matrix schema-v1 does not support conditions_by_scenario")
+    elif (
+        not isinstance(conditions_by_scenario, dict)
+        or set(conditions_by_scenario) != set(scenarios)
+        or any(
+            not isinstance(values, list)
+            or not values
+            or not all(isinstance(value, str) and value in conditions for value in values)
+            or len(values) != len(set(values))
+            for values in conditions_by_scenario.values()
+        )
+    ):
+        raise ValueError(
+            "matrix conditions_by_scenario must cover every scenario with unique declared conditions"
+        )
 
     models = matrix.get("models")
     if not isinstance(models, list) or not models:
@@ -175,9 +257,104 @@ def validate_matrix(matrix):
         )
     if len(model_keys) != len(set(model_keys)):
         raise ValueError("matrix model specifications must be unique")
+    max_parallel_calls = matrix.get("max_parallel_calls")
+    provider_limits = matrix.get("max_parallel_calls_by_provider")
+    provider_model_counts = Counter(model["provider"] for model in models)
+    if schema_version == 2 and (
+        not isinstance(max_parallel_calls, int)
+        or isinstance(max_parallel_calls, bool)
+        or not 1 <= max_parallel_calls <= len(models)
+    ):
+        raise ValueError(
+            "matrix max_parallel_calls must be between 1 and the model count"
+        )
+    if schema_version == 2 and (
+        not isinstance(provider_limits, dict)
+        or set(provider_limits) != set(provider_model_counts)
+        or any(
+            not isinstance(limit, int)
+            or isinstance(limit, bool)
+            or not 1 <= limit <= provider_model_counts[provider]
+            for provider, limit in provider_limits.items()
+        )
+        or sum(provider_limits.values()) != max_parallel_calls
+    ):
+        raise ValueError(
+            "matrix provider parallel limits must cover model providers and sum to max_parallel_calls"
+        )
+    if schema_version == 1 and (
+        max_parallel_calls is not None or provider_limits is not None
+    ):
+        raise ValueError("matrix schema-v1 does not support parallel-call controls")
 
-    if not isinstance(matrix.get("repetitions"), int) or matrix["repetitions"] < 3:
-        raise ValueError("benchmark matrix requires at least 3 repetitions")
+    thresholds = matrix.get("acceptance_thresholds")
+    expected_threshold_fields = {
+        "applicable_cell_completeness",
+        "model_identity",
+        "routing_safety",
+        "semantic",
+        "procedure",
+        "output_contract",
+        "guard_integrity",
+        "positive_activation_minimum_fraction",
+        "negative_activation_maximum_loaded",
+        "activation_applicable",
+    }
+    if schema_version == 2:
+        fraction = (
+            thresholds.get("positive_activation_minimum_fraction")
+            if isinstance(thresholds, dict)
+            else None
+        )
+        if (
+            not isinstance(thresholds, dict)
+            or set(thresholds) != expected_threshold_fields
+            or any(
+                thresholds.get(key) != 1.0
+                for key in (
+                    "applicable_cell_completeness",
+                    "model_identity",
+                    "routing_safety",
+                    "semantic",
+                    "procedure",
+                    "output_contract",
+                    "guard_integrity",
+                )
+            )
+            or not isinstance(fraction, dict)
+            or set(fraction) != {"numerator", "denominator"}
+            or not all(
+                isinstance(fraction.get(key), int)
+                and not isinstance(fraction.get(key), bool)
+                and fraction[key] > 0
+                for key in ("numerator", "denominator")
+            )
+            or fraction["numerator"] > fraction["denominator"]
+            or thresholds.get("negative_activation_maximum_loaded") != 0
+            or thresholds.get("activation_applicable")
+            is not (run_kind == "release-candidate")
+        ):
+            raise ValueError("matrix schema-v2 acceptance thresholds are invalid")
+    elif thresholds is not None:
+        raise ValueError("matrix schema-v1 does not support acceptance thresholds")
+
+    repetitions = matrix.get("repetitions")
+    if (
+        not isinstance(repetitions, int)
+        or isinstance(repetitions, bool)
+        or (
+            schema_version == 2
+            and run_kind == "development-smoke"
+            and repetitions != 1
+        )
+        or (
+            (schema_version == 1 or run_kind == "release-candidate")
+            and repetitions < 3
+        )
+    ):
+        raise ValueError(
+            "release benchmark requires at least 3 repetitions; development smoke requires exactly 1"
+        )
     if not isinstance(matrix.get("retry_limit"), int) or matrix["retry_limit"] < 1:
         raise ValueError("matrix retry_limit must be at least 1")
     if not isinstance(matrix.get("timeout_seconds"), (int, float)) or matrix["timeout_seconds"] <= 0:
@@ -226,12 +403,26 @@ def validate_matrix(matrix):
     validate_output_contract(matrix.get("output_contract"), context="matrix")
     for key in ("corpus_path", "benchmark_scenarios_path"):
         value = matrix.get(key)
-        if value is not None and (
-            not isinstance(value, str)
-            or not value.strip()
-            or Path(value).is_absolute()
+        if value is not None:
+            evals_relative_path(value, f"matrix {key}")
+    judge_config_path = matrix.get("judge_config_path")
+    if schema_version == 2 and run_kind == "release-candidate":
+        evals_relative_path(judge_config_path, "matrix judge_config_path")
+    elif judge_config_path is not None:
+        raise ValueError(
+            "matrix judge_config_path is only supported for schema-v2 release candidates"
+        )
+    prerequisite = matrix.get("prerequisite_smoke")
+    if prerequisite is not None:
+        if (
+            schema_version != 2
+            or run_kind != "release-candidate"
+            or not isinstance(prerequisite, dict)
+            or set(prerequisite) != {"matrix_path", "results_directory"}
         ):
-            raise ValueError(f"matrix {key} must be a nonempty relative path")
+            raise ValueError("matrix prerequisite_smoke is invalid")
+        for key, value in prerequisite.items():
+            evals_relative_path(value, f"matrix prerequisite_smoke {key}")
 
 
 def load_matrix(path=DEFAULT_MATRIX_PATH):
@@ -255,6 +446,44 @@ def matrix_data_path(matrix, key, default):
     return path
 
 
+def evals_relative_path(value, context):
+    if not isinstance(value, str) or not value.strip() or Path(value).is_absolute():
+        raise ValueError(f"{context} must be a nonempty relative path")
+    path = (HERE / value).resolve()
+    try:
+        path.relative_to(HERE.resolve())
+    except ValueError as error:
+        raise ValueError(f"{context} must stay within evals") from error
+    return path
+
+
+def canonical_rewrite_task(mode):
+    return f"Rewrite following source in {mode} mode. Return only rewritten text."
+
+
+def validate_scenario_applicability(matrix, scenarios):
+    if matrix["schema_version"] != 2:
+        return
+    for scenario_id in matrix["scenario_ids"]:
+        scenario = scenarios[scenario_id]
+        if "guarded" not in conditions_for_scenario(matrix, scenario_id):
+            continue
+        mode = scenario.get("mode")
+        contract = scenario.get("output_contract", matrix["output_contract"])
+        if (
+            mode not in {"clear", "procedure", "strict"}
+            or (
+                matrix["run_kind"] == "release-candidate"
+                and scenario.get("task") != canonical_rewrite_task(mode)
+            )
+            or contract.get("type") != "text"
+        ):
+            raise ValueError(
+                f"guarded scenario {scenario_id!r} needs a command-equivalent task, "
+                "supported rewrite mode, and text output contract"
+            )
+
+
 def load_matrix_scenarios(matrix):
     fixtures = load_fixtures(
         matrix_data_path(matrix, "corpus_path", DEFAULT_CORPUS_PATH)
@@ -267,6 +496,7 @@ def load_matrix_scenarios(matrix):
             DEFAULT_BENCHMARK_SCENARIOS_PATH,
         ),
     )
+    validate_scenario_applicability(matrix, scenarios)
     return fixtures, scenarios
 
 
@@ -308,14 +538,35 @@ def load_scenarios(
     return scenarios
 
 
+def conditions_for_scenario(matrix, scenario_id):
+    return matrix.get("conditions_by_scenario", {}).get(
+        scenario_id,
+        matrix["conditions"],
+    )
+
+
 def iter_cells(matrix, fixtures):
     for scenario_id in matrix["scenario_ids"]:
         if scenario_id not in fixtures:
             raise ValueError(f"unknown matrix scenario: {scenario_id}")
-    for model in matrix["models"]:
-        for condition in matrix["conditions"]:
-            for scenario_id in matrix["scenario_ids"]:
-                for repetition in range(1, matrix["repetitions"] + 1):
+    if matrix["schema_version"] == 1:
+        for model in matrix["models"]:
+            for condition in matrix["conditions"]:
+                for scenario_id in matrix["scenario_ids"]:
+                    for repetition in range(1, matrix["repetitions"] + 1):
+                        yield {
+                            "provider": model["provider"],
+                            "model": model["model"],
+                            "thinking": model["thinking"],
+                            "condition": condition,
+                            "scenario_id": scenario_id,
+                            "repetition": repetition,
+                        }
+        return
+    for scenario_id in matrix["scenario_ids"]:
+        for condition in conditions_for_scenario(matrix, scenario_id):
+            for repetition in range(1, matrix["repetitions"] + 1):
+                for model in matrix["models"]:
                     yield {
                         "provider": model["provider"],
                         "model": model["model"],
@@ -346,9 +597,26 @@ def sum_usage(messages, key):
     return sum(values) if values else None
 
 
-def parse_pi_json_events(stdout, skill_path=SKILL_PATH):
+class PiEventParseError(RuntimeError):
+    def __init__(self, message, guard_failure=None):
+        super().__init__(message)
+        self.guard_failure = guard_failure
+
+
+def parse_pi_json_events(
+    stdout,
+    skill_path=SKILL_PATH,
+    expect_guard=False,
+    guard_isolation_passed=True,
+):
     assistant_messages = []
     pending_reads = {}
+    active_tool_events = {}
+    tool_event_mismatches = 0
+    guard_submission_messages = {}
+    guard_starts = {}
+    guard_submissions = []
+    guard_unmatched_tool_events = 0
     tool_calls = 0
     non_read_tool_calls = 0
     read_calls = 0
@@ -380,14 +648,112 @@ def parse_pi_json_events(stdout, skill_path=SKILL_PATH):
                 )
             if message.get("role") == "assistant":
                 assistant_messages.append(message)
-        if event.get("type") == "tool_execution_start":
+                content = message.get("content")
+                if isinstance(content, list):
+                    submit_calls = [
+                        part
+                        for part in content
+                        if isinstance(part, dict)
+                        and part.get("type") == "toolCall"
+                        and part.get("name") == "submit_clear_rewrite"
+                    ]
+                    if submit_calls:
+                        arguments = submit_calls[0].get("arguments")
+                        valid = (
+                            len(submit_calls) == 1
+                            and isinstance(submit_calls[0].get("id"), str)
+                            and isinstance(arguments, dict)
+                            and set(arguments) == {"jobId", "draft"}
+                            and isinstance(arguments.get("jobId"), str)
+                            and isinstance(arguments.get("draft"), str)
+                            and all(
+                                isinstance(part, dict)
+                                and (
+                                    part.get("type") == "thinking"
+                                    or (
+                                        part.get("type") == "toolCall"
+                                        and part.get("name") == "submit_clear_rewrite"
+                                    )
+                                )
+                                for part in content
+                            )
+                        )
+                        for submit_call in submit_calls:
+                            call_id = submit_call.get("id")
+                            if isinstance(call_id, str):
+                                if call_id in guard_submission_messages:
+                                    guard_unmatched_tool_events += 1
+                                call_arguments = submit_call.get("arguments")
+                                guard_submission_messages[call_id] = {
+                                    "valid": valid,
+                                    "job_id": (
+                                        call_arguments.get("jobId")
+                                        if isinstance(call_arguments, dict)
+                                        else None
+                                    ),
+                                    "draft": (
+                                        call_arguments.get("draft")
+                                        if isinstance(call_arguments, dict)
+                                        else None
+                                    ),
+                                }
+        event_type = event.get("type")
+        if event_type == "tool_execution_start":
+            tool_call_id = event.get("toolCallId")
+            tool_name = event.get("toolName")
+            if (
+                not isinstance(tool_call_id, str)
+                or not isinstance(tool_name, str)
+                or tool_call_id in active_tool_events
+            ):
+                tool_event_mismatches += 1
+            else:
+                active_tool_events[tool_call_id] = tool_name
+        elif event_type == "tool_execution_end":
+            tool_call_id = event.get("toolCallId")
+            tool_name = event.get("toolName")
+            started_tool = active_tool_events.pop(tool_call_id, None)
+            if started_tool is None or started_tool != tool_name:
+                tool_event_mismatches += 1
+
+        if event_type == "tool_execution_start":
             tool_calls += 1
-            if event.get("toolName") == "read":
-                args = event.get("args")
+            tool_name = event.get("toolName")
+            tool_call_id = event.get("toolCallId")
+            args = event.get("args")
+            if tool_name == "read":
                 path = args.get("path") if isinstance(args, dict) else None
-                pending_reads[event.get("toolCallId")] = path
+                pending_reads[tool_call_id] = path
             else:
                 non_read_tool_calls += 1
+            if tool_name == "submit_clear_rewrite":
+                job_id = args.get("jobId") if isinstance(args, dict) else None
+                draft = args.get("draft") if isinstance(args, dict) else None
+                if (
+                    not isinstance(tool_call_id, str)
+                    or tool_call_id in guard_starts
+                    or not isinstance(job_id, str)
+                    or not isinstance(draft, str)
+                ):
+                    guard_unmatched_tool_events += 1
+                elif tool_call_id not in guard_submission_messages:
+                    guard_unmatched_tool_events += 1
+                    guard_starts[tool_call_id] = {
+                        "job_id": job_id,
+                        "draft": draft,
+                        "message_valid": False,
+                    }
+                else:
+                    submission_message = guard_submission_messages.pop(tool_call_id)
+                    guard_starts[tool_call_id] = {
+                        "job_id": job_id,
+                        "draft": draft,
+                        "message_valid": (
+                            submission_message["valid"]
+                            and submission_message["job_id"] == job_id
+                            and submission_message["draft"] == draft
+                        ),
+                    }
         if event.get("type") == "tool_execution_end" and event.get("toolName") == "read":
             read_calls += 1
             path = pending_reads.pop(event.get("toolCallId"), None)
@@ -407,22 +773,108 @@ def parse_pi_json_events(stdout, skill_path=SKILL_PATH):
             skill_tree_read_calls += 1
             if resolved_path == resolved_skill_path:
                 skill_entrypoint_read_calls += 1
+        if (
+            event.get("type") == "tool_execution_end"
+            and event.get("toolName") == "submit_clear_rewrite"
+        ):
+            tool_call_id = event.get("toolCallId")
+            start = guard_starts.pop(tool_call_id, None)
+            if start is None:
+                guard_unmatched_tool_events += 1
+                continue
+            result = event.get("result")
+            details = result.get("details") if isinstance(result, dict) else None
+            content = result.get("content") if isinstance(result, dict) else None
+            result_text = (
+                "".join(
+                    part.get("text", "")
+                    for part in content
+                    if isinstance(part, dict) and part.get("type") == "text"
+                )
+                if isinstance(content, list)
+                else None
+            )
+            result_draft = (
+                details.get("draft")
+                if isinstance(details, dict)
+                and isinstance(details.get("draft"), str)
+                else None
+            )
+            guard_submissions.append(
+                {
+                    "sequence": len(guard_submissions) + 1,
+                    "tool_call_id_sha256": hashlib.sha256(
+                        tool_call_id.encode("utf-8")
+                    ).hexdigest(),
+                    "job_id_sha256": hashlib.sha256(
+                        start["job_id"].encode("utf-8")
+                    ).hexdigest(),
+                    "draft_sha256": hashlib.sha256(
+                        start["draft"].encode("utf-8")
+                    ).hexdigest(),
+                    "draft_bytes": len(start["draft"].encode("utf-8")),
+                    "result_status": (
+                        details.get("status")
+                        if isinstance(details, dict)
+                        and isinstance(details.get("status"), str)
+                        else "invalid"
+                    ),
+                    "result_attempt": (
+                        details.get("attempt")
+                        if isinstance(details, dict)
+                        and isinstance(details.get("attempt"), int)
+                        and not isinstance(details.get("attempt"), bool)
+                        else None
+                    ),
+                    "result_draft_sha256": (
+                        hashlib.sha256(result_draft.encode("utf-8")).hexdigest()
+                        if result_draft is not None
+                        else None
+                    ),
+                    "result_text_sha256": (
+                        hashlib.sha256(result_text.encode("utf-8")).hexdigest()
+                        if result_text is not None
+                        else None
+                    ),
+                    "is_error": event.get("isError") is not False,
+                    "submission_message_valid": start["message_valid"],
+                }
+            )
 
-    final_message = assistant_messages[-1] if assistant_messages else None
-    final_content = final_message.get("content") if final_message else None
-    if final_message is None or not isinstance(final_content, list) or not any(
-        isinstance(part, dict)
-        and part.get("type") == "text"
-        and isinstance(part.get("text"), str)
-        and part["text"].strip()
-        for part in final_content
-    ):
-        raise RuntimeError("Pi benchmark call returned no final assistant text")
+    final_message = assistant_messages[-1] if assistant_messages else {}
+    final_content = final_message.get("content")
+    has_final_text = (
+        isinstance(final_content, list)
+        and any(
+            isinstance(part, dict)
+            and part.get("type") == "text"
+            and isinstance(part.get("text"), str)
+            and part["text"].strip()
+            for part in final_content
+        )
+    )
+    if not isinstance(final_content, list):
+        final_content = []
 
     text = "".join(
         part.get("text", "")
         for part in final_content
         if isinstance(part, dict) and part.get("type") == "text"
+    )
+    final_text_parts = [
+        part
+        for part in final_content
+        if isinstance(part, dict) and part.get("type") == "text"
+    ]
+    final_message_valid = (
+        len(final_text_parts) == 1
+        and isinstance(final_text_parts[0].get("text"), str)
+        and bool(final_text_parts[0]["text"])
+        and all(
+            isinstance(part, dict)
+            and part.get("type") in {"thinking", "text"}
+            for part in final_content
+        )
     )
     input_tokens = sum_usage(assistant_messages, "input")
     output_tokens = sum_usage(assistant_messages, "output")
@@ -446,7 +898,78 @@ def parse_pi_json_events(stdout, skill_path=SKILL_PATH):
         cost_values.append(value)
     cost_usd = round(sum(cost_values), 12) if cost_values else None
 
-    return {
+    guard_activity = bool(
+        expect_guard or guard_submissions or guard_submission_messages or guard_starts
+    )
+    if tool_event_mismatches and not guard_activity:
+        raise RuntimeError("Pi benchmark stream contains unmatched tool events")
+    guard_unmatched_tool_events += (
+        len(guard_starts)
+        + len(guard_submission_messages)
+        + tool_event_mismatches
+    )
+    accepted_submissions = [
+        submission
+        for submission in guard_submissions
+        if submission["result_status"] == "accepted"
+    ]
+    accepted_submission = (
+        accepted_submissions[0] if len(accepted_submissions) == 1 else None
+    )
+    statuses = [submission["result_status"] for submission in guard_submissions]
+    same_job_id = len(
+        {submission["job_id_sha256"] for submission in guard_submissions}
+    ) <= 1
+    attempts_contiguous = [
+        submission["result_attempt"] for submission in guard_submissions
+    ] == list(range(1, len(guard_submissions) + 1))
+    final_text_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    exact_accepted_output = (
+        accepted_submission is not None
+        and accepted_submission["draft_sha256"]
+        == accepted_submission["result_draft_sha256"]
+        == accepted_submission["result_text_sha256"]
+        == final_text_sha256
+    )
+    malformed_submission_messages = sum(
+        not submission["submission_message_valid"]
+        for submission in guard_submissions
+    )
+    direct_output_messages = sum(
+        any(
+            isinstance(part, dict)
+            and part.get("type") == "text"
+            and isinstance(part.get("text"), str)
+            and part["text"]
+            for part in message.get("content", [])
+        )
+        for message in assistant_messages[:-1]
+        if isinstance(message.get("content"), list)
+    ) + (
+        accepted_submission is None
+        and (expect_guard or bool(guard_submissions))
+    )
+    unauthorized_tool_calls = max(
+        0,
+        non_read_tool_calls - len(guard_submissions) - len(guard_starts),
+    )
+    guard_passed = (
+        1 <= len(guard_submissions) <= 3
+        and statuses[:-1] == ["retry"] * (len(statuses) - 1)
+        and statuses[-1:] == ["accepted"]
+        and not any(submission["is_error"] for submission in guard_submissions)
+        and malformed_submission_messages == 0
+        and direct_output_messages == 0
+        and unauthorized_tool_calls == 0
+        and guard_unmatched_tool_events == 0
+        and guard_isolation_passed
+        and final_message_valid
+        and same_job_id
+        and attempts_contiguous
+        and exact_accepted_output
+    )
+
+    response = {
         "text": text,
         "provider": final_message.get("provider"),
         "model": final_message.get("model"),
@@ -486,6 +1009,45 @@ def parse_pi_json_events(stdout, skill_path=SKILL_PATH):
             "skill_loaded": skill_entrypoint_read_calls > 0,
         },
     }
+    guard_observed = bool(
+        guard_submissions
+        or guard_submission_messages
+        or guard_unmatched_tool_events
+        or direct_output_messages
+    )
+    if expect_guard or guard_observed:
+        response["guard"] = {
+            "observed": guard_observed,
+            "max_submissions": 3,
+            "submissions": guard_submissions,
+            "accepted_submission": (
+                accepted_submission["sequence"]
+                if accepted_submission is not None
+                else None
+            ),
+            "accepted_draft_sha256": (
+                accepted_submission["draft_sha256"]
+                if accepted_submission is not None
+                else None
+            ),
+            "final_text_sha256": final_text_sha256,
+            "exact_accepted_output": exact_accepted_output,
+            "malformed_submission_messages": malformed_submission_messages,
+            "direct_output_messages": direct_output_messages,
+            "unauthorized_tool_calls": unauthorized_tool_calls,
+            "unmatched_tool_events": guard_unmatched_tool_events,
+            "ambient_resources_disabled": guard_isolation_passed,
+            "final_message_valid": final_message_valid,
+            "same_job_id": same_job_id,
+            "attempts_contiguous": attempts_contiguous,
+            "passed": guard_passed,
+        }
+    if not has_final_text:
+        raise PiEventParseError(
+            "Pi benchmark call returned no final assistant text",
+            guard_failure=response.get("guard"),
+        )
+    return response
 
 
 def json_type_matches(value, expected_type):
@@ -540,6 +1102,17 @@ def evaluate_output_contract(text, contract):
                         "pattern": pattern,
                     }
                 )
+    elif contract_type == "exact_text":
+        candidate = text
+        if contract["allow_terminal_newline"] and candidate.endswith("\n"):
+            candidate = candidate[:-1]
+        if candidate != contract["value"]:
+            violations.append(
+                {
+                    "rule": "exact-text",
+                    "message": "Output does not match the required exact text.",
+                }
+            )
     elif contract_type == "json_object":
         parsed = True
         try:
@@ -669,6 +1242,26 @@ def evaluate_scenario(scenario, text, default_contract, candidate):
     }
 
 
+def guarded_command_isolated(command):
+    required_flags = {
+        "--no-extensions",
+        "--no-skills",
+        "--no-builtin-tools",
+        "--no-prompt-templates",
+        "--no-themes",
+        "--no-context-files",
+        "--no-session",
+        "--no-approve",
+        "--offline",
+    }
+    return (
+        required_flags.issubset(command)
+        and command.count("--extension") == 1
+        and "--tools" not in command
+        and "--no-tools" not in command
+    )
+
+
 def invoke_pi(
     command,
     timeout_seconds,
@@ -708,26 +1301,55 @@ def invoke_pi(
     skill_path = SKILL_PATH
     if "--skill" in command:
         skill_path = Path(command[command.index("--skill") + 1]) / "SKILL.md"
+    expect_guard = "--extension" in command
+    guard_isolation_passed = (
+        guarded_command_isolated(command) if expect_guard else True
+    )
     if process.returncode != 0:
-        detail = process.stderr.strip()[:2000]
+        stderr = process.stderr.encode("utf-8")
+        stderr_metadata = (
+            f"stderr_bytes={len(stderr)} "
+            f"stderr_sha256={hashlib.sha256(stderr).hexdigest()}"
+        )
         failure = {
             "status": "failure",
             "duration_ms": duration_ms,
             "error": {
                 "kind": "process",
-                "message": f"Pi exited with exit {process.returncode}: {detail}",
+                "message": (
+                    f"Pi exited with exit {process.returncode}; {stderr_metadata}."
+                ),
             },
         }
         try:
             failure["partial_response"] = parse_pi_json_events(
                 process.stdout,
                 skill_path=skill_path,
+                expect_guard=expect_guard,
+                guard_isolation_passed=guard_isolation_passed,
             )
+        except PiEventParseError as error:
+            if error.guard_failure is not None:
+                failure["guard_failure"] = error.guard_failure
         except RuntimeError:
             pass
         return failure
     try:
-        response = parse_pi_json_events(process.stdout, skill_path=skill_path)
+        response = parse_pi_json_events(
+            process.stdout,
+            skill_path=skill_path,
+            expect_guard=expect_guard,
+            guard_isolation_passed=guard_isolation_passed,
+        )
+    except PiEventParseError as error:
+        failure = {
+            "status": "failure",
+            "duration_ms": duration_ms,
+            "error": {"kind": "output", "message": str(error)},
+        }
+        if error.guard_failure is not None:
+            failure["guard_failure"] = error.guard_failure
+        return failure
     except RuntimeError as error:
         return {
             "status": "failure",
@@ -907,6 +1529,166 @@ def evaluation_error(evaluation):
     return None
 
 
+def is_sha256(value):
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
+def guard_evidence_error(guard):
+    expected_fields = {
+        "observed",
+        "max_submissions",
+        "submissions",
+        "accepted_submission",
+        "accepted_draft_sha256",
+        "final_text_sha256",
+        "exact_accepted_output",
+        "malformed_submission_messages",
+        "direct_output_messages",
+        "unauthorized_tool_calls",
+        "unmatched_tool_events",
+        "ambient_resources_disabled",
+        "final_message_valid",
+        "same_job_id",
+        "attempts_contiguous",
+        "passed",
+    }
+    if not isinstance(guard, dict) or set(guard) != expected_fields:
+        return "guard fields are invalid"
+    counters = (
+        "malformed_submission_messages",
+        "direct_output_messages",
+        "unauthorized_tool_calls",
+        "unmatched_tool_events",
+    )
+    if (
+        not isinstance(guard.get("observed"), bool)
+        or guard.get("max_submissions") != 3
+        or not isinstance(guard.get("submissions"), list)
+        or not is_sha256(guard.get("final_text_sha256"))
+        or not all(
+            isinstance(guard.get(key), int)
+            and not isinstance(guard.get(key), bool)
+            and guard[key] >= 0
+            for key in counters
+        )
+        or not all(
+            isinstance(guard.get(key), bool)
+            for key in (
+                "exact_accepted_output",
+                "ambient_resources_disabled",
+                "final_message_valid",
+                "same_job_id",
+                "attempts_contiguous",
+                "passed",
+            )
+        )
+    ):
+        return "guard evidence is invalid"
+    expected_submission_fields = {
+        "sequence",
+        "tool_call_id_sha256",
+        "job_id_sha256",
+        "draft_sha256",
+        "draft_bytes",
+        "result_status",
+        "result_attempt",
+        "result_draft_sha256",
+        "result_text_sha256",
+        "is_error",
+        "submission_message_valid",
+    }
+    submissions = guard["submissions"]
+    for sequence, submission in enumerate(submissions, 1):
+        if not isinstance(submission, dict) or set(submission) != expected_submission_fields:
+            return "guard submission fields are invalid"
+        if (
+            submission.get("sequence") != sequence
+            or not all(
+                is_sha256(submission.get(key))
+                for key in (
+                    "tool_call_id_sha256",
+                    "job_id_sha256",
+                    "draft_sha256",
+                    "result_text_sha256",
+                )
+            )
+            or not isinstance(submission.get("draft_bytes"), int)
+            or isinstance(submission.get("draft_bytes"), bool)
+            or submission["draft_bytes"] < 0
+            or submission.get("result_status")
+            not in {"retry", "accepted", "blocked", "verifier-error"}
+            or not isinstance(submission.get("result_attempt"), int)
+            or isinstance(submission.get("result_attempt"), bool)
+            or submission["result_attempt"] < 1
+            or (
+                submission.get("result_draft_sha256") is not None
+                and not is_sha256(submission["result_draft_sha256"])
+            )
+            or not isinstance(submission.get("is_error"), bool)
+            or not isinstance(submission.get("submission_message_valid"), bool)
+        ):
+            return "guard submission evidence is invalid"
+    accepted = [
+        submission
+        for submission in submissions
+        if submission["result_status"] == "accepted"
+    ]
+    accepted_submission = accepted[0] if len(accepted) == 1 else None
+    accepted_sequence = (
+        accepted_submission["sequence"] if accepted_submission is not None else None
+    )
+    accepted_hash = (
+        accepted_submission["draft_sha256"]
+        if accepted_submission is not None
+        else None
+    )
+    statuses = [submission["result_status"] for submission in submissions]
+    same_job_id = len({item["job_id_sha256"] for item in submissions}) <= 1
+    attempts_contiguous = [
+        item["result_attempt"] for item in submissions
+    ] == list(range(1, len(submissions) + 1))
+    exact_accepted_output = (
+        accepted_submission is not None
+        and accepted_submission["draft_sha256"]
+        == accepted_submission["result_draft_sha256"]
+        == accepted_submission["result_text_sha256"]
+        == guard["final_text_sha256"]
+    )
+    passed = (
+        1 <= len(submissions) <= guard["max_submissions"]
+        and statuses[:-1] == ["retry"] * (len(statuses) - 1)
+        and statuses[-1:] == ["accepted"]
+        and not any(item["is_error"] for item in submissions)
+        and all(item["submission_message_valid"] for item in submissions)
+        and guard["malformed_submission_messages"] == 0
+        and guard["direct_output_messages"] == 0
+        and guard["unauthorized_tool_calls"] == 0
+        and guard["unmatched_tool_events"] == 0
+        and guard["ambient_resources_disabled"]
+        and guard["final_message_valid"]
+        and same_job_id
+        and attempts_contiguous
+        and exact_accepted_output
+    )
+    if (
+        guard["observed"]
+        != bool(
+            submissions
+            or guard["malformed_submission_messages"]
+            or guard["direct_output_messages"]
+            or guard["unmatched_tool_events"]
+        )
+        or guard.get("accepted_submission") != accepted_sequence
+        or guard.get("accepted_draft_sha256") != accepted_hash
+        or guard["same_job_id"] != same_job_id
+        or guard["attempts_contiguous"] != attempts_contiguous
+        or guard["exact_accepted_output"] != exact_accepted_output
+        or guard["passed"] != passed
+    ):
+        return "guard evidence is inconsistent"
+    return None
+
+
 def response_error(response, name, require_stop=False):
     expected_keys = {
         "text",
@@ -918,7 +1700,10 @@ def response_error(response, name, require_stop=False):
         "cost_usd",
         "routing",
     }
-    if not isinstance(response, dict) or set(response) != expected_keys:
+    if not isinstance(response, dict) or frozenset(response) not in {
+        frozenset(expected_keys),
+        frozenset(expected_keys | {"guard"}),
+    }:
         return f"{name} fields are invalid"
     for key in ("text", "provider", "model", "stop_reason"):
         if not isinstance(response.get(key), str) or not response[key]:
@@ -933,7 +1718,7 @@ def response_error(response, name, require_stop=False):
     if not all(
         isinstance(response.get(key), dict)
         for key in ("usage", "cost_usd", "routing")
-    ):
+    ) or ("guard" in response and not isinstance(response["guard"], dict)):
         return f"{name} measurements are incomplete"
     usage = response["usage"]
     measurement_names = (
@@ -955,6 +1740,14 @@ def response_error(response, name, require_stop=False):
             return error
     if error := measurement_error(response["cost_usd"], "cost_usd"):
         return error
+    guard = response.get("guard")
+    if guard is not None:
+        if error := guard_evidence_error(guard):
+            return f"{name} {error}"
+        if guard["final_text_sha256"] != hashlib.sha256(
+            response["text"].encode("utf-8")
+        ).hexdigest():
+            return f"{name} guard final text hash does not match response"
     routing = response["routing"]
     if set(routing) != {
         "tool_calls",
@@ -1026,6 +1819,10 @@ def attempt_error(attempt, index):
         expected_keys.add("error")
         if "partial_response" in attempt or "partial_evaluation" in attempt:
             expected_keys.update(("partial_response", "partial_evaluation"))
+        if "guard_failure" in attempt:
+            expected_keys.add("guard_failure")
+            if error := guard_evidence_error(attempt["guard_failure"]):
+                return f"attempt {index} {error}"
     if set(attempt) != expected_keys:
         return f"attempt {index} fields are invalid for its status"
     if attempt["status"] == "failure":
@@ -1063,6 +1860,22 @@ def routing_safety_passed(cell, response):
             and routing.get("outside_skill_read_calls") == 0
             and routing.get("successful_read_calls")
             == routing.get("skill_tree_read_calls")
+        )
+    if cell["condition"] == "guarded":
+        guard = response.get("guard", {})
+        submission_count = len(guard.get("submissions", []))
+        return (
+            guard.get("observed") is True
+            and guard.get("passed") is True
+            and routing.get("tool_calls") == submission_count
+            and routing.get("non_read_tool_calls") == submission_count
+            and routing.get("read_calls") == 0
+            and routing.get("successful_read_calls") == 0
+            and routing.get("failed_read_calls") == 0
+            and routing.get("skill_entrypoint_read_calls") == 0
+            and routing.get("skill_tree_read_calls") == 0
+            and routing.get("outside_skill_read_calls") == 0
+            and routing.get("skill_loaded") is False
         )
     return (
         routing.get("tool_calls") == 0
@@ -1104,7 +1917,12 @@ def expected_condition_integrity(cell, scenario, response):
 
 def expected_prompt_sha256(cell, matrix, scenario, skill_text):
     task_input = build_task_input(scenario)
-    prompt = build_condition_prompt(task_input, cell["condition"], skill_text)
+    prompt = build_condition_prompt(
+        task_input,
+        cell["condition"],
+        skill_text,
+        scenario=scenario,
+    )
     return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
 
@@ -1177,8 +1995,13 @@ def raw_document_error(document):
         else {"duration_ms", "response", "condition_integrity", "evaluation"}
     )
     allowed_keys = common_keys | status_keys
-    if not set(document) <= allowed_keys:
-        return "document contains unexpected fields"
+    if set(document) != allowed_keys:
+        return "document fields are incomplete or unexpected"
+    if (
+        not isinstance(document.get("updated_at"), str)
+        or not document["updated_at"]
+    ):
+        return "updated_at must be nonempty text"
     if not isinstance(document.get("cell"), dict):
         return "cell must be an object"
     if not isinstance(document.get("provenance"), dict):
@@ -1264,9 +2087,15 @@ def run_cell(
     pause=time.sleep,
     now=utc_now,
     skill_dir=SKILL_DIR,
+    guard_extension_path=GUARD_EXTENSION_PATH,
 ):
     task_input = build_task_input(fixture)
-    prompt = build_condition_prompt(task_input, cell["condition"], skill_text)
+    prompt = build_condition_prompt(
+        task_input,
+        cell["condition"],
+        skill_text,
+        scenario=fixture,
+    )
     prompt_sha256 = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     attempts = []
     if raw_path.exists():
@@ -1293,10 +2122,31 @@ def run_cell(
         attempts = list(existing.get("attempts", []))
         if existing.get("status") == "success":
             return {"action": "skipped", "path": str(raw_path)}
+        completed_guard_job = (
+            cell["condition"] == "guarded"
+            and any(
+                (
+                    attempt.get("guard_failure", {}).get("observed") is True
+                    or attempt.get("partial_response", {})
+                    .get("guard", {})
+                    .get("observed")
+                    is True
+                )
+                for attempt in attempts
+            )
+        )
+        if completed_guard_job:
+            return {"action": "failed", "path": str(raw_path)}
 
     if invoke is None:
         invoke = invoke_pi
-    command = build_pi_command(cell, matrix, prompt, skill_dir=skill_dir)
+    command = build_pi_command(
+        cell,
+        matrix,
+        prompt,
+        skill_dir=skill_dir,
+        guard_extension_path=guard_extension_path,
+    )
     document = {
         "schema_version": 1,
         "status": "failure",
@@ -1316,6 +2166,8 @@ def run_cell(
         }
         if call["status"] == "failure":
             attempt["error"] = call["error"]
+            if "guard_failure" in call:
+                attempt["guard_failure"] = call["guard_failure"]
             if "partial_response" in call:
                 attempt["partial_response"] = call["partial_response"]
                 attempt["partial_evaluation"] = evaluate_scenario(
@@ -1328,6 +2180,18 @@ def run_cell(
             document["last_error"] = call["error"]
             document["updated_at"] = now()
             write_json_atomic(raw_path, document)
+            completed_guard_job = (
+                cell["condition"] == "guarded"
+                and (
+                    call.get("guard_failure", {}).get("observed") is True
+                    or call.get("partial_response", {})
+                    .get("guard", {})
+                    .get("observed")
+                    is True
+                )
+            )
+            if completed_guard_job:
+                return {"action": "failed", "path": str(raw_path)}
             if attempt_in_run < matrix["retry_limit"]:
                 pause(matrix["inter_call_delay_seconds"])
             continue
@@ -1362,6 +2226,11 @@ def run_cell(
             document["last_error"] = error
             document["updated_at"] = now()
             write_json_atomic(raw_path, document)
+            if (
+                cell["condition"] == "guarded"
+                and response.get("guard", {}).get("observed") is True
+            ):
+                return {"action": "failed", "path": str(raw_path)}
             if attempt_in_run < matrix["retry_limit"]:
                 pause(matrix["inter_call_delay_seconds"])
             continue
@@ -1386,7 +2255,9 @@ def build_task_input(fixture):
     contract = fixture.get("output_contract")
     contract_text = ""
     final_instruction = "Return only the requested rewritten text."
-    if isinstance(contract, dict) and contract.get("type") == "json_object":
+    if isinstance(contract, dict) and contract.get("type") == "exact_text":
+        final_instruction = "Return only the requested output."
+    elif isinstance(contract, dict) and contract.get("type") == "json_object":
         contract_lines = [
             "Output contract:",
             "- Return one JSON object.",
@@ -1409,7 +2280,7 @@ def build_task_input(fixture):
     )
 
 
-def build_condition_prompt(task_input, condition, skill_text):
+def build_condition_prompt(task_input, condition, skill_text, scenario=None):
     if condition in {"baseline", "native-skill"}:
         return task_input
     if condition == "direct-prompt":
@@ -1419,10 +2290,18 @@ def build_condition_prompt(task_input, condition, skill_text):
             "---\n\n"
             f"{task_input}"
         )
+    if condition == "guarded" and scenario is not None:
+        return f"/clear-write --mode {scenario['mode']}\n{scenario['source']}"
     raise ValueError(f"unknown benchmark condition: {condition}")
 
 
-def build_pi_command(cell, matrix, prompt, skill_dir=SKILL_DIR):
+def build_pi_command(
+    cell,
+    matrix,
+    prompt,
+    skill_dir=SKILL_DIR,
+    guard_extension_path=GUARD_EXTENSION_PATH,
+):
     command = [
         "pi",
         "--print",
@@ -1452,10 +2331,14 @@ def build_pi_command(cell, matrix, prompt, skill_dir=SKILL_DIR):
         command.append("--no-skills")
         if cell["condition"] == "native-skill":
             command.extend(["--skill", str(skill_dir)])
+    if cell["condition"] == "guarded":
+        command.extend(["--extension", str(guard_extension_path)])
 
     tools = isolation["tools_by_condition"][cell["condition"]]
     if tools:
         command.extend(["--tools", ",".join(tools)])
+    elif cell["condition"] == "guarded":
+        command.append("--no-builtin-tools")
     else:
         command.append("--no-tools")
     if isolation["session_persistence"] is False:
@@ -1601,9 +2484,22 @@ def aggregate_operations(rows):
 
 
 def aggregate_activation(matrix, fixtures, successes):
+    if (
+        matrix["schema_version"] == 2
+        and not matrix["acceptance_thresholds"]["activation_applicable"]
+    ):
+        return {
+            "applicable": False,
+            "groups_expected": 0,
+            "groups_passed": 0,
+            "accepted": True,
+            "groups": [],
+        }
     groups = []
     for model in matrix["models"]:
         for scenario_id in matrix["scenario_ids"]:
+            if "native-skill" not in conditions_for_scenario(matrix, scenario_id):
+                continue
             rows = [
                 row
                 for row in successes
@@ -1619,14 +2515,30 @@ def aggregate_activation(matrix, fixtures, successes):
             loaded = sum(
                 row["response"]["routing"]["skill_loaded"] for row in rows
             )
-            required = (
-                math.ceil(2 * matrix["repetitions"] / 3)
-                if expected_loaded
-                else 0
-            )
-            passed = len(rows) == matrix["repetitions"] and (
-                loaded >= required if expected_loaded else loaded == 0
-            )
+            if matrix["schema_version"] == 2:
+                thresholds = matrix["acceptance_thresholds"]
+                fraction = thresholds["positive_activation_minimum_fraction"]
+                required = (
+                    math.ceil(
+                        fraction["numerator"]
+                        * matrix["repetitions"]
+                        / fraction["denominator"]
+                    )
+                    if expected_loaded
+                    else thresholds["negative_activation_maximum_loaded"]
+                )
+                passed = len(rows) == matrix["repetitions"] and (
+                    loaded >= required if expected_loaded else loaded <= required
+                )
+            else:
+                required = (
+                    math.ceil(2 * matrix["repetitions"] / 3)
+                    if expected_loaded
+                    else 0
+                )
+                passed = len(rows) == matrix["repetitions"] and (
+                    loaded >= required if expected_loaded else loaded == 0
+                )
             groups.append(
                 {
                     "provider": model["provider"],
@@ -1642,11 +2554,26 @@ def aggregate_activation(matrix, fixtures, successes):
             )
     passed = sum(group["passed"] for group in groups)
     return {
+        "applicable": True,
         "groups_expected": len(groups),
         "groups_passed": passed,
         "accepted": passed == len(groups),
         "groups": groups,
     }
+
+
+def semantic_axis_passed(evaluation):
+    return all(
+        metric["passed"] is not False
+        for metric in evaluation["semantic"]["metrics"].values()
+    )
+
+
+def scenario_procedure_applicable(scenario):
+    return scenario.get("mode") == "procedure" or any(
+        invariant.get("category") == "procedure"
+        for invariant in scenario.get("invariants", [])
+    )
 
 
 def aggregate_results(
@@ -1770,18 +2697,23 @@ def aggregate_results(
     gate_rows = [
         row for row in successes if row["cell"]["condition"] in gate_conditions
     ]
-    expected_gate_samples = (
-        len(matrix["models"])
-        * len(gate_conditions)
-        * len(matrix["scenario_ids"])
-        * matrix["repetitions"]
+    expected_gate_samples = sum(
+        cell["condition"] in gate_conditions for cell in cells
     )
-    passed_gate_samples = sum(
-        row["evaluation"]["semantic_gate_passed"] for row in gate_rows
-    )
-    failed_gate_samples = sum(
-        not row["evaluation"]["semantic_gate_passed"] for row in gate_rows
-    )
+    if matrix["schema_version"] == 2:
+        passed_gate_samples = sum(
+            semantic_axis_passed(row["evaluation"]) for row in gate_rows
+        )
+        failed_gate_samples = sum(
+            not semantic_axis_passed(row["evaluation"]) for row in gate_rows
+        )
+    else:
+        passed_gate_samples = sum(
+            row["evaluation"]["semantic_gate_passed"] for row in gate_rows
+        )
+        failed_gate_samples = sum(
+            not row["evaluation"]["semantic_gate_passed"] for row in gate_rows
+        )
     semantic_acceptance = {
         "conditions": gate_conditions,
         "expected_samples": expected_gate_samples,
@@ -1790,6 +2722,52 @@ def aggregate_results(
         "failed_samples": failed_gate_samples,
         "accepted": (
             len(gate_rows) == expected_gate_samples and failed_gate_samples == 0
+        ),
+    }
+    procedure_gate_rows = [
+        row
+        for row in gate_rows
+        if row["evaluation"]["procedure"]["applicable"]
+    ]
+    expected_procedure_samples = sum(
+        cell["condition"] in gate_conditions
+        and scenario_procedure_applicable(fixtures[cell["scenario_id"]])
+        for cell in cells
+    )
+    procedure_passed_samples = sum(
+        row["evaluation"]["procedure"]["passed"] is True
+        for row in procedure_gate_rows
+    )
+    procedure_failed_samples = sum(
+        row["evaluation"]["procedure"]["passed"] is not True
+        for row in procedure_gate_rows
+    )
+    procedure_acceptance = {
+        "conditions": gate_conditions,
+        "expected_samples": expected_procedure_samples,
+        "successful_samples": len(procedure_gate_rows),
+        "passed_samples": procedure_passed_samples,
+        "failed_samples": procedure_failed_samples,
+        "accepted": (
+            len(procedure_gate_rows) == expected_procedure_samples
+            and procedure_failed_samples == 0
+        ),
+    }
+    output_contract_passed_samples = sum(
+        row["evaluation"]["output_contract"]["passed"] for row in gate_rows
+    )
+    output_contract_failed_samples = sum(
+        not row["evaluation"]["output_contract"]["passed"] for row in gate_rows
+    )
+    output_contract_acceptance = {
+        "conditions": gate_conditions,
+        "expected_samples": expected_gate_samples,
+        "successful_samples": len(gate_rows),
+        "passed_samples": output_contract_passed_samples,
+        "failed_samples": output_contract_failed_samples,
+        "accepted": (
+            len(gate_rows) == expected_gate_samples
+            and output_contract_failed_samples == 0
         ),
     }
     model_identity_passed_samples = sum(
@@ -1803,18 +2781,13 @@ def aggregate_results(
     native_rows = [
         row for row in successes if row["cell"]["condition"] == "native-skill"
     ]
-    expected_native_samples = (
-        len(matrix["models"])
-        * len(matrix["scenario_ids"])
-        * matrix["repetitions"]
+    expected_native_samples = sum(
+        cell["condition"] == "native-skill" for cell in cells
     )
-    expected_skill_loaded_samples = (
-        len(matrix["models"])
-        * sum(
-            fixtures[scenario_id].get("expect_skill_loaded", True)
-            for scenario_id in matrix["scenario_ids"]
-        )
-        * matrix["repetitions"]
+    expected_skill_loaded_samples = sum(
+        cell["condition"] == "native-skill"
+        and fixtures[cell["scenario_id"]].get("expect_skill_loaded", True)
+        for cell in cells
     )
     skill_loaded_samples = sum(
         row["response"]["routing"]["skill_loaded"] for row in native_rows
@@ -1827,6 +2800,31 @@ def aggregate_results(
         for row in successes
     )
     activation = aggregate_activation(matrix, fixtures, successes)
+    guard_rows = [
+        row for row in successes if row["cell"]["condition"] == "guarded"
+    ]
+    expected_guard_samples = sum(
+        cell["condition"] == "guarded" for cell in cells
+    )
+    guard_integrity = {
+        "expected_samples": expected_guard_samples,
+        "successful_samples": len(guard_rows),
+        "passed_samples": sum(
+            row["response"].get("guard", {}).get("passed") is True
+            for row in guard_rows
+        ),
+        "failed_samples": sum(
+            row["response"].get("guard", {}).get("passed") is not True
+            for row in guard_rows
+        ),
+        "accepted": (
+            len(guard_rows) == expected_guard_samples
+            and all(
+                row["response"].get("guard", {}).get("passed") is True
+                for row in guard_rows
+            )
+        ),
+    }
     condition_integrity = {
         "expected_samples": expected,
         "successful_samples": len(successes),
@@ -1846,7 +2844,30 @@ def aggregate_results(
             and activation["accepted"]
         ),
     }
-    return {
+    applicability_groups = []
+    for model in matrix["models"]:
+        for scenario_id in matrix["scenario_ids"]:
+            for condition in conditions_for_scenario(matrix, scenario_id):
+                successful_samples = sum(
+                    row["cell"]["provider"] == model["provider"]
+                    and row["cell"]["model"] == model["model"]
+                    and row["cell"]["thinking"] == model["thinking"]
+                    and row["cell"]["scenario_id"] == scenario_id
+                    and row["cell"]["condition"] == condition
+                    for row in successes
+                )
+                applicability_groups.append(
+                    {
+                        "provider": model["provider"],
+                        "model": model["model"],
+                        "thinking": model["thinking"],
+                        "scenario_id": scenario_id,
+                        "condition": condition,
+                        "expected_samples": matrix["repetitions"],
+                        "successful_samples": successful_samples,
+                    }
+                )
+    results = {
         "schema_version": 1,
         "generated_at": generated_at or utc_now(),
         "provenance": provenance,
@@ -1863,6 +2884,12 @@ def aggregate_results(
         "partial_outputs": partial_outputs,
         "unresolved": unresolved,
     }
+    if matrix["schema_version"] == 2:
+        results["procedure_acceptance"] = procedure_acceptance
+        results["output_contract_acceptance"] = output_contract_acceptance
+        results["guard_integrity"] = guard_integrity
+        results["applicability"] = {"groups": applicability_groups}
+    return results
 
 
 def display_path(path):
@@ -1905,8 +2932,55 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
         f"- Package commit: `{provenance['package_commit']}`",
         f"- Package dirty: `{str(provenance['package_dirty']).lower()}`",
         f"- Skill SHA-256: `{provenance.get('skill_sha256', 'unavailable')}`",
+        *(
+            [f"- Extension SHA-256: `{provenance['extension_sha256']}`"]
+            if "extension_sha256" in provenance
+            else []
+        ),
         f"- Pi version: `{provenance['pi_version']}`",
         f"- Runner version: `{provenance['runner_version']}`",
+        *(
+            [
+                "",
+                "## Applicable cell denominators",
+                "",
+                "| Model | Scenario | Condition | Successful/expected |",
+                "|---|---|---|---:|",
+                *[
+                    (
+                        f"| `{group['provider']}/{group['model']}:{group['thinking']}` | "
+                        f"`{group['scenario_id']}` | {group['condition']} | "
+                        f"{group['successful_samples']}/{group['expected_samples']} |"
+                    )
+                    for group in results["applicability"]["groups"]
+                ],
+            ]
+            if "applicability" in results
+            else []
+        ),
+        *(
+            [
+                "",
+                "## Mechanical verifier integrity",
+                "",
+                (
+                    "**Guard integrity: "
+                    + (
+                        "ACCEPTED"
+                        if results["guard_integrity"]["accepted"]
+                        else "NOT ACCEPTED"
+                    )
+                    + ".**"
+                ),
+                (
+                    "Exact accepted guarded outputs: "
+                    f"{results['guard_integrity']['passed_samples']}/"
+                    f"{results['guard_integrity']['expected_samples']}."
+                ),
+            ]
+            if "guard_integrity" in results
+            else []
+        ),
         "",
         "## Semantic results",
         "",
@@ -1940,6 +3014,30 @@ def write_reports(results, results_directory, matrix_path=DEFAULT_MATRIX_PATH):
             "**Semantic acceptance: "
             + ("ACCEPTED" if results["semantic_acceptance"]["accepted"] else "NOT ACCEPTED")
             + ".**"
+        ),
+        *(
+            [
+                (
+                    "**Applicable procedure acceptance: "
+                    + (
+                        "ACCEPTED"
+                        if results["procedure_acceptance"]["accepted"]
+                        else "NOT ACCEPTED"
+                    )
+                    + ".**"
+                ),
+                (
+                    "**Output-contract acceptance: "
+                    + (
+                        "ACCEPTED"
+                        if results["output_contract_acceptance"]["accepted"]
+                        else "NOT ACCEPTED"
+                    )
+                    + ".**"
+                ),
+            ]
+            if "procedure_acceptance" in results
+            else []
         ),
         "",
         "| Model | Condition | Runs | Gate pass/fail | Procedure pass/fail | Output-contract pass/fail |",
@@ -2074,10 +3172,91 @@ def raw_result_name(cell):
     )
 
 
+def validate_evaluation_resources(matrix, provenance):
+    if matrix["schema_version"] != 2:
+        return
+    for key, value in evaluation_resource_hashes(matrix).items():
+        if provenance.get(key) != value:
+            raise RuntimeError(
+                f"evaluation resource changed after provenance capture: {key}"
+            )
+
+
+def validate_prerequisite_smoke(matrix, provenance, skill_text=None):
+    prerequisite = matrix.get("prerequisite_smoke")
+    if prerequisite is None:
+        return
+    smoke_matrix_path = evals_relative_path(
+        prerequisite["matrix_path"], "prerequisite smoke matrix path"
+    )
+    smoke_results_directory = evals_relative_path(
+        prerequisite["results_directory"], "prerequisite smoke results directory"
+    )
+    smoke_matrix = load_matrix(smoke_matrix_path)
+    if smoke_matrix.get("run_kind") != "development-smoke":
+        raise RuntimeError("prerequisite matrix is not a development smoke")
+    results_path = smoke_results_directory / "results.json"
+    if not results_path.is_file():
+        raise RuntimeError(
+            f"release generation requires completed smoke results at {results_path}"
+        )
+    smoke_results = strict_json_loads(results_path.read_text(encoding="utf-8"))
+    smoke_provenance = smoke_results.get("provenance")
+    if not isinstance(smoke_provenance, dict):
+        raise RuntimeError("prerequisite smoke provenance is invalid")
+    for key in (
+        "runner_version",
+        "package_commit",
+        "package_dirty",
+        "skill_sha256",
+        "extension_sha256",
+        "runner_sha256",
+        "scorer_sha256",
+        "pi_version",
+    ):
+        if smoke_provenance.get(key) != provenance.get(key):
+            raise RuntimeError(
+                f"prerequisite smoke does not match release provenance field {key}"
+            )
+    expected_smoke_matrix_hash = hashlib.sha256(
+        smoke_matrix_path.read_bytes()
+    ).hexdigest()
+    if smoke_provenance.get("matrix_sha256") != expected_smoke_matrix_hash:
+        raise RuntimeError("prerequisite smoke matrix provenance does not match")
+    if (
+        smoke_results.get("matrix", {}).get("id") != smoke_matrix["matrix_id"]
+        or smoke_results.get("matrix", {}).get("version")
+        != smoke_matrix["version"]
+    ):
+        raise RuntimeError("prerequisite smoke matrix identity does not match")
+    _fixtures, scenarios = load_matrix_scenarios(smoke_matrix)
+    recomputed = aggregate_results(
+        smoke_matrix,
+        scenarios,
+        smoke_provenance,
+        smoke_results_directory / "raw",
+        skill_text=skill_text,
+    )
+    for key in (
+        "completeness",
+        "condition_integrity",
+        "semantic_acceptance",
+        "procedure_acceptance",
+        "output_contract_acceptance",
+        "guard_integrity",
+        "applicability",
+    ):
+        if smoke_results.get(key) != recomputed.get(key):
+            raise RuntimeError(f"prerequisite smoke {key} does not match raw evidence")
+    if not benchmark_accepted(recomputed):
+        raise RuntimeError("prerequisite smoke is not accepted")
+
+
 def execute_benchmark(
     matrix_path,
     results_directory,
     report_only=False,
+    attest_no_prior_candidate_output=False,
     provenance=None,
     run_cell_function=run_cell,
     pause=time.sleep,
@@ -2086,6 +3265,14 @@ def execute_benchmark(
     matrix_path = Path(matrix_path)
     results_directory = Path(results_directory)
     matrix = load_matrix(matrix_path)
+    if (
+        not report_only
+        and matrix.get("run_kind") == "release-candidate"
+        and not attest_no_prior_candidate_output
+    ):
+        raise RuntimeError(
+            "release generation requires --attest-no-prior-candidate-output"
+        )
     fixtures, scenarios = load_matrix_scenarios(matrix)
     if not report_only:
         score_fixtures.load_linter()
@@ -2098,8 +3285,37 @@ def execute_benchmark(
             raise RuntimeError(
                 "benchmark generation requires a clean git working tree"
             )
+        validate_evaluation_resources(matrix, provenance)
+        validate_prerequisite_smoke(
+            matrix,
+            provenance,
+            skill_text=SKILL_PATH.read_text(encoding="utf-8"),
+        )
         with tempfile.TemporaryDirectory(prefix="pi-ste-snapshot-") as directory:
-            skill_snapshot = Path(directory) / "clear-technical-writing"
+            snapshot_root = Path(directory)
+            if matrix["schema_version"] == 1:
+                skill_snapshot = snapshot_root / "clear-technical-writing"
+                guard_extension_snapshot = GUARD_EXTENSION_PATH
+            else:
+                package_snapshot = snapshot_root / "package"
+                skill_snapshot = (
+                    package_snapshot / "skills" / "clear-technical-writing"
+                )
+                extension_snapshot = package_snapshot / "extensions"
+                shutil.copytree(
+                    ROOT / "extensions",
+                    extension_snapshot,
+                    ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
+                )
+                if tree_sha256(extension_snapshot) != provenance.get(
+                    "extension_sha256"
+                ):
+                    raise RuntimeError(
+                        "extension resources changed after provenance capture"
+                    )
+                guard_extension_snapshot = (
+                    extension_snapshot / GUARD_EXTENSION_PATH.name
+                )
             shutil.copytree(
                 SKILL_DIR,
                 skill_snapshot,
@@ -2113,13 +3329,18 @@ def execute_benchmark(
                 encoding="utf-8"
             )
             cells = list(iter_cells(matrix, scenarios))
-            for index, cell in enumerate(cells, 1):
+            provider_semaphores = {
+                provider: threading.BoundedSemaphore(limit)
+                for provider, limit in matrix.get(
+                    "max_parallel_calls_by_provider", {}
+                ).items()
+            }
+
+            def run_indexed_cell(index, cell):
                 raw_path = raw_directory / raw_result_name(cell)
-                emit(
-                    f"[{index}/{len(cells)}] {cell['provider']}/{cell['model']}:"
-                    f"{cell['thinking']} {cell['condition']} "
-                    f"{cell['scenario_id']} r{cell['repetition']}"
-                )
+                semaphore = provider_semaphores.get(cell["provider"])
+                if semaphore is not None:
+                    semaphore.acquire()
                 try:
                     outcome = run_cell_function(
                         cell,
@@ -2130,13 +3351,50 @@ def execute_benchmark(
                         raw_path,
                         pause=pause,
                         skill_dir=skill_snapshot,
+                        guard_extension_path=guard_extension_snapshot,
                     )
                 except RuntimeError as error:
-                    emit(f"  STALE {error}")
-                    continue
-                emit(f"  {outcome['action'].upper()}")
+                    return index, cell, None, error
+                finally:
+                    if semaphore is not None:
+                        semaphore.release()
                 if outcome["action"] != "skipped" and index < len(cells):
                     pause(matrix["inter_call_delay_seconds"])
+                return index, cell, outcome, None
+
+            if matrix["schema_version"] == 1:
+                completed = (
+                    run_indexed_cell(index, cell)
+                    for index, cell in enumerate(cells, 1)
+                )
+                for index, cell, outcome, error in completed:
+                    emit(
+                        f"[{index}/{len(cells)}] {cell['provider']}/{cell['model']}:"
+                        f"{cell['thinking']} {cell['condition']} "
+                        f"{cell['scenario_id']} r{cell['repetition']}"
+                    )
+                    emit(f"  STALE {error}" if error else f"  {outcome['action'].upper()}")
+            else:
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=matrix["max_parallel_calls"]
+                ) as executor:
+                    futures = {
+                        executor.submit(run_indexed_cell, index, cell): (index, cell)
+                        for index, cell in enumerate(cells, 1)
+                    }
+                    for future in concurrent.futures.as_completed(futures):
+                        index, cell, outcome, error = future.result()
+                        emit(
+                            f"[{index}/{len(cells)}] {cell['provider']}/{cell['model']}:"
+                            f"{cell['thinking']} {cell['condition']} "
+                            f"{cell['scenario_id']} r{cell['repetition']}"
+                        )
+                        emit(
+                            f"  STALE {error}"
+                            if error
+                            else f"  {outcome['action'].upper()}"
+                        )
+            validate_evaluation_resources(matrix, provenance)
 
     results = aggregate_results(
         matrix,
@@ -2168,6 +3426,14 @@ def build_parser():
         action="store_true",
         help="aggregate existing raw cells without model calls",
     )
+    parser.add_argument(
+        "--attest-no-prior-candidate-output",
+        action="store_true",
+        help=(
+            "attest that no model has received the release-candidate scenarios; "
+            "required for schema-v2 release generation"
+        ),
+    )
     return parser
 
 
@@ -2176,6 +3442,11 @@ def benchmark_accepted(results):
         results["completeness"]["complete"]
         and results["condition_integrity"]["accepted"]
         and results["semantic_acceptance"]["accepted"]
+        and results.get("procedure_acceptance", {"accepted": True})["accepted"]
+        and results.get("output_contract_acceptance", {"accepted": True})[
+            "accepted"
+        ]
+        and results.get("guard_integrity", {"accepted": True})["accepted"]
     )
 
 
@@ -2187,6 +3458,7 @@ def main(argv=None):
             args.matrix,
             args.results_dir,
             report_only=args.report_only,
+            attest_no_prior_candidate_output=args.attest_no_prior_candidate_output,
         )
     except (
         OSError,

@@ -15,7 +15,7 @@ Evaluation stack includes:
 - Blind cross-provider quality judgment.
 - Guarded-verifier development probes.
 
-Development probes and archived scenarios cannot serve as unseen release evidence. First release still requires a new matrix with genuinely unseen scenarios, committed before candidate generation. No package or scorer changes may retroactively change that result.
+Development probes and archived scenarios cannot serve as unseen release evidence. The schema-v2 first-release design is frozen in [`RELEASE-CANDIDATE-PREREGISTRATION.md`](RELEASE-CANDIDATE-PREREGISTRATION.md). Commit the complete preregistration snapshot before the development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
 
 ## Active files
 
@@ -24,6 +24,11 @@ Development probes and archived scenarios cannot serve as unseen release evidenc
 - `score_fixtures.py`: closed-world semantic scorer.
 - `fixtures/`: current regression fixtures.
 - `benchmark-scenarios.json`: original scenario definitions retained for regression work.
+- `development-guard-smoke-matrix.json`: required three-call guarded smoke on known development evidence.
+- `release-candidate-matrix.json`: 153-cell schema-v2 ragged release matrix.
+- `fixtures/release-candidate.json`: five unseen prose fixtures.
+- `release-candidate-scenarios.json`: unseen exact-CSV routing control.
+- `release-candidate-quality-judge.json`: 99 matched blind comparisons.
 
 Runner output defaults to ignored development paths under `evals/results/`. Commit evidence only after explicit review.
 
@@ -45,15 +50,28 @@ archive/pre-release/evals/evidence/development/
 
 Internal matrix IDs remain `v1` and `v1-independent-review` to preserve provenance. Use source commits recorded in evidence when reproducing historical runs. Do not regenerate archived evidence from current package state.
 
-## Run a preregistered matrix
+## Run the first-release evaluation
 
-Commit all source changes first. Generation requires clean Git tree because each raw cell records exact package commit and Pi version.
+Commit all source changes first. Generation requires a clean Git tree because each raw cell records the exact package commit, Pi version, skill hash, and extension hash.
+
+Run the required development smoke first:
 
 ```bash
 python3 evals/run_pi_bench.py \
-  --matrix path/to/preregistered-matrix.json \
-  --results-dir evals/results/current-run
+  --matrix evals/development-guard-smoke-matrix.json \
+  --results-dir evals/results/development-guard-smoke
 ```
+
+Then run the preregistered release matrix:
+
+```bash
+python3 evals/run_pi_bench.py \
+  --matrix evals/release-candidate-matrix.json \
+  --results-dir evals/results/release-candidate \
+  --attest-no-prior-candidate-output
+```
+
+Release generation verifies that accepted smoke raw evidence matches the same immutable package snapshot.
 
 Rebuild reports without model calls:
 
@@ -68,19 +86,21 @@ Exit 0 means matrix complete with accepted condition-integrity and semantic gate
 
 ## Conditions
 
-Standard matrix conditions:
+Schema-v1 archive conditions remain frozen as baseline, native-skill, and direct-prompt.
+
+Schema v2 uses:
 
 - `baseline`: no writing skill and no model-callable tools.
 - `native-skill`: Pi loads only `clear-technical-writing`; model can use only `read` for progressive loading.
-- `direct-prompt`: complete `SKILL.md` is injected with skills and tools disabled. Diagnostic only.
+- `guarded`: Pi loads only the explicit guarded verifier extension and invokes exact `/clear-write --mode <mode>` source input with no built-in tools.
 
-Only native-skill condition gates package acceptance unless new preregistration explicitly says otherwise. Baseline and direct-prompt failures remain visible diagnostic evidence.
+Per-scenario applicability creates a ragged matrix. The exact-CSV structured negative omits guarded because `/clear-write` cannot represent its serialization instructions. Native and guarded semantic gates are authoritative. Guard integrity is a separate 100% gate.
 
 ## Isolation and provenance
 
 Matrix controls tools, extensions, skills, prompt templates, themes, context files, sessions, project trust, and Pi startup networking. Provider requests still run.
 
-Each call uses empty temporary working directory. Baseline and adapted conditions receive same task input and system prompt.
+Each call uses an empty temporary working directory. Baseline and native conditions receive the same task input and system prompt. Guarded release scenarios are restricted to canonical, task-equivalent rewrite tasks. Native-versus-guarded is labeled an end-to-end package-path comparison, not a verifier-only effect.
 
 Raw reuse requires matching:
 
@@ -99,7 +119,7 @@ Each successful raw cell records provider/model identity, usage metadata, cost, 
 
 Reports place semantic and exact output-contract results before style. Semantic failures remain authoritative; style or judge preference cannot override them.
 
-Positive automatic activation normally requires at least two loads across three repetitions. Negative structured-output scenarios require zero loads. Exact thresholds must be fixed in preregistered matrix.
+Positive automatic activation requires at least two loads across three repetitions. The structured-output negative requires zero loads. Applicable-cell completeness, model identity, routing safety, native and guarded semantics, applicable procedures, output contracts, and guard integrity each require 100%. Exact thresholds are machine-validated from the preregistered matrix.
 
 `failures.json` retains missing, stale, malformed, routing-invalid, and otherwise rejected cells. Incomplete matrix blocks aggregate claims.
 
@@ -109,17 +129,17 @@ Run judge only after source generation passes required gates:
 
 ```bash
 python3 evals/run_quality_judge.py \
-  --config path/to/preregistered-judge.json \
-  --matrix path/to/preregistered-matrix.json \
-  --benchmark-results-dir evals/results/current-run \
-  --results-dir evals/results/current-judge
+  --config evals/release-candidate-quality-judge.json \
+  --matrix evals/release-candidate-matrix.json \
+  --benchmark-results-dir evals/results/release-candidate \
+  --results-dir evals/results/release-candidate-judge
 ```
 
 Judge receives task, source, and blinded candidate labels. It does not receive condition or generator identity. Cross-provider mapping reduces shared-provider bias.
 
 Rubric covers factual fidelity, task completion, uncertainty and obligation, terminology, safety and actionability, readability, and concision.
 
-Deterministic semantic or output-contract failures override judge preference. Judge-reported semantic, task, modality, terminology, or safety blockers require human resolution.
+The judge creates only matched baseline/native and native/guarded pairs. Preferences are descriptive, not a superiority claim. Deterministic semantic, output-contract, routing, or guard-integrity failures override judge preference. Judge-reported semantic, task, modality, terminology, or safety blockers require human resolution.
 
 ## Limits
 

@@ -10,6 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "evals" / "score_fixtures.py"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
+RELEASE_CANDIDATE_CORPUS_PATH = (
+    ROOT / "evals" / "fixtures" / "release-candidate.json"
+)
 PRE_RELEASE_EVIDENCE = (
     ROOT / "archive" / "pre-release" / "evals" / "evidence"
 )
@@ -65,6 +68,56 @@ def run_cli(fixture_id, rewrite, *args):
         capture_output=True,
         check=False,
     )
+
+
+class ReleaseCandidateScoringTest(unittest.TestCase):
+    def test_cli_can_reproduce_release_corpus_score(self):
+        corpus = json.loads(
+            RELEASE_CANDIDATE_CORPUS_PATH.read_text(encoding="utf-8")
+        )
+        fixture = corpus["fixtures"][0]
+        candidate = fixture["passing_rewrites"][0]["rewrite"]
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                fixture["id"],
+                "--corpus",
+                str(RELEASE_CANDIDATE_CORPUS_PATH),
+                "--format",
+                "json",
+                "-",
+            ],
+            input=candidate,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["fixture_id"], fixture["id"])
+
+    def test_preregistered_safe_and_unsafe_siblings_hit_expected_gates(self):
+        corpus = json.loads(
+            RELEASE_CANDIDATE_CORPUS_PATH.read_text(encoding="utf-8")
+        )
+
+        for fixture in corpus["fixtures"]:
+            for candidate in fixture["passing_rewrites"]:
+                with self.subTest(fixture=fixture["id"], candidate=candidate["id"]):
+                    score = score_fixtures.score_rewrite(
+                        fixture, candidate["rewrite"], candidate["id"]
+                    )
+                    self.assertTrue(score["semantic"]["gate_passed"])
+                    if fixture["mode"] == "procedure":
+                        self.assertTrue(score["procedure"]["passed"])
+            for candidate in fixture["failing_baselines"]:
+                with self.subTest(fixture=fixture["id"], candidate=candidate["id"]):
+                    score = score_fixtures.score_rewrite(
+                        fixture, candidate["rewrite"], candidate["id"]
+                    )
+                    self.assertFalse(score["semantic"]["gate_passed"])
 
 
 class SemanticParaphraseRegressionTest(unittest.TestCase):
@@ -855,7 +908,7 @@ class HumanOutputAndErrorTest(unittest.TestCase):
         self.assertNotIn("overall score", result.stdout.lower())
         self.assertIn("do not prove full semantic equivalence", result.stdout)
 
-    def test_custom_corpus_is_not_an_unvalidated_cli_surface(self):
+    def test_custom_corpus_is_explicit_and_hash_attested(self):
         result = run_cli(
             "release-facts-and-causes",
             "Text.",
@@ -863,9 +916,12 @@ class HumanOutputAndErrorTest(unittest.TestCase):
             str(CORPUS_PATH),
         )
 
-        self.assertEqual(result.returncode, 2)
-        self.assertEqual(result.stdout, "")
-        self.assertIn("unrecognized arguments: --corpus", result.stderr)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(
+            report["corpus_sha256"],
+            score_fixtures.hashlib.sha256(CORPUS_PATH.read_bytes()).hexdigest(),
+        )
 
     def test_unknown_fixture_is_an_invocation_error(self):
         result = run_cli("missing-fixture", "Text.")

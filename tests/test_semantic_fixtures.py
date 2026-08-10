@@ -7,6 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
+RELEASE_CANDIDATE_CORPUS_PATH = (
+    ROOT / "evals" / "fixtures" / "release-candidate.json"
+)
 
 REQUIRED_TAGS = {
     "fact",
@@ -218,6 +221,42 @@ class SemanticFixtureCorpusTest(unittest.TestCase):
                     self.assertEqual(violated_rules(fixture, candidate["rewrite"]), set())
             for baseline in fixture["failing_baselines"]:
                 with self.subTest(fixture=fixture["id"], baseline=baseline["id"]):
+                    self.assertEqual(
+                        violated_rules(fixture, baseline["rewrite"]),
+                        set(baseline["expected_violations"]),
+                    )
+
+    def test_release_candidate_fixtures_are_unseen_canonical_and_closed_world(self):
+        corpus = json.loads(
+            RELEASE_CANDIDATE_CORPUS_PATH.read_text(encoding="utf-8")
+        )
+        fixtures = {fixture["id"]: fixture for fixture in corpus["fixtures"]}
+
+        self.assertEqual(
+            set(fixtures),
+            {
+                "morrowglass-rejection-analysis",
+                "sablefen-drawer-access-policy",
+                "calder-anti-rollback-fuse-procedure",
+                "brineglass-role-ledger",
+                "mireglass-holdover-service-notice",
+            },
+        )
+        for fixture in fixtures.values():
+            with self.subTest(fixture=fixture["id"]):
+                self.assertEqual(
+                    fixture["task"],
+                    f"Rewrite following source in {fixture['mode']} mode. "
+                    "Return only rewritten text.",
+                )
+                for candidate in [
+                    {"id": "source", "rewrite": fixture["source"]},
+                    *fixture["passing_rewrites"],
+                ]:
+                    self.assertEqual(
+                        violated_rules(fixture, candidate["rewrite"]), set()
+                    )
+                for baseline in fixture["failing_baselines"]:
                     self.assertEqual(
                         violated_rules(fixture, baseline["rewrite"]),
                         set(baseline["expected_violations"]),

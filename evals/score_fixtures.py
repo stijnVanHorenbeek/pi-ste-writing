@@ -2,6 +2,7 @@
 """Score one rewrite against deterministic semantic-preservation fixtures."""
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
@@ -375,8 +376,8 @@ def read_text(path):
     return Path(path).read_text(encoding="utf-8")
 
 
-def load_fixture(fixture_id):
-    corpus = json.loads(DEFAULT_CORPUS_PATH.read_text(encoding="utf-8"))
+def load_fixture(fixture_id, corpus_path=DEFAULT_CORPUS_PATH):
+    corpus = json.loads(Path(corpus_path).read_text(encoding="utf-8"))
     for fixture in corpus["fixtures"]:
         if fixture["id"] == fixture_id:
             return fixture
@@ -432,6 +433,7 @@ def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("fixture_id")
     parser.add_argument("path", nargs="?", default="-")
+    parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS_PATH)
     parser.add_argument("--format", choices=FORMATS, default="text")
     return parser
 
@@ -440,9 +442,9 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     try:
-        fixture = load_fixture(args.fixture_id)
+        fixture = load_fixture(args.fixture_id, args.corpus)
     except (OSError, UnicodeError, json.JSONDecodeError, KeyError, TypeError) as error:
-        parser.error(f"cannot read corpus {str(DEFAULT_CORPUS_PATH)!r}: {error}")
+        parser.error(f"cannot read corpus {str(args.corpus)!r}: {error}")
     except ValueError as error:
         parser.error(str(error))
     try:
@@ -452,6 +454,7 @@ def main():
 
     candidate = "<stdin>" if args.path == "-" else args.path
     report = score_rewrite(fixture, rewrite, candidate)
+    report["corpus_sha256"] = hashlib.sha256(args.corpus.read_bytes()).hexdigest()
     if args.format == "json":
         print(json.dumps(report, indent=2))
     else:

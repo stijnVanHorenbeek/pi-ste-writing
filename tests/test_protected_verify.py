@@ -58,6 +58,33 @@ class ProtectedVerifyTests(unittest.TestCase):
                     self.assertFalse(report["ok"])
                     self.assertTrue(report["violations"])
 
+    def test_release_candidate_separates_mechanical_and_semantic_probes(self):
+        corpus = json.loads(
+            (ROOT / "evals" / "fixtures" / "release-candidate.json").read_text()
+        )
+        fixtures = {fixture["id"]: fixture for fixture in corpus["fixtures"]}
+        for fixture in fixtures.values():
+            safe = fixture["passing_rewrites"][0]["rewrite"]
+            with self.subTest(fixture=fixture["id"], candidate="safe"):
+                result, report = self.run_verify(fixture["source"], safe)
+                self.assertEqual(result.returncode, 0)
+                self.assertTrue(report["ok"])
+
+        calder = fixtures["calder-anti-rollback-fuse-procedure"]
+        result, report = self.run_verify(
+            calder["source"], calder["failing_baselines"][0]["rewrite"]
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(report["ok"])
+
+        brineglass = fixtures["brineglass-role-ledger"]
+        result, report = self.run_verify(
+            brineglass["source"],
+            brineglass["failing_baselines"][0]["rewrite"],
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertTrue(report["ok"])
+
     def test_does_not_claim_to_verify_semantic_roles(self):
         result, report = self.run_verify(
             "Minimum is `low`; maximum is `high`.",

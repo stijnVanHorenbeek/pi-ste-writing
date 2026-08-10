@@ -2,13 +2,15 @@
 """Run blind cross-provider quality review for completed Pi benchmark outputs."""
 
 import argparse
+import concurrent.futures
 import hashlib
 import json
 import re
 import statistics
 import subprocess
+import threading
 import time
-from collections import Counter
+from collections import Counter, deque
 from pathlib import Path
 
 import run_pi_bench
@@ -21,7 +23,7 @@ DEFAULT_CONFIG_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-quality-judge.js
 DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.json"
 DEFAULT_BENCHMARK_RESULTS_DIR = run_pi_bench.DEFAULT_RESULTS_DIR
 DEFAULT_JUDGE_RESULTS_DIR = HERE / "results" / "current-judge"
-JUDGE_RUNNER_VERSION = "2"
+JUDGE_RUNNER_VERSION = "3"
 REQUIRED_DIMENSIONS = (
     "factual_semantic_fidelity",
     "task_completion",
@@ -42,7 +44,7 @@ def collect_judge_provenance(
     kwargs = {} if run_command is None else {"run_command": run_command}
     current = run_pi_bench.collect_provenance(matrix_path, **kwargs)
     source = source_results["provenance"]
-    return {
+    provenance = {
         "judge_runner_version": JUDGE_RUNNER_VERSION,
         "judge_config_sha256": hashlib.sha256(
             Path(config_path).read_bytes()
@@ -56,23 +58,51 @@ def collect_judge_provenance(
         "skill_sha256": current["skill_sha256"],
         "pi_version": current["pi_version"],
     }
+    if "extension_sha256" in source:
+        provenance["source_extension_sha256"] = source["extension_sha256"]
+        provenance["extension_sha256"] = current.get("extension_sha256")
+        for key in (
+            "runner_sha256",
+            "scorer_sha256",
+            "corpus_sha256",
+            "scenario_sha256",
+        ):
+            provenance[f"source_{key}"] = source.get(key)
+            provenance[key] = current.get(key)
+    return provenance
 
 
-def source_compatibility_error(source_provenance, judge_provenance):
+def source_compatibility_error(
+    source_provenance,
+    judge_provenance,
+    require_same_commit=False,
+):
     if source_provenance.get("package_dirty") is not False:
         return "benchmark evidence must come from a clean git working tree"
     if judge_provenance.get("package_dirty") is not False:
         return "judge generation requires a clean git working tree"
+    if require_same_commit and judge_provenance.get(
+        "package_commit"
+    ) != source_provenance.get("package_commit"):
+        return "schema-v2 judge generation requires the benchmark package commit"
     if judge_provenance.get("skill_sha256") != source_provenance.get(
         "skill_sha256"
     ):
         return "judge generation requires the benchmark skill snapshot"
+    if "extension_sha256" in source_provenance and judge_provenance.get(
+        "extension_sha256"
+    ) != source_provenance.get("extension_sha256"):
+        return "judge generation requires the benchmark extension snapshot"
+    for key in ("runner_sha256", "scorer_sha256", "corpus_sha256", "scenario_sha256"):
+        if key in source_provenance and judge_provenance.get(key) != source_provenance.get(key):
+            return f"judge generation requires the benchmark {key} snapshot"
     return None
 
 
 def validate_judge_config(config):
-    if not isinstance(config, dict) or config.get("schema_version") != 1:
-        raise ValueError("judge config schema_version must be 1")
+    if not isinstance(config, dict) or config.get("schema_version") not in {1, 2}:
+        raise ValueError("judge config schema_version must be 1 or 2")
+    schema_version = config["schema_version"]
     if not isinstance(config.get("version"), int) or config["version"] < 1:
         raise ValueError("judge config version must be a positive integer")
     amendments = config.get("amendments")
@@ -184,6 +214,52 @@ def validate_judge_config(config):
         or not all(isinstance(item, str) and item.strip() for item in limitations)
     ):
         raise ValueError("judge limitations must be explicit")
+    if schema_version == 1:
+        if any(
+            key in config
+            for key in (
+                "max_parallel_calls",
+                "max_parallel_calls_by_provider",
+                "preference_claim",
+                "acceptance_thresholds",
+            )
+        ):
+            raise ValueError("judge schema-v1 does not support schema-v2 controls")
+    else:
+        max_parallel_calls = config.get("max_parallel_calls")
+        provider_limits = config.get("max_parallel_calls_by_provider")
+        judge_providers = {
+            judge["provider"] for judge in config["judges_by_source_provider"].values()
+        }
+        thresholds = config.get("acceptance_thresholds")
+        if (
+            not isinstance(max_parallel_calls, int)
+            or isinstance(max_parallel_calls, bool)
+            or max_parallel_calls < 1
+            or not isinstance(provider_limits, dict)
+            or set(provider_limits) != judge_providers
+            or any(
+                not isinstance(limit, int)
+                or isinstance(limit, bool)
+                or limit < 1
+                for limit in provider_limits.values()
+            )
+            or sum(provider_limits.values()) != max_parallel_calls
+            or config.get("preference_claim") != "descriptive-only"
+            or not isinstance(thresholds, dict)
+            or set(thresholds)
+            != {
+                "judge_completeness",
+                "cross_provider_mapping",
+                "maximum_review_required",
+            }
+            or thresholds.get("judge_completeness") != 1.0
+            or thresholds.get("cross_provider_mapping") != 1.0
+            or thresholds.get("maximum_review_required") != 0
+        ):
+            raise ValueError(
+                "judge schema-v2 requires bounded provider parallelism and descriptive-only preference"
+            )
 
 
 def load_judge_config(path=DEFAULT_CONFIG_PATH):
@@ -195,6 +271,8 @@ def load_judge_config(path=DEFAULT_CONFIG_PATH):
 def validate_judge_matrix(config, matrix):
     validate_judge_config(config)
     run_pi_bench.validate_matrix(matrix)
+    if config["schema_version"] != matrix["schema_version"]:
+        raise ValueError("judge and source matrix schema versions must match")
     if matrix.get("matrix_id") != config.get("source_matrix_id"):
         raise ValueError("judge source matrix ID does not match")
     if matrix["repetitions"] < config["source_repetitions_minimum"]:
@@ -206,6 +284,22 @@ def validate_judge_matrix(config, matrix):
         for comparison in config["comparisons"]
     ):
         raise ValueError("judge comparison references an unknown source condition")
+    if matrix["schema_version"] == 2:
+        for comparison in config["comparisons"]:
+            matched = [
+                scenario_id
+                for scenario_id in matrix["scenario_ids"]
+                if {
+                    comparison["left_condition"],
+                    comparison["right_condition"],
+                }.issubset(
+                    run_pi_bench.conditions_for_scenario(matrix, scenario_id)
+                )
+            ]
+            if not matched:
+                raise ValueError(
+                    f"judge comparison {comparison['id']!r} has no matched scenarios"
+                )
     source_providers = {model["provider"] for model in matrix["models"]}
     missing = source_providers - set(config["judges_by_source_provider"])
     if missing:
@@ -218,6 +312,28 @@ def validate_judge_matrix(config, matrix):
             == source_provider
         ):
             raise ValueError("judge mapping must use a cross-provider model")
+
+
+def validate_preregistered_judge_config(
+    config_path,
+    matrix,
+    source_provenance,
+):
+    if matrix["schema_version"] != 2:
+        return
+    expected_path = run_pi_bench.evals_relative_path(
+        matrix["judge_config_path"], "matrix judge_config_path"
+    )
+    if Path(config_path).resolve() != expected_path:
+        raise ValueError("schema-v2 judge config path is not preregistered")
+    expected_hash = hashlib.sha256(expected_path.read_bytes()).hexdigest()
+    if (
+        source_provenance.get("preregistered_judge_config_path")
+        != matrix["judge_config_path"]
+        or source_provenance.get("preregistered_judge_config_sha256")
+        != expected_hash
+    ):
+        raise ValueError("schema-v2 judge config hash is not preregistered")
 
 
 def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MATRIX_PATH):
@@ -239,6 +355,23 @@ def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MA
     semantic = results.get("semantic_acceptance")
     if not isinstance(semantic, dict) or not isinstance(semantic.get("accepted"), bool):
         raise ValueError("source benchmark semantic acceptance is invalid")
+    if matrix["schema_version"] == 2:
+        if semantic.get("accepted") is not True:
+            raise ValueError("source benchmark semantic acceptance is not accepted")
+        procedure = results.get("procedure_acceptance")
+        if not isinstance(procedure, dict) or procedure.get("accepted") is not True:
+            raise ValueError("source benchmark procedure acceptance is not accepted")
+        output_contract = results.get("output_contract_acceptance")
+        if (
+            not isinstance(output_contract, dict)
+            or output_contract.get("accepted") is not True
+        ):
+            raise ValueError(
+                "source benchmark output-contract acceptance is not accepted"
+            )
+        guard = results.get("guard_integrity")
+        if not isinstance(guard, dict) or guard.get("accepted") is not True:
+            raise ValueError("source benchmark guard integrity is not accepted")
     provenance = results.get("provenance")
     expected_matrix_hash = hashlib.sha256(Path(matrix_path).read_bytes()).hexdigest()
     if (
@@ -246,6 +379,22 @@ def validate_source_results(results, matrix, matrix_path=run_pi_bench.DEFAULT_MA
         or provenance.get("matrix_sha256") != expected_matrix_hash
     ):
         raise ValueError("source benchmark matrix provenance does not match")
+    if matrix["schema_version"] == 2:
+        expected_judge_path = run_pi_bench.evals_relative_path(
+            matrix["judge_config_path"], "matrix judge_config_path"
+        )
+        expected_judge_hash = hashlib.sha256(
+            expected_judge_path.read_bytes()
+        ).hexdigest()
+        if (
+            provenance.get("preregistered_judge_config_path")
+            != matrix["judge_config_path"]
+            or provenance.get("preregistered_judge_config_sha256")
+            != expected_judge_hash
+        ):
+            raise ValueError(
+                "source benchmark judge-config provenance does not match"
+            )
 
 
 def validate_source_evidence(
@@ -263,11 +412,20 @@ def validate_source_evidence(
         Path(raw_directory),
         skill_text=skill_text,
     )
-    authority_fields = (
+    authority_fields = [
         ("completeness", "completeness"),
         ("condition_integrity", "condition integrity"),
         ("semantic_acceptance", "semantic acceptance"),
-    )
+    ]
+    if matrix["schema_version"] == 2:
+        authority_fields.extend(
+            (
+                ("procedure_acceptance", "procedure acceptance"),
+                ("output_contract_acceptance", "output-contract acceptance"),
+                ("guard_integrity", "guard integrity"),
+                ("applicability", "applicability denominators"),
+            )
+        )
     for key, label in authority_fields:
         if recomputed.get(key) != source_results.get(key):
             raise ValueError(
@@ -327,7 +485,20 @@ def load_source_pair(
         if document["condition_integrity"]["passed"] is not True:
             raise RuntimeError(f"source benchmark condition integrity failed: {path}")
         candidates[condition] = document["response"]["text"]
-        evaluations[condition] = document["evaluation"]
+        evaluation = document["evaluation"]
+        if matrix["schema_version"] == 2:
+            procedure = evaluation["procedure"]
+            evaluation = evaluation | {
+                "deterministic_gate_passed": (
+                    run_pi_bench.semantic_axis_passed(evaluation)
+                    and evaluation["output_contract"]["passed"]
+                    and (
+                        not procedure["applicable"]
+                        or procedure["passed"] is True
+                    )
+                )
+            }
+        evaluations[condition] = evaluation
     return candidates, evaluations
 
 
@@ -337,6 +508,13 @@ def iter_judge_cells(matrix, config):
         judge = config["judges_by_source_provider"][source_model["provider"]]
         for comparison in config["comparisons"]:
             for scenario_id in matrix["scenario_ids"]:
+                if matrix["schema_version"] == 2 and not {
+                    comparison["left_condition"],
+                    comparison["right_condition"],
+                }.issubset(
+                    run_pi_bench.conditions_for_scenario(matrix, scenario_id)
+                ):
+                    continue
                 for repetition in range(1, matrix["repetitions"] + 1):
                     yield {
                         "source_model": dict(source_model),
@@ -348,6 +526,24 @@ def iter_judge_cells(matrix, config):
                         "source_repetition": repetition,
                         "judge": dict(judge),
                     }
+
+
+def provider_bounded_order(cells, provider_limits, provider_for_cell):
+    queues = {
+        provider: deque(
+            cell for cell in cells if provider_for_cell(cell) == provider
+        )
+        for provider in provider_limits
+    }
+    if sum(len(queue) for queue in queues.values()) != len(cells):
+        raise ValueError("provider limits do not cover every scheduled cell")
+    ordered = []
+    while any(queues.values()):
+        for provider, limit in provider_limits.items():
+            for _ in range(limit):
+                if queues[provider]:
+                    ordered.append(queues[provider].popleft())
+    return ordered
 
 
 def judge_cell_id(cell):
@@ -536,14 +732,28 @@ def authoritative_outcome(
         for label in ("A", "B")
         if verdict["candidates"][label]["blocking_issues"]
     )
-    left_passed = left_evaluation["semantic_gate_passed"]
-    right_passed = right_evaluation["semantic_gate_passed"]
+    schema_v2_authority = (
+        "deterministic_gate_passed" in left_evaluation
+        or "deterministic_gate_passed" in right_evaluation
+    )
+    left_passed = left_evaluation.get(
+        "deterministic_gate_passed",
+        left_evaluation["semantic_gate_passed"],
+    )
+    right_passed = right_evaluation.get(
+        "deterministic_gate_passed",
+        right_evaluation["semantic_gate_passed"],
+    )
 
     if left_passed != right_passed:
         winner = left_condition if left_passed else right_condition
         return {
             "winner": winner,
-            "basis": "deterministic-semantic-gate",
+            "basis": (
+                "deterministic-source-gates"
+                if schema_v2_authority
+                else "deterministic-semantic-gate"
+            ),
             "judge_preference": judge_preference,
             "blocking_conditions": blocking_conditions,
             "review_required": winner in blocking_conditions,
@@ -999,6 +1209,41 @@ def aggregate_judge_results(
     }
     source_semantic_accepted = source_results["semantic_acceptance"]["accepted"]
     source_integrity_accepted = source_results["condition_integrity"]["accepted"]
+    source_procedure_accepted = source_results.get(
+        "procedure_acceptance", {"accepted": True}
+    )["accepted"]
+    source_output_contract_accepted = source_results.get(
+        "output_contract_acceptance", {"accepted": True}
+    )["accepted"]
+    source_guard_accepted = source_results.get(
+        "guard_integrity", {"accepted": True}
+    )["accepted"]
+    applicability_groups = []
+    for source_model in matrix["models"]:
+        for comparison in config["comparisons"]:
+            for scenario_id in matrix["scenario_ids"]:
+                if matrix["schema_version"] == 2 and not {
+                    comparison["left_condition"],
+                    comparison["right_condition"],
+                }.issubset(
+                    run_pi_bench.conditions_for_scenario(matrix, scenario_id)
+                ):
+                    continue
+                successful_judgments = sum(
+                    document["cell"]["source_model"] == source_model
+                    and document["cell"]["comparison_id"] == comparison["id"]
+                    and document["cell"]["scenario_id"] == scenario_id
+                    for document in documents
+                )
+                applicability_groups.append(
+                    {
+                        "source_model": dict(source_model),
+                        "comparison_id": comparison["id"],
+                        "scenario_id": scenario_id,
+                        "expected_judgments": matrix["repetitions"],
+                        "successful_judgments": successful_judgments,
+                    }
+                )
     quality_acceptance = {
         "expected_judgments": expected,
         "successful_judgments": counts["successful"],
@@ -1008,11 +1253,14 @@ def aggregate_judge_results(
             completeness["complete"]
             and source_semantic_accepted
             and source_integrity_accepted
+            and source_procedure_accepted
+            and source_output_contract_accepted
+            and source_guard_accepted
             and summary["cross_provider_judgments"] == expected
             and summary["review_required"] == 0
         ),
     }
-    return {
+    results = {
         "schema_version": 1,
         "generated_at": generated_at or run_pi_bench.utc_now(),
         "provenance": provenance,
@@ -1025,13 +1273,19 @@ def aggregate_judge_results(
         "semantic_authority": {
             "source_accepted": source_semantic_accepted,
             "condition_integrity_accepted": source_integrity_accepted,
-            "rule": "Deterministic semantic and output-contract failures override judge preference.",
+            "procedure_accepted": source_procedure_accepted,
+            "output_contract_accepted": source_output_contract_accepted,
+            "guard_integrity_accepted": source_guard_accepted,
+            "rule": "Deterministic semantic, output-contract, and guard-integrity failures override judge preference.",
         },
         "quality_acceptance": quality_acceptance,
         "summary": summary,
         "limitations": list(config["limitations"]),
         "unresolved": unresolved,
     }
+    if matrix["schema_version"] == 2:
+        results["applicability"] = {"groups": applicability_groups}
+    return results
 
 
 def write_judge_reports(results, results_directory):
@@ -1070,10 +1324,59 @@ def write_judge_reports(results, results_directory):
             )
             + "."
         ),
-        "- Deterministic semantic failures override judge preference.",
+        (
+            "- Source applicable procedure acceptance: "
+            + (
+                "accepted"
+                if results["semantic_authority"]["procedure_accepted"]
+                else "not accepted"
+            )
+            + "."
+        ),
+        (
+            "- Source output-contract acceptance: "
+            + (
+                "accepted"
+                if results["semantic_authority"]["output_contract_accepted"]
+                else "not accepted"
+            )
+            + "."
+        ),
+        (
+            "- Source guard integrity: "
+            + (
+                "accepted"
+                if results["semantic_authority"]["guard_integrity_accepted"]
+                else "not accepted"
+            )
+            + "."
+        ),
+        "- Deterministic semantic, applicable-procedure, output-contract, routing, and guard-integrity failures override judge preference.",
         (
             "- Judge blocking findings requiring review: "
             f"{results['quality_acceptance']['review_required']}."
+        ),
+        *(
+            [
+                "",
+                "## Applicable judgment denominators",
+                "",
+                "| Source model | Comparison | Scenario | Successful/expected |",
+                "|---|---|---|---:|",
+                *[
+                    (
+                        f"| `{group['source_model']['provider']}/"
+                        f"{group['source_model']['model']}:"
+                        f"{group['source_model']['thinking']}` | "
+                        f"{group['comparison_id']} | `{group['scenario_id']}` | "
+                        f"{group['successful_judgments']}/"
+                        f"{group['expected_judgments']} |"
+                    )
+                    for group in results["applicability"]["groups"]
+                ],
+            ]
+            if "applicability" in results
+            else []
         ),
         "",
         "## Quality scores and preferences",
@@ -1290,6 +1593,11 @@ def execute_judging(
         source_results_path.read_text(encoding="utf-8")
     )
     validate_source_results(source_results, matrix, matrix_path=matrix_path)
+    validate_preregistered_judge_config(
+        config_path,
+        matrix,
+        source_results["provenance"],
+    )
     source_raw_directory = benchmark_results_directory / "raw"
     source_provenance = source_results["provenance"]
     if not report_only and source_provenance["package_dirty"]:
@@ -1315,8 +1623,12 @@ def execute_judging(
     raw_directory.mkdir(parents=True, exist_ok=True)
 
     if not report_only:
-        if "skill_sha256" in provenance:
-            if error := source_compatibility_error(source_provenance, provenance):
+        if config["schema_version"] == 2 or "skill_sha256" in provenance:
+            if error := source_compatibility_error(
+                source_provenance,
+                provenance,
+                require_same_commit=config["schema_version"] == 2,
+            ):
                 raise RuntimeError(error)
         skill_text = source_skill_text
         if run_pi_bench.tree_sha256(run_pi_bench.SKILL_DIR) != source_provenance[
@@ -1325,8 +1637,32 @@ def execute_judging(
             raise RuntimeError(
                 "judge generation requires the benchmark skill snapshot"
             )
+        if "extension_sha256" in source_provenance and run_pi_bench.tree_sha256(
+            run_pi_bench.ROOT / "extensions"
+        ) != source_provenance["extension_sha256"]:
+            raise RuntimeError(
+                "judge generation requires the benchmark extension snapshot"
+            )
         cells = list(iter_judge_cells(matrix, config))
-        for index, cell in enumerate(cells, 1):
+        if config["schema_version"] == 2:
+            cells = provider_bounded_order(
+                cells,
+                config["max_parallel_calls_by_provider"],
+                lambda cell: cell["judge"]["provider"],
+            )
+        provider_semaphores = {
+            provider: threading.BoundedSemaphore(limit)
+            for provider, limit in config.get(
+                "max_parallel_calls_by_provider", {}
+            ).items()
+        }
+
+        def run_indexed_judgment(index, cell):
+            validate_preregistered_judge_config(
+                config_path,
+                matrix,
+                source_provenance,
+            )
             candidates, evaluations = load_source_pair(
                 source_raw_directory,
                 cell,
@@ -1336,13 +1672,10 @@ def execute_judging(
                 source_provenance,
             )
             raw_path = raw_directory / judge_raw_result_name(cell)
-            source = cell["source_model"]
-            judge = cell["judge"]
-            emit(
-                f"[{index}/{len(cells)}] {source['provider']}/{source['model']} "
-                f"{cell['comparison_id']} {cell['scenario_id']} "
-                f"r{cell['source_repetition']} -> {judge['provider']}/{judge['model']}"
-            )
+            judge_provider = cell["judge"]["provider"]
+            semaphore = provider_semaphores.get(judge_provider)
+            if semaphore is not None:
+                semaphore.acquire()
             try:
                 outcome = run_judge_cell(
                     cell,
@@ -1356,11 +1689,50 @@ def execute_judging(
                     pause=pause,
                 )
             except RuntimeError as error:
-                emit(f"  STALE {error}")
-                continue
-            emit(f"  {outcome['action'].upper()}")
+                return index, cell, None, error
+            finally:
+                try:
+                    validate_preregistered_judge_config(
+                        config_path,
+                        matrix,
+                        source_provenance,
+                    )
+                finally:
+                    if semaphore is not None:
+                        semaphore.release()
             if outcome["action"] != "skipped" and index < len(cells):
                 pause(config["inter_call_delay_seconds"])
+            return index, cell, outcome, None
+
+        def emit_judgment(result):
+            index, cell, outcome, error = result
+            source = cell["source_model"]
+            judge = cell["judge"]
+            emit(
+                f"[{index}/{len(cells)}] {source['provider']}/{source['model']} "
+                f"{cell['comparison_id']} {cell['scenario_id']} "
+                f"r{cell['source_repetition']} -> {judge['provider']}/{judge['model']}"
+            )
+            emit(f"  STALE {error}" if error else f"  {outcome['action'].upper()}")
+
+        if config["schema_version"] == 1:
+            for index, cell in enumerate(cells, 1):
+                emit_judgment(run_indexed_judgment(index, cell))
+        else:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=config["max_parallel_calls"]
+            ) as executor:
+                futures = [
+                    executor.submit(run_indexed_judgment, index, cell)
+                    for index, cell in enumerate(cells, 1)
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    emit_judgment(future.result())
+        validate_preregistered_judge_config(
+            config_path,
+            matrix,
+            source_provenance,
+        )
 
     results = aggregate_judge_results(
         matrix,
@@ -1381,6 +1753,9 @@ def judge_accepted(results):
         results["completeness"]["complete"]
         and results["semantic_authority"]["source_accepted"]
         and results["semantic_authority"]["condition_integrity_accepted"]
+        and results["semantic_authority"]["procedure_accepted"]
+        and results["semantic_authority"]["output_contract_accepted"]
+        and results["semantic_authority"]["guard_integrity_accepted"]
         and results["quality_acceptance"]["accepted"]
     )
 

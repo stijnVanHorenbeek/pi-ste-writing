@@ -1,10 +1,13 @@
 import contextlib
 import copy
 import io
+import hashlib
 import json
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -17,9 +20,88 @@ CONFIG_PATH = ARCHIVE_CONFIG / "initial-quality-judge.json"
 MATRIX_PATH = ARCHIVE_CONFIG / "initial-skill-matrix.json"
 INDEPENDENT_CONFIG_PATH = ARCHIVE_CONFIG / "independent-review-quality-judge.json"
 INDEPENDENT_MATRIX_PATH = ARCHIVE_CONFIG / "independent-review-matrix.json"
+RELEASE_CANDIDATE_CONFIG_PATH = EVALS / "release-candidate-quality-judge.json"
+RELEASE_CANDIDATE_MATRIX_PATH = EVALS / "release-candidate-matrix.json"
 sys.path.insert(0, str(EVALS))
 
 import run_quality_judge
+
+
+def schema_v2_design():
+    matrix = json.loads(MATRIX_PATH.read_text())
+    matrix.update(
+        schema_version=2,
+        run_kind="release-candidate",
+        judge_config_path="release-candidate-quality-judge.json",
+        matrix_id="release-candidate",
+        conditions=["baseline", "native-skill", "guarded"],
+        conditions_by_scenario={
+            scenario_id: (
+                ["baseline", "native-skill"]
+                if scenario_id == "schema-constrained-incident-status"
+                else ["baseline", "native-skill", "guarded"]
+            )
+            for scenario_id in matrix["scenario_ids"]
+        },
+        semantic_gate_conditions=["native-skill", "guarded"],
+        max_parallel_calls=3,
+        max_parallel_calls_by_provider={
+            "openai-codex": 1,
+            "github-copilot": 2,
+        },
+        acceptance_thresholds={
+            "applicable_cell_completeness": 1.0,
+            "model_identity": 1.0,
+            "routing_safety": 1.0,
+            "semantic": 1.0,
+            "procedure": 1.0,
+            "output_contract": 1.0,
+            "guard_integrity": 1.0,
+            "positive_activation_minimum_fraction": {
+                "numerator": 2,
+                "denominator": 3,
+            },
+            "negative_activation_maximum_loaded": 0,
+            "activation_applicable": True,
+        },
+    )
+    matrix["isolation"]["tools_by_condition"] = {
+        "baseline": [],
+        "native-skill": ["read"],
+        "guarded": [],
+    }
+    config = json.loads(CONFIG_PATH.read_text())
+    config.update(
+        schema_version=2,
+        judge_id="release-candidate-quality",
+        source_matrix_id=matrix["matrix_id"],
+        comparisons=[
+            {
+                "id": "baseline-vs-native",
+                "left_condition": "baseline",
+                "right_condition": "native-skill",
+                "role": "routing-control-cohort",
+            },
+            {
+                "id": "native-vs-guarded",
+                "left_condition": "native-skill",
+                "right_condition": "guarded",
+                "role": "end-to-end-package-path",
+            },
+        ],
+        max_parallel_calls=3,
+        max_parallel_calls_by_provider={
+            "openai-codex": 1,
+            "github-copilot": 2,
+        },
+        preference_claim="descriptive-only",
+        acceptance_thresholds={
+            "judge_completeness": 1.0,
+            "cross_provider_mapping": 1.0,
+            "maximum_review_required": 0,
+        },
+    )
+    return matrix, config
 
 
 class JudgeConfigTest(unittest.TestCase):
@@ -45,7 +127,7 @@ class JudgeConfigTest(unittest.TestCase):
             ],
         )
         self.assertEqual(config["version"], 2)
-        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "2")
+        self.assertEqual(run_quality_judge.JUDGE_RUNNER_VERSION, "3")
         self.assertEqual(config["source_repetitions_minimum"], 3)
         self.assertEqual(
             [comparison["id"] for comparison in config["comparisons"]],
@@ -72,6 +154,76 @@ class JudgeConfigTest(unittest.TestCase):
         run_quality_judge.validate_judge_matrix(config, matrix)
         self.assertEqual(config["source_matrix_id"], "v1-independent-review")
         self.assertEqual(len(list(run_quality_judge.iter_judge_cells(matrix, config))), 108)
+
+    def test_schema_v2_preregisters_parallelism_and_descriptive_preference(self):
+        matrix, config = schema_v2_design()
+
+        run_quality_judge.validate_judge_matrix(config, matrix)
+
+        self.assertEqual(config["max_parallel_calls"], 3)
+        self.assertEqual(config["preference_claim"], "descriptive-only")
+
+    def test_release_candidate_judge_uses_matched_cross_provider_pairs(self):
+        config = run_quality_judge.load_judge_config(
+            RELEASE_CANDIDATE_CONFIG_PATH
+        )
+        matrix = run_quality_judge.run_pi_bench.load_matrix(
+            RELEASE_CANDIDATE_MATRIX_PATH
+        )
+        cells = list(run_quality_judge.iter_judge_cells(matrix, config))
+
+        self.assertEqual(len(cells), 99)
+        self.assertEqual(
+            [comparison["id"] for comparison in config["comparisons"]],
+            ["baseline-vs-native", "native-vs-guarded"],
+        )
+        self.assertEqual(config["preference_claim"], "descriptive-only")
+        self.assertFalse(
+            any(
+                cell["comparison_id"] == "native-vs-guarded"
+                and cell["scenario_id"] == "hushvale-spore-transfer-csv"
+                for cell in cells
+            )
+        )
+        for cell in cells:
+            self.assertNotEqual(
+                cell["source_model"]["provider"], cell["judge"]["provider"]
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            results = run_quality_judge.aggregate_judge_results(
+                matrix,
+                config,
+                {"judge_config_sha256": "a" * 64},
+                Path(directory),
+                {
+                    "semantic_acceptance": {"accepted": True},
+                    "condition_integrity": {"accepted": True},
+                    "guard_integrity": {"accepted": True},
+                },
+            )
+        self.assertEqual(len(results["applicability"]["groups"]), 33)
+        self.assertEqual(
+            sum(
+                group["expected_judgments"]
+                for group in results["applicability"]["groups"]
+            ),
+            99,
+        )
+        source_provenance = {
+            "preregistered_judge_config_path": matrix["judge_config_path"],
+            "preregistered_judge_config_sha256": hashlib.sha256(
+                RELEASE_CANDIDATE_CONFIG_PATH.read_bytes()
+            ).hexdigest(),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            alternate = Path(directory) / "alternate-judge.json"
+            alternate.write_bytes(RELEASE_CANDIDATE_CONFIG_PATH.read_bytes())
+            with self.assertRaisesRegex(ValueError, "path is not preregistered"):
+                run_quality_judge.validate_preregistered_judge_config(
+                    alternate,
+                    matrix,
+                    source_provenance,
+                )
 
     def test_validation_rejects_missing_dimension_and_same_provider_mapping(self):
         config = run_quality_judge.load_judge_config(CONFIG_PATH)
@@ -196,6 +348,54 @@ class JudgeCellTest(unittest.TestCase):
             second = run_quality_judge.blind_assignment(group[1])
             self.assertNotEqual(first["A"], second["A"])
             self.assertEqual(set(first.values()), set(second.values()))
+
+    def test_schema_v2_judges_only_matched_applicable_pairs(self):
+        matrix, config = schema_v2_design()
+
+        cells = list(run_quality_judge.iter_judge_cells(matrix, config))
+
+        expected = len(matrix["models"]) * matrix["repetitions"] * (
+            len(matrix["scenario_ids"])
+            + len(matrix["scenario_ids"]) - 1
+        )
+        self.assertEqual(len(cells), expected)
+        self.assertFalse(
+            any(
+                cell["comparison_id"] == "native-vs-guarded"
+                and cell["scenario_id"] == "schema-constrained-incident-status"
+                for cell in cells
+            )
+        )
+
+    def test_schema_v2_rejects_comparison_without_matched_scenario(self):
+        matrix, config = schema_v2_design()
+        for scenario_id in matrix["scenario_ids"]:
+            matrix["conditions_by_scenario"][scenario_id] = [
+                "baseline",
+                "native-skill",
+            ]
+
+        with self.assertRaisesRegex(ValueError, "no matched scenarios"):
+            run_quality_judge.validate_judge_matrix(config, matrix)
+
+    def test_schema_v2_execution_order_fills_preregistered_provider_lanes(self):
+        matrix, config = schema_v2_design()
+        cells = list(run_quality_judge.iter_judge_cells(matrix, config))
+
+        ordered = run_quality_judge.provider_bounded_order(
+            cells,
+            config["max_parallel_calls_by_provider"],
+            lambda cell: cell["judge"]["provider"],
+        )
+
+        self.assertEqual(
+            [cell["judge"]["provider"] for cell in ordered[:3]],
+            ["openai-codex", "github-copilot", "github-copilot"],
+        )
+        self.assertEqual(
+            sorted(run_quality_judge.judge_cell_id(cell) for cell in ordered),
+            sorted(run_quality_judge.judge_cell_id(cell) for cell in cells),
+        )
 
     def test_raw_names_stay_unique_when_model_differs_only_by_thinking(self):
         config = run_quality_judge.load_judge_config(CONFIG_PATH)
@@ -746,7 +946,7 @@ class JudgeReportingTest(unittest.TestCase):
             report.index("## Semantic authority"),
             report.index("## Quality scores and preferences"),
         )
-        self.assertIn("Deterministic semantic failures override", report)
+        self.assertIn("Deterministic semantic, applicable-procedure", report)
         self.assertIn("## Limitations", report)
         for limitation in config["limitations"]:
             self.assertIn(limitation, report)
@@ -767,6 +967,12 @@ class JudgeOrchestrationTest(unittest.TestCase):
 
         self.assertIsNone(
             run_quality_judge.source_compatibility_error(source, current)
+        )
+        self.assertIn(
+            "benchmark package commit",
+            run_quality_judge.source_compatibility_error(
+                source, current, require_same_commit=True
+            ),
         )
         current["skill_sha256"] = "d" * 64
         self.assertIn(
@@ -884,6 +1090,118 @@ class JudgeOrchestrationTest(unittest.TestCase):
         )
         sleep.assert_called_once_with(config["inter_call_delay_seconds"])
 
+    def test_schema_v2_generation_runs_judgments_in_parallel(self):
+        matrix, config = schema_v2_design()
+        cells = list(run_quality_judge.iter_judge_cells(matrix, config))[:3]
+        scenarios = {
+            scenario_id: {"task": "task", "source": "source"}
+            for scenario_id in matrix["scenario_ids"]
+        }
+        active = 0
+        max_active = 0
+        lock = threading.Lock()
+
+        def fake_run_cell(*_args, **_kwargs):
+            nonlocal active, max_active
+            with lock:
+                active += 1
+                max_active = max(max_active, active)
+            time.sleep(0.03)
+            with lock:
+                active -= 1
+            return {"action": "completed", "path": "raw"}
+
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            matrix_path = directory / "matrix.json"
+            config_path = directory / "judge.json"
+            matrix_path.write_text(json.dumps(matrix))
+            config_path.write_text(json.dumps(config))
+            source = directory / "source"
+            source.mkdir()
+            source_results = {
+                "schema_version": 1,
+                "matrix": {"id": matrix["matrix_id"], "version": matrix["version"]},
+                "completeness": {"complete": True},
+                "condition_integrity": {"accepted": True},
+                "semantic_acceptance": {"accepted": True},
+                "procedure_acceptance": {"accepted": True},
+                "output_contract_acceptance": {"accepted": True},
+                "guard_integrity": {"accepted": True},
+                "provenance": {
+                    "runner_version": "5",
+                    "matrix_sha256": hashlib.sha256(matrix_path.read_bytes()).hexdigest(),
+                    "package_commit": "b" * 40,
+                    "package_dirty": False,
+                    "skill_sha256": run_quality_judge.run_pi_bench.tree_sha256(
+                        run_quality_judge.run_pi_bench.SKILL_DIR
+                    ),
+                    "extension_sha256": run_quality_judge.run_pi_bench.tree_sha256(
+                        run_quality_judge.run_pi_bench.ROOT / "extensions"
+                    ),
+                    "preregistered_judge_config_path": matrix["judge_config_path"],
+                    "preregistered_judge_config_sha256": hashlib.sha256(
+                        RELEASE_CANDIDATE_CONFIG_PATH.read_bytes()
+                    ).hexdigest(),
+                    "pi_version": "0.84.1",
+                },
+            }
+            (source / "results.json").write_text(json.dumps(source_results))
+            with (
+                mock.patch.object(
+                    run_quality_judge.run_pi_bench,
+                    "load_matrix_scenarios",
+                    return_value=({}, scenarios),
+                ),
+                mock.patch.object(run_quality_judge, "validate_source_evidence"),
+                mock.patch.object(
+                    run_quality_judge,
+                    "validate_preregistered_judge_config",
+                ),
+                mock.patch.object(
+                    run_quality_judge,
+                    "iter_judge_cells",
+                    side_effect=[iter(cells), iter(())],
+                ),
+                mock.patch.object(
+                    run_quality_judge,
+                    "load_source_pair",
+                    return_value=(
+                        {"baseline": "left", "native-skill": "right"},
+                        {
+                            "baseline": {"semantic_gate_passed": True},
+                            "native-skill": {"semantic_gate_passed": True},
+                        },
+                    ),
+                ),
+                mock.patch.object(
+                    run_quality_judge,
+                    "run_judge_cell",
+                    side_effect=fake_run_cell,
+                ),
+            ):
+                run_quality_judge.execute_judging(
+                    config_path,
+                    matrix_path,
+                    source,
+                    directory / "judge-results",
+                    provenance={
+                        "judge_config_sha256": "a" * 64,
+                        "package_commit": "b" * 40,
+                        "package_dirty": False,
+                        "skill_sha256": source_results["provenance"]["skill_sha256"],
+                        "extension_sha256": source_results["provenance"]["extension_sha256"],
+                    },
+                    pause=lambda _seconds: None,
+                    emit=lambda _message: None,
+                )
+
+        self.assertGreater(max_active, 1)
+        self.assertLessEqual(
+            max_active,
+            config["max_parallel_calls_by_provider"]["github-copilot"],
+        )
+
     def test_cli_converts_provenance_command_failure_to_exit_two(self):
         with mock.patch.object(
             run_quality_judge,
@@ -940,6 +1258,29 @@ class AuthorityAndInvocationTest(unittest.TestCase):
         self.assertEqual(outcome["basis"], "deterministic-semantic-gate")
         self.assertFalse(outcome["review_required"])
         self.assertEqual(outcome["judge_preference"], "baseline")
+
+    def test_schema_v2_procedure_failure_overrides_judge_preference(self):
+        assignment = {"A": "baseline", "B": "native-skill"}
+        verdict = valid_verdict(self.config)
+        verdict["preference"] = "A"
+
+        outcome = run_quality_judge.authoritative_outcome(
+            "baseline",
+            "native-skill",
+            {
+                "semantic_gate_passed": True,
+                "deterministic_gate_passed": False,
+            },
+            {
+                "semantic_gate_passed": True,
+                "deterministic_gate_passed": True,
+            },
+            verdict,
+            assignment,
+        )
+
+        self.assertEqual(outcome["winner"], "native-skill")
+        self.assertEqual(outcome["basis"], "deterministic-source-gates")
 
     def test_blocking_issue_suppresses_preference_when_both_gates_pass(self):
         assignment = {"A": "native-skill", "B": "baseline"}
