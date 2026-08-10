@@ -1,5 +1,8 @@
 # V1 Acceptance Contract and Upstream Inventory
 
+> [!NOTE]
+> Frozen historical contract. V1 failed release gates and remains unpublished. Experimental V2 extension changes are specified in [`v2-verifier-contract.md`](v2-verifier-contract.md); they do not rewrite V1 evidence.
+
 Status: approved implementation baseline
 
 Package working name: `pi-ste-writing`

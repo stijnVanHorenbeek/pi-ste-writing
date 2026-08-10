@@ -1,11 +1,13 @@
 {
   "name": "pi-ste-writing",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "type": "module",
   "private": true,
-  "description": "Semantic-safe technical writing skill for Pi",
+  "description": "Semantic-safe technical writing skill and guarded verifier for Pi",
   "keywords": [
     "pi-package",
     "pi-skill",
+    "pi-extension",
     "technical-writing",
     "simplified-technical-english"
   ],
@@ -19,11 +21,20 @@
   },
   "homepage": "https://github.com/stijnVanHorenbeek/pi-ste-writing#readme",
   "files": [
+    "docs",
+    "extensions",
     "skills",
     "README.md",
     "LICENSE"
   ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
   "pi": {
+    "extensions": [
+      "./extensions/clear-writing-guard.ts"
+    ],
     "skills": [
       "./skills"
     ]

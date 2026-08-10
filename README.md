@@ -3,22 +3,25 @@
 Semantic-safe technical-writing skill for [Pi](https://pi.dev). It rewrites or audits human-facing technical prose while keeping technical correctness, source facts, safety, modality, terminology, and exact values ahead of style.
 
 > [!NOTE]
-> V1 is pre-release. npm publication is disabled by `private: true`; Git and local-path installs work now.
+> V2 verifier is experimental and unpublished. npm publication stays disabled by `private: true`; Git and local-path installs work for development.
 
 ## What it provides
 
-Package exposes one progressively loaded skill: `clear-technical-writing`.
+Package exposes:
 
+- Progressively loaded `clear-technical-writing` skill.
+- Opt-in `/clear-write` Pi extension for guarded rewrites.
 - **Clear:** concise technical prose without strict STE vocabulary or sentence limits.
 - **Procedure:** actionable instructions with conditions and warnings in safe order.
 - **Strict STE:** explicit STE-oriented review after semantic checks pass.
-- **Advisory linter:** dependency-free Python checks for mechanical writing issues and protected-content differences.
+- Advisory Python linter for writing checks.
+- Deterministic Python verifier for protected occurrence counts and containers.
 
-Package does not load an extension, prompt template, theme, output style, global instruction, or persistent mode.
+Package does not load prompt template, theme, output style, global instruction, or persistent writing mode. Extension stays idle until `/clear-write` invocation.
 
 ## Install
 
-Pi packages can instruct models to run commands. Review package source before installation.
+Pi packages can execute arbitrary code. This package extension creates temporary files and runs package-owned Python verifier. Review package source before installation. Python 3 is required for guarded rewrites.
 
 ### User installation
 
@@ -94,6 +97,26 @@ In interactive Pi:
 
 Arguments after command become skill task. Explicit invocation can request writing work in normally excluded contexts, but cannot authorize semantic drift, unsafe action ordering, or unrequested protected-content changes.
 
+### Guarded rewrite
+
+Use verifier when protected occurrence count and container must be gated:
+
+```text
+/clear-write --mode procedure
+Before maintenance, run `kubectl drain node-17 --ignore-daemonsets`.
+Record ticket `OPS-6634` once.
+```
+
+Modes: `clear`, `procedure`, and `strict`; default is `clear`. Source can follow mode on same line. With no source argument in interactive Pi, command opens editor.
+
+Extension owns source snapshot. Model submits job ID and draft to terminating `submit_clear_rewrite` tool. Verifier rejects protected-content drift and lets model repair up to three submissions. Invalid candidate is never accepted output.
+
+Guard checks recognized literal occurrence counts and structural Markdown containers for code, links, bold text, quoted diagnostics, URLs, numeric values, paths, flags, environment variables, JSON keys, and recognized identifiers. Ordered-list markers are structural, not protected numeric facts. Guard does not verify semantic role or relationship between preserved values.
+
+Guard acceptance is not proof of full semantic equivalence. It cannot mechanically verify every fact, modality, causal statement, unknown-root-cause statement, procedure ordering, or domain term. Review high-risk output against source.
+
+TUI, JSON, and RPC expose accepted draft as tool result. Print mode emits accepted draft as final assistant text. Provider streaming can show unverified deltas before finalized direct output is blocked; only accepted artifact carries verifier result.
+
 ### Clear mode
 
 Clear mode is default:
@@ -147,7 +170,7 @@ Skill applies this priority order:
 
 Unless user requests targeted change, skill preserves code, identifiers, commands, flags, paths, URLs, environment variables, product terms, quoted output, numbers, dates, versions, units, ranges, link destinations, reference IDs, anchors, and machine-readable schemas. Protected values retain occurrence count, container, and semantic role.
 
-These safeguards reduce known failure modes; they do not prove arbitrary prose equivalence. Review high-risk or open-ended model output against source. Deterministic fixtures cover declared properties only.
+These safeguards reduce known failure modes; they do not prove arbitrary prose equivalence. Review high-risk or open-ended model output against source. Deterministic fixtures cover declared properties only. V2 guarded path adds mechanical enforcement for recognized protected occurrences; it does not weaken or replace this semantic contract.
 
 ## Default exclusions
 
@@ -162,6 +185,20 @@ Skill does not auto-activate for:
 - Marketing, brand, or editorial voice.
 
 Complete technical reasoning first. Apply skill only to requested human-facing prose.
+
+## Protected-content verifier
+
+Guarded extension runs verifier automatically. Direct CLI use:
+
+```bash
+python3 skills/clear-technical-writing/scripts/protected_verify.py \
+  --source source.md \
+  draft.md
+```
+
+Exit 0 means recognized protected occurrence counts and containers match. Exit 1 means mismatch. Other failures indicate verifier infrastructure error. JSON report is written to stdout. Verifier imports bundled `ste_lint.py`; no third-party Python package is required.
+
+Mechanical success does not prove arbitrary semantic equivalence or ASD-STE100 compliance.
 
 ## Advisory linter
 
@@ -204,7 +241,7 @@ Progressive loading limits normal prompt cost:
 3. Semantic reference loads for source-based rewrites and audits.
 4. Use-case, checklist, and strict-rule references load only when needed.
 
-Activated work consumes additional input tokens. Strict audits and high-risk procedures load most context. Explicit invocation improves routing reliability but has same loaded-context cost. Local linter itself makes no provider call. Evaluation runner and independent judge can make many paid model calls; see [`evals/README.md`](evals/README.md) before running them.
+Activated work consumes additional input tokens. Strict audits and high-risk procedures load most context. Explicit skill invocation improves routing reliability with same loaded-context cost. Guarded invocation injects skill plus semantic-preservation guidance and can require repair turns, so it costs more. Local linter and verifier make no provider call. Evaluation runner and independent judge can make many paid model calls; see [`evals/README.md`](evals/README.md) before running them.
 
 ## Disable, remove, and update
 
@@ -223,7 +260,18 @@ pi config
 pi config -l
 ```
 
-Because package exposes only one skill, disabling `clear-technical-writing` disables package behavior. Package filters can also set its `skills` list to `[]` in Pi settings.
+Disabling `clear-technical-writing` stops automatic and explicit skill use but does not disable `/clear-write`. Package filters can disable resources independently. Example keeps skill and disables extension:
+
+```json
+{
+  "packages": [
+    {
+      "source": "git:github.com/stijnVanHorenbeek/pi-ste-writing",
+      "extensions": []
+    }
+  ]
+}
+```
 
 Remove user installation:
 
@@ -270,6 +318,13 @@ Automatic routing is probabilistic. Use:
 - Disable skill with `pi config` or `pi config -l`.
 - Remove package from correct global or project scope.
 
+### Guarded rewrite fails
+
+- Confirm Python 3 is available as `python3`.
+- Check extension is enabled in package filters.
+- Keep source in same `/clear-write` invocation; guarded jobs are one-shot and not restored across reload/session changes.
+- Treat blocked or verifier-error result as no accepted rewrite.
+
 ### Linter command fails
 
 - Confirm Python 3 is available.
@@ -280,13 +335,14 @@ Automatic routing is probabilistic. Use:
 ## Package layout
 
 ```text
-skills/clear-technical-writing/  Pi skill, references, and linter
+extensions/                      Opt-in guarded-rewrite Pi extension
+skills/clear-technical-writing/  Pi skill, references, linter, and verifier
 tests/                           deterministic tests and regressions
 evals/                           benchmark, scorer, and independent judge
-docs/                            V1 acceptance contract
+docs/                            Versioned acceptance contracts
 ```
 
-See [`docs/v1-acceptance-contract.md`](docs/v1-acceptance-contract.md) for scope and completion gates.
+See frozen [`docs/v1-acceptance-contract.md`](docs/v1-acceptance-contract.md) and experimental [`docs/v2-verifier-contract.md`](docs/v2-verifier-contract.md).
 
 ## Upstream, trademark, and limits
 
