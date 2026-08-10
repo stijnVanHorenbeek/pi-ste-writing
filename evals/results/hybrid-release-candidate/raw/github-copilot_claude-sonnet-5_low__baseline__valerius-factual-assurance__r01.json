@@ -1,0 +1,55 @@
+{
+  "schema_version": 2,
+  "status": "failure",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "thinking": "low",
+    "condition": "baseline",
+    "scenario_id": "valerius-factual-assurance",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "7",
+    "matrix_sha256": "d41409d978ecde0a60026c0702b1080f4372238411051185f3afb4136844e8cb",
+    "package_commit": "a3fde8294c88970e56606833c28a6aecf44580a6",
+    "package_dirty": false,
+    "skill_sha256": "908f5c9aff34a7f34a771e1db0a2e2e421f53ec93b3f8af45926336e48b431fc",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "48bfad6c06241f0cee31bb564298f19eca44259c3d7d9f860667cbadd75d6950",
+    "scorer_sha256": "b1b3ba6b248865910802ca86e23d1cdc655a7d238f36d9031adfa3da307657e8",
+    "corpus_sha256": "d8b2ff47da8f16bb25961d88b648ab0b3758550a0a5a5d02826c1afc8c9f1cf6",
+    "scenario_sha256": "945a9867dba5150573b4522c22d10a6b5f0cfa3fa71ea09c2b3c76ea71eb0c34",
+    "preregistered_judge_config_sha256": "f108712e2b78e0094e57765bf2012a8a58adde2b53b065208800f0ea5334e342",
+    "preregistered_judge_config_path": "hybrid-release-candidate-quality-judge.json"
+  },
+  "prompt_sha256": "2de65f5b40ee1bd98d6a8a89e41bc7b315fbca3b5e7fd9bb9856d7f7758376f9",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T11:22:02.280875+00:00",
+      "status": "failure",
+      "duration_ms": 1956,
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      }
+    },
+    {
+      "number": 2,
+      "started_at": "2026-08-10T11:22:06.243364+00:00",
+      "status": "failure",
+      "duration_ms": 2040,
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      }
+    }
+  ],
+  "last_error": {
+    "kind": "output",
+    "message": "Pi benchmark call returned no final assistant text"
+  },
+  "updated_at": "2026-08-10T11:22:08.284279+00:00"
+}

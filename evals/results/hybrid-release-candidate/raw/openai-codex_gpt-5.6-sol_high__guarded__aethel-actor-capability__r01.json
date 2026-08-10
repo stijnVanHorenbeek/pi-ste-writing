@@ -1,0 +1,156 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "guarded",
+    "scenario_id": "aethel-actor-capability",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "7",
+    "matrix_sha256": "d41409d978ecde0a60026c0702b1080f4372238411051185f3afb4136844e8cb",
+    "package_commit": "a3fde8294c88970e56606833c28a6aecf44580a6",
+    "package_dirty": false,
+    "skill_sha256": "908f5c9aff34a7f34a771e1db0a2e2e421f53ec93b3f8af45926336e48b431fc",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "48bfad6c06241f0cee31bb564298f19eca44259c3d7d9f860667cbadd75d6950",
+    "scorer_sha256": "b1b3ba6b248865910802ca86e23d1cdc655a7d238f36d9031adfa3da307657e8",
+    "corpus_sha256": "d8b2ff47da8f16bb25961d88b648ab0b3758550a0a5a5d02826c1afc8c9f1cf6",
+    "scenario_sha256": "945a9867dba5150573b4522c22d10a6b5f0cfa3fa71ea09c2b3c76ea71eb0c34",
+    "preregistered_judge_config_sha256": "f108712e2b78e0094e57765bf2012a8a58adde2b53b065208800f0ea5334e342",
+    "preregistered_judge_config_path": "hybrid-release-candidate-quality-judge.json"
+  },
+  "prompt_sha256": "1c8737973424b453fef4f264b9078ae1510c65ec3cc8b0fb98b396ab38b4e27b",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T11:21:21.488713+00:00",
+      "status": "success",
+      "duration_ms": 12284
+    }
+  ],
+  "updated_at": "2026-08-10T11:21:33.773385+00:00",
+  "duration_ms": 12284,
+  "response": {
+    "text": "At Aethel Facility, shift supervisors must lock bay `B-42` when radiation exceeds 15 mSv/h. When radiation is below 15 mSv/h, a shift supervisor may unlock `B-42` only if authorization `AUTH-992` is valid. The supervisor is not obligated to unlock the bay even with valid authorization. If secondary sensors show anomalies, the supervisor should request a sweep before unlocking. Maintenance technicians can monitor radiation levels on the dashboard, but they must not authorize `AUTH-992` or unlock the bay.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "toolUse",
+    "usage": {
+      "input_tokens": {
+        "value": 3581,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 402,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 244,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 158,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 3983,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.029965,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 1,
+      "non_read_tool_calls": 1,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    },
+    "guard": {
+      "observed": true,
+      "max_submissions": 3,
+      "submissions": [
+        {
+          "sequence": 1,
+          "tool_call_id_sha256": "91323416d2f845e6ff9ff4394f0195fe7bec3b5201f8937c67cf75d9fd0e32d8",
+          "job_id_sha256": "0ffd52cf83138680501b068dc27f67b18d4eddc2edae5f3747601dba6861d071",
+          "draft_sha256": "0f2522118ce335ca6786dcdf6057fd1a5022d0df273470bb46dd99e28fc0cab0",
+          "draft_bytes": 508,
+          "result_status": "accepted",
+          "result_attempt": 1,
+          "result_draft_sha256": "0f2522118ce335ca6786dcdf6057fd1a5022d0df273470bb46dd99e28fc0cab0",
+          "result_text_sha256": "0f2522118ce335ca6786dcdf6057fd1a5022d0df273470bb46dd99e28fc0cab0",
+          "is_error": false,
+          "submission_message_valid": true
+        }
+      ],
+      "accepted_submission": 1,
+      "accepted_draft_sha256": "0f2522118ce335ca6786dcdf6057fd1a5022d0df273470bb46dd99e28fc0cab0",
+      "final_text_sha256": "0f2522118ce335ca6786dcdf6057fd1a5022d0df273470bb46dd99e28fc0cab0",
+      "exact_accepted_output": true,
+      "malformed_submission_messages": 0,
+      "direct_output_messages": 0,
+      "unauthorized_tool_calls": 0,
+      "unmatched_tool_events": 0,
+      "ambient_resources_disabled": true,
+      "terminal_artifact_valid": true,
+      "same_job_id": true,
+      "attempts_contiguous": true,
+      "passed": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": false,
+      "passed": null,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

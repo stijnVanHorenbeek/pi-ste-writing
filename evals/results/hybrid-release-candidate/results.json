@@ -1,0 +1,1414 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-10T11:29:50.940671+00:00",
+  "provenance": {
+    "runner_version": "7",
+    "matrix_sha256": "d41409d978ecde0a60026c0702b1080f4372238411051185f3afb4136844e8cb",
+    "package_commit": "a3fde8294c88970e56606833c28a6aecf44580a6",
+    "package_dirty": false,
+    "skill_sha256": "908f5c9aff34a7f34a771e1db0a2e2e421f53ec93b3f8af45926336e48b431fc",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "48bfad6c06241f0cee31bb564298f19eca44259c3d7d9f860667cbadd75d6950",
+    "scorer_sha256": "b1b3ba6b248865910802ca86e23d1cdc655a7d238f36d9031adfa3da307657e8",
+    "corpus_sha256": "d8b2ff47da8f16bb25961d88b648ab0b3758550a0a5a5d02826c1afc8c9f1cf6",
+    "scenario_sha256": "945a9867dba5150573b4522c22d10a6b5f0cfa3fa71ea09c2b3c76ea71eb0c34",
+    "preregistered_judge_config_sha256": "f108712e2b78e0094e57765bf2012a8a58adde2b53b065208800f0ea5334e342",
+    "preregistered_judge_config_path": "hybrid-release-candidate-quality-judge.json"
+  },
+  "matrix": {
+    "id": "hybrid-release-candidate",
+    "version": 2,
+    "conditions": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "repetitions": 3
+  },
+  "completeness": {
+    "expected": 153,
+    "successful": 149,
+    "failed": 4,
+    "missing": 0,
+    "stale": 0,
+    "invalid": 0,
+    "complete": false
+  },
+  "condition_integrity": {
+    "expected_samples": 153,
+    "successful_samples": 149,
+    "integrity_passed_samples": 149,
+    "model_identity_passed_samples": 149,
+    "routing_safety_passed_samples": 149,
+    "activation_groups_expected": 18,
+    "activation_groups_passed": 17,
+    "expected_native_samples": 54,
+    "successful_native_samples": 53,
+    "expected_skill_loaded_samples": 45,
+    "skill_loaded_samples": 44,
+    "accepted": false
+  },
+  "objective_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 99,
+    "successful_samples": 98,
+    "passed_samples": 65,
+    "failed_samples": 33,
+    "accepted": false
+  },
+  "condition_results": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 4,
+        "samples_failed": 14,
+        "contracts": {
+          "passed_samples": 4,
+          "failed_samples": 14
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 0,
+          "failed_samples": 3
+        },
+        "output_contract": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3715,
+          "mean": 206.388889,
+          "stddev": 32.067877
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2297,
+          "mean": 127.611111,
+          "stddev": 59.124294
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 284,
+          "mean": 15.777778,
+          "stddev": 18.155365
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2013,
+          "mean": 111.833333,
+          "stddev": 48.465624
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.087485,
+          "mean": 0.00486,
+          "stddev": 0.001923
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 159236,
+          "mean": 8846.444444,
+          "stddev": 2370.428799
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 18
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "native-skill",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 11,
+        "samples_failed": 7,
+        "contracts": {
+          "passed_samples": 11,
+          "failed_samples": 7
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 0,
+          "failed_samples": 3
+        },
+        "output_contract": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 104539,
+          "mean": 5807.722222,
+          "stddev": 2670.995753
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 8223,
+          "mean": 456.833333,
+          "stddev": 289.50307
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3933,
+          "mean": 218.5,
+          "stddev": 199.100826
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 4290,
+          "mean": 238.333333,
+          "stddev": 109.675785
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.769385,
+          "mean": 0.042744,
+          "stddev": 0.021574
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 324255,
+          "mean": 18014.166667,
+          "stddev": 7864.832881
+        },
+        "routing": {
+          "applicable_runs": 18,
+          "skill_loaded_runs": 15
+        },
+        "response_models": {
+          "gpt-5.6-sol": 18
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 12,
+        "samples_failed": 3,
+        "contracts": {
+          "passed_samples": 12,
+          "failed_samples": 3
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 0,
+          "failed_samples": 3
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 63068,
+          "mean": 4204.533333,
+          "stddev": 1211.153713
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 6914,
+          "mean": 460.933333,
+          "stddev": 130.309103
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 3528,
+          "mean": 235.2,
+          "stddev": 105.762753
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 3386,
+          "mean": 225.733333,
+          "stddev": 77.769288
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.5266,
+          "mean": 0.035107,
+          "stddev": 0.008778
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 229368,
+          "mean": 15291.2,
+          "stddev": 4238.666727
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 15
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "baseline",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 4,
+        "samples_failed": 11,
+        "contracts": {
+          "passed_samples": 4,
+          "failed_samples": 11
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 12,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 4700,
+          "mean": 313.333333,
+          "stddev": 60.242473
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2690,
+          "mean": 179.333333,
+          "stddev": 83.770056
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2690,
+          "mean": 179.333333,
+          "stddev": 83.770056
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.0363,
+          "mean": 0.00242,
+          "stddev": 0.000958
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 52791,
+          "mean": 3519.4,
+          "stddev": 848.706137
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "claude-sonnet-5": 15
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "native-skill",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 9,
+        "samples_failed": 9,
+        "contracts": {
+          "passed_samples": 9,
+          "failed_samples": 9
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 1,
+          "failed_samples": 2
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 90,
+          "mean": 5,
+          "stddev": 1.527525
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 6665,
+          "mean": 370.277778,
+          "stddev": 164.52484
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 188,
+          "mean": 10.444444,
+          "stddev": 13.454542
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 6477,
+          "mean": 359.833333,
+          "stddev": 161.201134
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.3200604,
+          "mean": 0.017781,
+          "stddev": 0.007817
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 151846,
+          "mean": 8435.888889,
+          "stddev": 3405.917789
+        },
+        "routing": {
+          "applicable_runs": 18,
+          "skill_loaded_runs": 15
+        },
+        "response_models": {
+          "claude-sonnet-5": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 12,
+        "samples_failed": 3,
+        "contracts": {
+          "passed_samples": 12,
+          "failed_samples": 3
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 30,
+          "mean": 2,
+          "stddev": 0.0
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 4578,
+          "mean": 305.2,
+          "stddev": 21.942956
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 42,
+          "mean": 2.8,
+          "stddev": 7.222188
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 4536,
+          "mean": 302.4,
+          "stddev": 22.951543
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.28776,
+          "mean": 0.019184,
+          "stddev": 0.000267
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 61203,
+          "mean": 4080.2,
+          "stddev": 431.902643
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "claude-sonnet-5": 15
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 18,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 18
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 0,
+          "failed_samples": 3
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3908,
+          "mean": 217.111111,
+          "stddev": 33.668133
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2474,
+          "mean": 137.444444,
+          "stddev": 61.372471
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2474,
+          "mean": 137.444444,
+          "stddev": 61.372471
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.024417,
+          "mean": 0.001357,
+          "stddev": 0.000508
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 95755,
+          "mean": 5319.722222,
+          "stddev": 1507.226548
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gemini-3.6-flash": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "runs": 17,
+      "objective": {
+        "samples_passed": 9,
+        "samples_failed": 8,
+        "contracts": {
+          "passed_samples": 9,
+          "failed_samples": 8
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 0,
+          "failed_samples": 3
+        },
+        "output_contract": {
+          "passed_samples": 14,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 89229,
+          "mean": 5248.764706,
+          "stddev": 2381.551781
+        },
+        "output_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 4065,
+          "mean": 239.117647,
+          "stddev": 106.238844
+        },
+        "reasoning_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 4065,
+          "mean": 239.117647,
+          "stddev": 106.238844
+        },
+        "cost_usd": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 0.164331,
+          "mean": 0.009667,
+          "stddev": 0.004345
+        },
+        "duration_ms": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 192062,
+          "mean": 11297.764706,
+          "stddev": 4964.320421
+        },
+        "routing": {
+          "applicable_runs": 17,
+          "skill_loaded_runs": 14
+        },
+        "response_models": {
+          "gemini-3.6-flash": 17
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 12,
+        "samples_failed": 3,
+        "contracts": {
+          "passed_samples": 12,
+          "failed_samples": 3
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 2,
+          "failed_samples": 1
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 57712,
+          "mean": 3847.466667,
+          "stddev": 14.527522
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2876,
+          "mean": 191.733333,
+          "stddev": 17.7406
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2876,
+          "mean": 191.733333,
+          "stddev": 17.7406
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.108138,
+          "mean": 0.007209,
+          "stddev": 0.000154
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 197840,
+          "mean": 13189.333333,
+          "stddev": 4236.504434
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gemini-3.6-flash": 15
+        }
+      }
+    }
+  ],
+  "partial_outputs": [
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "aethel-actor-capability",
+        "repetition": 1
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "aethel-actor-capability",
+        "repetition": 1
+      },
+      "attempt": 2,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "aethel-actor-capability",
+        "repetition": 2
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "ciphera-repository-terms",
+        "repetition": 3
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "thalassa-destructive-procedure",
+        "repetition": 3
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    }
+  ],
+  "unresolved": [
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "aethel-actor-capability",
+        "repetition": 1
+      },
+      "error": {
+        "kind": "condition-integrity",
+        "message": "Model identity or routing safety did not pass."
+      },
+      "attempts": 2,
+      "completed_outputs": 2
+    },
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "condition": "baseline",
+        "scenario_id": "valerius-factual-assurance",
+        "repetition": 1
+      },
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      },
+      "attempts": 2,
+      "completed_outputs": 0
+    },
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "condition": "baseline",
+        "scenario_id": "valerius-factual-assurance",
+        "repetition": 2
+      },
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      },
+      "attempts": 2,
+      "completed_outputs": 0
+    },
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "condition": "baseline",
+        "scenario_id": "valerius-factual-assurance",
+        "repetition": 3
+      },
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      },
+      "attempts": 2,
+      "completed_outputs": 0
+    }
+  ],
+  "objective_procedure_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 18,
+    "successful_samples": 18,
+    "passed_samples": 6,
+    "failed_samples": 12,
+    "accepted": false
+  },
+  "output_contract_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 99,
+    "successful_samples": 98,
+    "passed_samples": 92,
+    "failed_samples": 6,
+    "accepted": false
+  },
+  "guard_integrity": {
+    "expected_samples": 45,
+    "successful_samples": 45,
+    "passed_samples": 45,
+    "failed_samples": 0,
+    "accepted": true
+  },
+  "applicability": {
+    "groups": [
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "kestrel-flight-log-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "kestrel-flight-log-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 0
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "kestrel-flight-log-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "kestrel-flight-log-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "lumina-threshold-causality",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 2
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "aethel-actor-capability",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "valerius-factual-assurance",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "ciphera-repository-terms",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "thalassa-destructive-procedure",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "kestrel-flight-log-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "kestrel-flight-log-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      }
+    ]
+  }
+}

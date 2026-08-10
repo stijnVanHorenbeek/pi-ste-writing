@@ -1,0 +1,70 @@
+[
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "scenario_id": "aethel-actor-capability",
+      "repetition": 1
+    },
+    "error": {
+      "kind": "condition-integrity",
+      "message": "Model identity or routing safety did not pass."
+    },
+    "attempts": 2,
+    "completed_outputs": 2
+  },
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "baseline",
+      "scenario_id": "valerius-factual-assurance",
+      "repetition": 1
+    },
+    "error": {
+      "kind": "output",
+      "message": "Pi benchmark call returned no final assistant text"
+    },
+    "attempts": 2,
+    "completed_outputs": 0
+  },
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "baseline",
+      "scenario_id": "valerius-factual-assurance",
+      "repetition": 2
+    },
+    "error": {
+      "kind": "output",
+      "message": "Pi benchmark call returned no final assistant text"
+    },
+    "attempts": 2,
+    "completed_outputs": 0
+  },
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "baseline",
+      "scenario_id": "valerius-factual-assurance",
+      "repetition": 3
+    },
+    "error": {
+      "kind": "output",
+      "message": "Pi benchmark call returned no final assistant text"
+    },
+    "attempts": 2,
+    "completed_outputs": 0
+  }
+]
