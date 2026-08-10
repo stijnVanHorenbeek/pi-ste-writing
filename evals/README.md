@@ -31,6 +31,7 @@ Prospective runner support now defines a guarded-core release contract; it does 
 - `development-guard-smoke-matrix.json`: required three-call guarded smoke on known development evidence.
 - `development-hardening-reliability-matrix.json`: 18-cell, three-repetition probe over known guard and routing regressions; never release evidence.
 - `development-gpt-tier-screen-matrix.json`: 18-cell, one-repetition guarded screen across selected OpenAI GPT tiers and thinking levels; directional development evidence only.
+- `development-gpt-guarded-reliability-matrix.json`: 45-cell, three-repetition guarded reliability probe comparing the high-thinking control with GPT 5.6 low and GPT 5.4 Mini high; never release evidence.
 - `release-candidate-matrix.json`: 153-cell schema-v2 ragged release matrix.
 - `fixtures/release-candidate.json`: five unseen prose fixtures.
 - `release-candidate-scenarios.json`: unseen exact-CSV routing control.
