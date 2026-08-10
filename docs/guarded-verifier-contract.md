@@ -1,14 +1,16 @@
-# V2 protected-content verifier contract
+# Guarded protected-content verifier contract
 
-Status: experimental, unpublished, and not release evidence.
+Status: release candidate, experimental, unpublished, and not release evidence.
 
-This contract adds an opt-in Pi extension to the V1 skill. It does not rewrite the historical V1 acceptance contract or failed benchmark results. V2 packaging supersedes only the V1 skill-only package shape.
+Candidate package version: `0.1.0-rc.1`
+
+This contract defines current package shape: progressively loaded writing skill plus opt-in Pi extension. It supersedes skill-only experimental package shape without rewriting archived pre-release contracts or failed benchmark evidence.
 
 ## Purpose
 
-Model instructions alone did not reliably preserve protected occurrence counts and Markdown containers. V2 adds a guarded rewrite path that accepts a draft only after deterministic protected-content verification of those properties.
+Model instructions alone did not reliably preserve protected occurrence counts and Markdown containers. Guarded rewrite path accepts draft only after deterministic protected-content verification of those properties.
 
-The skill semantic-safety contract remains in force. Verifier acceptance does not prove arbitrary semantic equivalence, factual completeness, causal correctness, procedure safety, or ASD-STE100 compliance.
+Skill semantic-safety contract remains in force. Verifier acceptance does not prove arbitrary semantic equivalence, factual completeness, causal correctness, procedure safety, or ASD-STE100 compliance.
 
 ## Invocation
 
@@ -16,9 +18,9 @@ The skill semantic-safety contract remains in force. Verifier acceptance does no
 /clear-write [--mode clear|procedure|strict] <source>
 ```
 
-Source can follow the mode on the same line or the next line. If interactive invocation has no source argument, Pi opens a source editor. Non-interactive invocation requires inline source.
+Source can follow mode on same line or next line. If interactive invocation has no source argument, Pi opens source editor. Non-interactive invocation requires inline source.
 
-Command is explicit and one-shot. It does not enable a persistent writing mode and does not change automatic skill routing.
+Command is explicit and one-shot. It does not enable persistent writing mode or change automatic skill routing.
 
 ## Trust boundary
 
@@ -78,7 +80,7 @@ These remain skill, scorer, review, and benchmark responsibilities. High-risk ou
 
 ## Packaging and security
 
-V2 package manifest exposes:
+Candidate package manifest exposes:
 
 - `./skills`
 - `./extensions/clear-writing-guard.ts`
@@ -89,7 +91,7 @@ Users can disable extension separately with Pi package filters while retaining s
 
 ## Release gate
 
-V2 remains experimental until all conditions pass from clean immutable commit:
+Candidate remains experimental until all conditions pass from clean immutable commit:
 
 1. Unit and integration tests pass.
 2. Package dry run includes intended skill, extension, helper modules, and verifier; no bundled dependency.
@@ -98,4 +100,4 @@ V2 remains experimental until all conditions pass from clean immutable commit:
 5. New preregistered, genuinely unseen release benchmark passes source gates.
 6. User explicitly approves publication.
 
-Independent-review V1 scenarios are development tests only. They cannot become unseen V2 release evidence.
+Archived pre-release scenarios are development tests only. They cannot become unseen release evidence.

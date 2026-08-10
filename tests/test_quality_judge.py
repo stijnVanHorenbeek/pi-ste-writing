@@ -12,17 +12,24 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALS = ROOT / "evals"
-CONFIG_PATH = EVALS / "quality-judge.json"
-MATRIX_PATH = EVALS / "v1-matrix.json"
-INDEPENDENT_CONFIG_PATH = EVALS / "independent-review-quality-judge.json"
-INDEPENDENT_MATRIX_PATH = EVALS / "independent-review-matrix.json"
+ARCHIVE_CONFIG = ROOT / "archive" / "pre-release" / "evals" / "config"
+CONFIG_PATH = ARCHIVE_CONFIG / "initial-quality-judge.json"
+MATRIX_PATH = ARCHIVE_CONFIG / "initial-skill-matrix.json"
+INDEPENDENT_CONFIG_PATH = ARCHIVE_CONFIG / "independent-review-quality-judge.json"
+INDEPENDENT_MATRIX_PATH = ARCHIVE_CONFIG / "independent-review-matrix.json"
 sys.path.insert(0, str(EVALS))
 
 import run_quality_judge
 
 
 class JudgeConfigTest(unittest.TestCase):
-    def test_v1_config_declares_complete_rubric_and_cross_provider_judges(self):
+    def test_default_judge_reads_default_benchmark_output(self):
+        self.assertEqual(
+            run_quality_judge.DEFAULT_BENCHMARK_RESULTS_DIR,
+            run_quality_judge.run_pi_bench.DEFAULT_RESULTS_DIR,
+        )
+
+    def test_initial_config_declares_complete_rubric_and_cross_provider_judges(self):
         config = run_quality_judge.load_judge_config(CONFIG_PATH)
         matrix = json.loads(MATRIX_PATH.read_text())
 

@@ -1,7 +1,9 @@
-# V1 Acceptance Contract and Upstream Inventory
+# Archived skill-only experiment contract
+
+Historical internal label: `V1`. This label identified design generation, not package release.
 
 > [!NOTE]
-> Frozen historical contract. V1 failed release gates and remains unpublished. Experimental V2 extension changes are specified in [`v2-verifier-contract.md`](v2-verifier-contract.md); they do not rewrite V1 evidence.
+> Frozen pre-release contract. Skill-only experiment failed acceptance gates and was never published. Current guarded candidate is specified in [`docs/guarded-verifier-contract.md`](../../../docs/guarded-verifier-contract.md); it does not rewrite this evidence.
 
 Status: approved implementation baseline
 

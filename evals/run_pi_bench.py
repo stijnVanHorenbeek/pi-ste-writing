@@ -27,10 +27,11 @@ import score_fixtures
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-DEFAULT_MATRIX_PATH = HERE / "v1-matrix.json"
+PRE_RELEASE_ARCHIVE = ROOT / "archive" / "pre-release" / "evals"
+DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.json"
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
-DEFAULT_RESULTS_DIR = HERE / "results" / "v1"
+DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
 RUNNER_VERSION = "4"
 CONDITIONS = ("baseline", "native-skill", "direct-prompt")
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}

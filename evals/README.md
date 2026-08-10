@@ -1,142 +1,126 @@
-# V1 evaluation
+# Evaluation
 
-V1 uses a preregistered Pi matrix, closed-world semantic fixtures, deterministic scoring, and blind independent review. It does not claim ASD-STE100 certification or complete open-prose equivalence.
+Package has no public release. Current package version is the first release candidate, `0.1.0-rc.1`.
 
-## Preregistered matrix
+Historical labels such as `V1`, `V2`, and matrix `version: 6` were internal design or benchmark-amendment identifiers. They were not package releases. Frozen pre-release configs and evidence now live under [`archive/pre-release/`](../archive/pre-release/README.md).
 
-`v1-matrix.json` fixes six scenario IDs, three conditions, three models with explicit providers and thinking levels, and three repetitions. Five scenarios use closed-world semantic fixtures; one checks an exact schema-constrained JSON contract. Every model, condition, and scenario needs three successful samples. Version 2 lowered Claude Sonnet 5 from medium to low thinking to reduce GitHub Copilot cost. Versions 3–6 record evidence-driven fixture, routing, output-contract, and semantic-preservation corrections from completed runs and targeted probes.
+## Current release-candidate status
 
-Conditions:
+Evaluation stack includes:
 
-- `baseline`: no writing skill and no model-callable tools.
-- `native-skill`: Pi loads only `clear-technical-writing`; model can use only `read` so progressive skill loading works.
-- `direct-prompt`: complete `SKILL.md` text is injected with skills and tools disabled. This condition is diagnostic, not a substitute for native loading.
+- Preregistered Pi matrix runner.
+- Closed-world semantic fixtures.
+- Deterministic semantic and output-contract scoring.
+- Native skill-routing checks.
+- Blind cross-provider quality judgment.
+- Guarded-verifier development probes.
 
-Version 3 makes `native-skill` the package acceptance gate. Baseline and direct-prompt remain complete diagnostic controls: their failures stay authoritative for those outputs and visible in reports, but expected control failures do not veto package release. Positive native activation passes at two or more loads across three repetitions per model and scenario; negative structured-output activation requires zero loads.
+Development probes and archived scenarios cannot serve as unseen release evidence. First release still requires a new matrix with genuinely unseen scenarios, committed before candidate generation. No package or scorer changes may retroactively change that result.
 
-Matrix changes require a versioned amendment with a recorded reason. Raw results store the matrix SHA-256, so results from changed matrices cannot be silently reused.
+## Active files
 
-## Independent follow-up
+- `run_pi_bench.py`: generation, resume, provenance, deterministic scoring, and reports.
+- `run_quality_judge.py`: blind cross-provider judging after source gates pass.
+- `score_fixtures.py`: closed-world semantic scorer.
+- `fixtures/`: current regression fixtures.
+- `benchmark-scenarios.json`: original scenario definitions retained for regression work.
 
-`independent-review-matrix.json` preregisters six unseen sibling scenarios after the original V1 matrix failed. Fresh-context reviewers authored and audited scenario content before candidate generation. The follow-up keeps the same three conditions, models, repetitions, native-only semantic gate, and two-of-three positive activation threshold. It loads `fixtures/independent-review.json` and `independent-review-scenarios.json` through matrix-relative paths. No package or scoring changes are permitted after outputs exist; failures remain final evidence rather than tuning input.
+Runner output defaults to ignored development paths under `evals/results/`. Commit evidence only after explicit review.
 
-Run generation from a clean committed tree:
+## Historical archive
+
+Original matrix reached internal amendment `version: 6`; this was sixth matrix revision, not release six. It failed package acceptance. Independent follow-up also failed and its judge was not run.
+
+Archived paths:
+
+```text
+archive/pre-release/evals/config/initial-skill-matrix.json
+archive/pre-release/evals/config/initial-quality-judge.json
+archive/pre-release/evals/config/independent-review-matrix.json
+archive/pre-release/evals/config/independent-review-quality-judge.json
+archive/pre-release/evals/evidence/initial-skill-matrix-final/
+archive/pre-release/evals/evidence/independent-review/
+archive/pre-release/evals/evidence/development/
+```
+
+Internal matrix IDs remain `v1` and `v1-independent-review` to preserve provenance. Use source commits recorded in evidence when reproducing historical runs. Do not regenerate archived evidence from current package state.
+
+## Run a preregistered matrix
+
+Commit all source changes first. Generation requires clean Git tree because each raw cell records exact package commit and Pi version.
 
 ```bash
 python3 evals/run_pi_bench.py \
-  --matrix evals/independent-review-matrix.json \
-  --results-dir evals/results/independent-review
-```
-
-If source gates pass, run its preregistered 108-cell judge:
-
-```bash
-python3 evals/run_quality_judge.py \
-  --config evals/independent-review-quality-judge.json \
-  --matrix evals/independent-review-matrix.json \
-  --benchmark-results-dir evals/results/independent-review \
-  --results-dir evals/results/independent-review/judge
-```
-
-## Run
-
-Commit all source changes first. Generation requires a clean Git working tree because each raw cell records exact package commit and Pi version.
-
-```bash
-python3 evals/run_pi_bench.py \
-  --matrix evals/v1-matrix.json \
-  --results-dir evals/results/v1
+  --matrix path/to/preregistered-matrix.json \
+  --results-dir evals/results/current-run
 ```
 
 Rebuild reports without model calls:
 
 ```bash
 python3 evals/run_pi_bench.py \
-  --matrix evals/v1-matrix.json \
-  --results-dir evals/results/v1 \
+  --matrix path/to/preregistered-matrix.json \
+  --results-dir evals/results/current-run \
   --report-only
 ```
 
-Exit 0 means matrix complete with accepted condition-integrity and semantic gates. Exit 1 means evidence is incomplete or a required gate failed. Invocation or configuration errors exit 2.
+Exit 0 means matrix complete with accepted condition-integrity and semantic gates. Exit 1 means evidence incomplete or required gate failed. Invocation or configuration errors exit 2.
 
-## Isolation
+## Conditions
 
-Matrix controls tools, extensions, skills, prompt templates, themes, context files, sessions, project trust, and Pi startup networking. V1 disables ambient resources, persistent sessions, project trust, and startup network checks. Provider requests still run. Native condition explicitly loads package skill and allows only `read`.
+Standard matrix conditions:
 
-Each call uses an empty temporary working directory. Baseline and adapted conditions receive same task input and system prompt.
+- `baseline`: no writing skill and no model-callable tools.
+- `native-skill`: Pi loads only `clear-technical-writing`; model can use only `read` for progressive loading.
+- `direct-prompt`: complete `SKILL.md` is injected with skills and tools disabled. Diagnostic only.
 
-## Resume and raw evidence
+Only native-skill condition gates package acceptance unless new preregistration explicitly says otherwise. Baseline and direct-prompt failures remain visible diagnostic evidence.
 
-Existing matching successful cells are skipped. Failed cells keep attempt history and retry on next run. Model-identity or routing-safety failures retain completed output as partial evidence and retry; ordinary automatic-activation misses remain samples for two-of-three routing acceptance. Raw reuse requires identical cell identity, runner version, matrix hash, package commit, dirty state, and Pi version. Stale results remain visible and are not overwritten.
+## Isolation and provenance
 
-Each successful raw cell records:
+Matrix controls tools, extensions, skills, prompt templates, themes, context files, sessions, project trust, and Pi startup networking. Provider requests still run.
 
-- Requested and returned provider/model identity.
-- Thinking level.
-- Input, provider output, reasoning, visible-output, cache, and total token metadata with explicit availability.
-- Cost and duration.
-- Native skill-read evidence.
-- Deterministic semantic, procedure, Exact output-contract, and advisory style results.
+Each call uses empty temporary working directory. Baseline and adapted conditions receive same task input and system prompt.
 
-Unavailable reasoning metadata remains `null`; provider output counts include reasoning where Pi reports that relationship. Hidden reasoning content is never stored. Non-stop partial outputs remain in failed-attempt records and receive separate aggregate failure evidence.
+Raw reuse requires matching:
 
-## Reports
+- Cell identity.
+- Runner version.
+- Matrix SHA-256.
+- Package commit and clean state.
+- Pi version.
+- Provider, model, and thinking level.
 
-`results.json` and `RESULTS.md` report semantic metrics before style metrics. Semantic and exact output-contract failures remain authoritative. Style findings cannot override them. Usage, cost, duration, population standard deviation, routing evidence, and unresolved cells follow.
+Stale and failed attempts remain visible. Existing matching successes resume without another call.
 
-`failures.json` lists failed, missing, stale, and invalid cells. Incomplete matrices block final benchmark claims.
+Each successful raw cell records provider/model identity, usage metadata, cost, duration, native skill-read evidence, deterministic semantic results, procedure results, exact output-contract results, and advisory style findings. Hidden reasoning content is never stored.
 
-Exact output-contract checks support plain-text framing rules and schema-constrained JSON objects with required keys, additional-property control, and property types.
+## Reports and gates
 
-## Independent quality judge
+Reports place semantic and exact output-contract results before style. Semantic failures remain authoritative; style or judge preference cannot override them.
 
-Run judging only after benchmark generation completes. Source benchmark must come from a clean package commit, and judge generation must use same matrix and skill snapshot. Evaluator-only fixes can use a newer clean commit; reports record both commits:
+Positive automatic activation normally requires at least two loads across three repetitions. Negative structured-output scenarios require zero loads. Exact thresholds must be fixed in preregistered matrix.
 
-```bash
-python3 evals/run_quality_judge.py \
-  --config evals/quality-judge.json \
-  --matrix evals/v1-matrix.json \
-  --benchmark-results-dir evals/results/v1 \
-  --results-dir evals/results/v1/judge
-```
+`failures.json` retains missing, stale, malformed, routing-invalid, and otherwise rejected cells. Incomplete matrix blocks aggregate claims.
 
-Rebuild judge reports without model calls:
+## Blind quality judge
+
+Run judge only after source generation passes required gates:
 
 ```bash
 python3 evals/run_quality_judge.py \
-  --benchmark-results-dir evals/results/v1 \
-  --results-dir evals/results/v1/judge \
-  --report-only
+  --config path/to/preregistered-judge.json \
+  --matrix path/to/preregistered-matrix.json \
+  --benchmark-results-dir evals/results/current-run \
+  --results-dir evals/results/current-judge
 ```
 
-`quality-judge.json` preregisters two comparisons for every model, scenario, and source repetition:
+Judge receives task, source, and blinded candidate labels. It does not receive condition or generator identity. Cross-provider mapping reduces shared-provider bias.
 
-- `baseline-vs-native` is primary skill comparison.
-- `baseline-vs-direct-prompt` is diagnostic comparison.
+Rubric covers factual fidelity, task completion, uncertainty and obligation, terminology, safety and actionability, readability, and concision.
 
-Three source repetitions provide repeated samples. First two repetitions swap candidate order; later orders use deterministic hashing. Judge receives only task, source, and labels `Candidate A` and `Candidate B`. Condition, generator model, and provider stay out of judge prompt.
-
-Current mappings use a different provider from source generator: OpenAI-generated candidates use Gemini 3.6 Flash at low thinking through GitHub Copilot; GitHub Copilot-generated candidates use OpenAI. Judge config version 2 made this change before first run to reduce GitHub Copilot cost. V1 expects 108 judgments: 3 generator models × 2 comparisons × 6 scenarios × 3 source repetitions.
-
-Rubric scores each candidate from 1–5, or marks dimension not applicable:
-
-- Factual and semantic fidelity.
-- Task completion and completeness.
-- Correct uncertainty and obligation.
-- Technical terminology.
-- Safety and actionability.
-- Readability and concision.
-
-Before judging or reporting, runner recomputes source completeness, condition integrity, and semantic acceptance from benchmark raw cells and rejects aggregate mismatches. Judge verdict transport accepts raw JSON or one enclosing `json` code fence, then enforces exact object schema. Raw judge cells retain blind assignment, candidate and prompt hashes, provider identity, usage/cost metadata, attempts, verdict, and unblinded outcome. Existing valid successes resume without calls. Failed or invalid verdicts remain visible and retry within configured limit.
-
-Reports keep deterministic semantic authority separate from ordinal judge preference. If one candidate fails deterministic semantic or output-contract gates, passing candidate wins regardless of judge preference. If both fail, neither wins. Judge-reported semantic, task, modality, terminology, or safety blockers require human resolution and suppress preference-based acceptance.
-
-Exit 0 requires complete cross-provider judgments, accepted source semantic and condition-integrity gates, and zero unresolved judge blockers. Exit 1 means evidence remains incomplete or unaccepted. Configuration and invocation errors exit 2.
-
-### Judge limits
-
-Model judging is not ground truth. Blind labels reduce but do not eliminate positional, style, or treatment-identification bias. Cross-provider review reduces shared-provider bias but does not prove independence. Scores do not prove semantic equivalence or ASD-STE100 compliance. Deterministic failures remain authoritative, and judge blockers require human review before release claims.
+Deterministic semantic or output-contract failures override judge preference. Judge-reported semantic, task, modality, terminology, or safety blockers require human resolution.
 
 ## Limits
 
-Deterministic patterns cover declared fixture properties only. New claims and open prose still need attested source review. Provider costs are metadata, not billing records. Runner never requests or stores hidden reasoning content.
+Deterministic patterns cover declared fixture properties only. New claims and open prose still need source-relative review. Model judging is not ground truth. Costs are provider metadata, not billing records. No score proves arbitrary semantic equivalence or ASD-STE100 compliance.

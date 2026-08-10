@@ -3,7 +3,7 @@
 Semantic-safe technical-writing skill for [Pi](https://pi.dev). It rewrites or audits human-facing technical prose while keeping technical correctness, source facts, safety, modality, terminology, and exact values ahead of style.
 
 > [!NOTE]
-> V2 verifier is experimental and unpublished. npm publication stays disabled by `private: true`; Git and local-path installs work for development.
+> `0.1.0-rc.1` is the first release candidate. It remains experimental and unpublished. npm publication stays disabled by `private: true`; Git and local-path installs work for development.
 
 ## What it provides
 
@@ -170,7 +170,7 @@ Skill applies this priority order:
 
 Unless user requests targeted change, skill preserves code, identifiers, commands, flags, paths, URLs, environment variables, product terms, quoted output, numbers, dates, versions, units, ranges, link destinations, reference IDs, anchors, and machine-readable schemas. Protected values retain occurrence count, container, and semantic role.
 
-These safeguards reduce known failure modes; they do not prove arbitrary prose equivalence. Review high-risk or open-ended model output against source. Deterministic fixtures cover declared properties only. V2 guarded path adds mechanical enforcement for recognized protected occurrences; it does not weaken or replace this semantic contract.
+These safeguards reduce known failure modes; they do not prove arbitrary prose equivalence. Review high-risk or open-ended model output against source. Deterministic fixtures cover declared properties only. Guarded path adds mechanical enforcement for recognized protected occurrences; it does not weaken or replace this semantic contract.
 
 ## Default exclusions
 
@@ -339,10 +339,11 @@ extensions/                      Opt-in guarded-rewrite Pi extension
 skills/clear-technical-writing/  Pi skill, references, linter, and verifier
 tests/                           deterministic tests and regressions
 evals/                           benchmark, scorer, and independent judge
-docs/                            Versioned acceptance contracts
+docs/                            Current guarded-verifier contract
+archive/pre-release/              Frozen pre-release contracts and evidence
 ```
 
-See frozen [`docs/v1-acceptance-contract.md`](docs/v1-acceptance-contract.md) and experimental [`docs/v2-verifier-contract.md`](docs/v2-verifier-contract.md).
+See current [`docs/guarded-verifier-contract.md`](docs/guarded-verifier-contract.md). Historical design labels and benchmark amendments live in [`archive/pre-release/`](archive/pre-release/README.md); none represents a published package release.
 
 ## Upstream, trademark, and limits
 

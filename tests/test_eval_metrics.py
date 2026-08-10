@@ -10,9 +10,16 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "evals" / "score_fixtures.py"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json"
-INDEPENDENT_RESULTS_PATH = ROOT / "evals" / "results" / "independent-review"
+PRE_RELEASE_EVIDENCE = (
+    ROOT / "archive" / "pre-release" / "evals" / "evidence"
+)
+INDEPENDENT_RESULTS_PATH = PRE_RELEASE_EVIDENCE / "independent-review"
 ADJUDICATION_PATH = INDEPENDENT_RESULTS_PATH / "adjudication" / "summary.json"
-SEMANTIC_PROBES_PATH = ROOT / "evals" / "results" / "post-adjudication-semantic-probes.json"
+SEMANTIC_PROBES_PATH = (
+    PRE_RELEASE_EVIDENCE
+    / "development"
+    / "post-adjudication-semantic-probes.json"
+)
 sys.path.insert(0, str(ROOT / "evals"))
 
 import score_fixtures

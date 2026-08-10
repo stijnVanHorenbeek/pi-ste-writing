@@ -8,8 +8,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MATRIX_PATH = ROOT / "evals" / "v1-matrix.json"
-INDEPENDENT_MATRIX_PATH = ROOT / "evals" / "independent-review-matrix.json"
+ARCHIVE_CONFIG = ROOT / "archive" / "pre-release" / "evals" / "config"
+MATRIX_PATH = ARCHIVE_CONFIG / "initial-skill-matrix.json"
+INDEPENDENT_MATRIX_PATH = ARCHIVE_CONFIG / "independent-review-matrix.json"
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 BENCHMARK_SCENARIOS_PATH = ROOT / "evals" / "benchmark-scenarios.json"
 EVALS_DIR = ROOT / "evals"
@@ -2030,7 +2031,7 @@ class PromptAndIsolationCommandTest(unittest.TestCase):
         self.assertNotIn("--tools", command)
 
 
-class V1MatrixContractTest(unittest.TestCase):
+class ArchivedMatrixContractTest(unittest.TestCase):
     def test_matrix_preregisters_models_conditions_scenarios_and_isolation(self):
         matrix = json.loads(MATRIX_PATH.read_text(encoding="utf-8"))
         corpus = json.loads(CORPUS_PATH.read_text(encoding="utf-8"))

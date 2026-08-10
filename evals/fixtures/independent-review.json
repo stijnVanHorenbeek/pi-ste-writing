@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Independently authored, unseen semantic-preservation fixtures preregistered before V1 follow-up candidate generation.",
+  "description": "Independently authored semantic-preservation fixtures from pre-release follow-up; now retained as development regressions.",
   "fixtures": [
     {
       "id": "helios-transcoder-confirmed-and-unconfirmed-cause",

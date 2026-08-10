@@ -15,10 +15,12 @@ import run_pi_bench
 
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_CONFIG_PATH = HERE / "quality-judge.json"
-DEFAULT_MATRIX_PATH = HERE / "v1-matrix.json"
-DEFAULT_BENCHMARK_RESULTS_DIR = HERE / "results" / "v1"
-DEFAULT_JUDGE_RESULTS_DIR = DEFAULT_BENCHMARK_RESULTS_DIR / "judge"
+ROOT = HERE.parent
+PRE_RELEASE_ARCHIVE = ROOT / "archive" / "pre-release" / "evals"
+DEFAULT_CONFIG_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-quality-judge.json"
+DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.json"
+DEFAULT_BENCHMARK_RESULTS_DIR = run_pi_bench.DEFAULT_RESULTS_DIR
+DEFAULT_JUDGE_RESULTS_DIR = HERE / "results" / "current-judge"
 JUDGE_RUNNER_VERSION = "2"
 REQUIRED_DIMENSIONS = (
     "factual_semantic_fidelity",

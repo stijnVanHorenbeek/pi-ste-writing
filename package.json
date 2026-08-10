@@ -1,6 +1,6 @@
 {
   "name": "pi-ste-writing",
-  "version": "0.2.0",
+  "version": "0.1.0-rc.1",
   "type": "module",
   "private": true,
   "description": "Semantic-safe technical writing skill and guarded verifier for Pi",

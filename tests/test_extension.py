@@ -24,6 +24,7 @@ class ProtectedContentNodeTests(unittest.TestCase):
 class PackageManifestTests(unittest.TestCase):
     def test_package_exposes_extension_and_runtime_files(self):
         manifest = json.loads((ROOT / "package.json").read_text())
+        self.assertEqual(manifest["version"], "0.1.0-rc.1")
         self.assertEqual(
             manifest["pi"]["extensions"],
             ["./extensions/clear-writing-guard.ts"],
@@ -56,7 +57,8 @@ class PackageManifestTests(unittest.TestCase):
             "skills/clear-technical-writing/scripts/protected_verify.py",
             paths,
         )
-        self.assertIn("docs/v2-verifier-contract.md", paths)
+        self.assertIn("docs/guarded-verifier-contract.md", paths)
+        self.assertNotIn("docs/v2-verifier-contract.md", paths)
         self.assertEqual(package.get("bundled", []), [])
 
 
