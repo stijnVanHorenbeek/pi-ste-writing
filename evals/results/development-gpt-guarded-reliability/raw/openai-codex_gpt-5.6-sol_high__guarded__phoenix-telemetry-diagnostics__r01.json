@@ -1,0 +1,155 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "guarded",
+    "scenario_id": "phoenix-telemetry-diagnostics",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "12",
+    "matrix_sha256": "fe5857fb6033d97fb8627a849775e54053dcd17ba5e1295eace63f7749c0b2f1",
+    "package_commit": "e32b6f18d52935d67e2fcf9dcdc596133e3c499b",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "16f0dad75d19744e4dd49f3b507f3d416a0701a32b8d7107c59101cb1efa1cec",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426"
+  },
+  "prompt_sha256": "d7c2593e37ef60e9d28b5e0d71ea162c5d1446d3b79f3d465110135830106d6a",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T16:59:27.088256+00:00",
+      "status": "success",
+      "duration_ms": 10199
+    }
+  ],
+  "updated_at": "2026-08-10T16:59:37.289901+00:00",
+  "duration_ms": 10199,
+  "response": {
+    "text": "Phoenix Station transmitter #7 broadcast 204 messages on 2042-06-22 at an average signal power of 18.4 dBm. Frequency analysis identified oscillator instability as the cause of 91 message failures. The cause of the remaining 113 failures is unknown. The analysis neither establishes nor rules out network congestion as the cause of those failures. During the broadcast window, packet jitter increased from 4 ms to 19 ms. Hardware faults were excluded as a contributing factor.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "toolUse",
+    "usage": {
+      "input_tokens": {
+        "value": 3571,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 245,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 100,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 145,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 3816,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.025205,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 1,
+      "non_read_tool_calls": 1,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    },
+    "guard": {
+      "observed": true,
+      "max_submissions": 3,
+      "submissions": [
+        {
+          "sequence": 1,
+          "tool_call_id_sha256": "87648c9b22da61d6fbbc01dc37d6b081e27b1ab99268ab38d8cc3ea9e5b7bf64",
+          "job_id_sha256": "cd6514feaf036af37ba6fc011868029471a346d4c43340e78180220c3de779df",
+          "draft_sha256": "1b3f4b55dd12164e78a938c6666538b83f3770ddc86dd5ecd783668f79c4f356",
+          "draft_bytes": 476,
+          "result_status": "accepted",
+          "result_attempt": 1,
+          "result_draft_sha256": "1b3f4b55dd12164e78a938c6666538b83f3770ddc86dd5ecd783668f79c4f356",
+          "result_text_sha256": "1b3f4b55dd12164e78a938c6666538b83f3770ddc86dd5ecd783668f79c4f356",
+          "is_error": false,
+          "submission_message_valid": true
+        }
+      ],
+      "accepted_submission": 1,
+      "accepted_draft_sha256": "1b3f4b55dd12164e78a938c6666538b83f3770ddc86dd5ecd783668f79c4f356",
+      "final_text_sha256": "1b3f4b55dd12164e78a938c6666538b83f3770ddc86dd5ecd783668f79c4f356",
+      "exact_accepted_output": true,
+      "malformed_submission_messages": 0,
+      "direct_output_messages": 0,
+      "unauthorized_tool_calls": 0,
+      "unmatched_tool_events": 0,
+      "ambient_resources_disabled": true,
+      "terminal_artifact_valid": true,
+      "same_job_id": true,
+      "attempts_contiguous": true,
+      "passed": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": false,
+      "passed": null,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "text",
+      "gated": true,
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

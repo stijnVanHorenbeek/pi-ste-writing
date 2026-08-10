@@ -1,0 +1,945 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-10T17:10:26.619659+00:00",
+  "provenance": {
+    "runner_version": "12",
+    "matrix_sha256": "fe5857fb6033d97fb8627a849775e54053dcd17ba5e1295eace63f7749c0b2f1",
+    "package_commit": "e32b6f18d52935d67e2fcf9dcdc596133e3c499b",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "16f0dad75d19744e4dd49f3b507f3d416a0701a32b8d7107c59101cb1efa1cec",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426"
+  },
+  "matrix": {
+    "id": "development-gpt-guarded-reliability",
+    "version": 1,
+    "conditions": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "repetitions": 3
+  },
+  "completeness": {
+    "expected": 45,
+    "successful": 45,
+    "failed": 0,
+    "missing": 0,
+    "stale": 0,
+    "invalid": 0,
+    "complete": true
+  },
+  "condition_integrity": {
+    "expected_samples": 45,
+    "successful_samples": 45,
+    "integrity_passed_samples": 45,
+    "model_identity_passed_samples": 45,
+    "routing_safety_passed_samples": 45,
+    "activation_groups_expected": 0,
+    "activation_groups_passed": 0,
+    "expected_native_samples": 0,
+    "successful_native_samples": 0,
+    "expected_skill_loaded_samples": 0,
+    "skill_loaded_samples": 0,
+    "accepted": true
+  },
+  "objective_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 45,
+    "successful_samples": 45,
+    "passed_samples": 45,
+    "failed_samples": 0,
+    "accepted": true
+  },
+  "condition_results": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "baseline",
+      "runs": 0,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 0,
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "reasoning_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "visible_output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "cost_usd": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "duration_ms": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {}
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "native-skill",
+      "runs": 0,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 0,
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "reasoning_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "visible_output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "cost_usd": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "duration_ms": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {}
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 56043,
+          "mean": 3736.2,
+          "stddev": 584.123868
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 6510,
+          "mean": 434,
+          "stddev": 211.923257
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 3734,
+          "mean": 248.933333,
+          "stddev": 160.803593
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2776,
+          "mean": 185.066667,
+          "stddev": 77.252371
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.476795,
+          "mean": 0.031786,
+          "stddev": 0.00828
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 233625,
+          "mean": 15575,
+          "stddev": 7717.985877
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 15
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "low",
+      "condition": "baseline",
+      "runs": 0,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 0,
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "reasoning_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "visible_output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "cost_usd": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "duration_ms": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {}
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "low",
+      "condition": "native-skill",
+      "runs": 0,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 0,
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "reasoning_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "visible_output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "cost_usd": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "duration_ms": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {}
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "low",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 53776,
+          "mean": 3585.066667,
+          "stddev": 36.86094
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 3294,
+          "mean": 219.6,
+          "stddev": 80.62572
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 712,
+          "mean": 47.466667,
+          "stddev": 49.369176
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2582,
+          "mean": 172.133333,
+          "stddev": 47.633135
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.3677,
+          "mean": 0.024513,
+          "stddev": 0.002554
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 146663,
+          "mean": 9777.533333,
+          "stddev": 1730.520918
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 15
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.4-mini",
+      "thinking": "high",
+      "condition": "baseline",
+      "runs": 0,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 0,
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "reasoning_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "visible_output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "cost_usd": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "duration_ms": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {}
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.4-mini",
+      "thinking": "high",
+      "condition": "native-skill",
+      "runs": 0,
+      "objective": {
+        "samples_passed": 0,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 0,
+          "passed_samples": 0,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 0,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "reasoning_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "visible_output_tokens": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "cost_usd": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "duration_ms": {
+          "available_runs": 0,
+          "missing_runs": 0,
+          "sum": null,
+          "mean": null,
+          "stddev": null
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {}
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.4-mini",
+      "thinking": "high",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 54270,
+          "mean": 3618,
+          "stddev": 129.494401
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 13780,
+          "mean": 918.666667,
+          "stddev": 746.077804
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 11091,
+          "mean": 739.4,
+          "stddev": 711.257647
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2689,
+          "mean": 179.266667,
+          "stddev": 56.184775
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.1030197,
+          "mean": 0.006868,
+          "stddev": 0.003388
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 279092,
+          "mean": 18606.133333,
+          "stddev": 10227.459606
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.4-mini": 15
+        }
+      }
+    }
+  ],
+  "partial_outputs": [],
+  "unresolved": [],
+  "objective_procedure_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 9,
+    "successful_samples": 9,
+    "passed_samples": 9,
+    "failed_samples": 0,
+    "accepted": true
+  },
+  "output_contract_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 45,
+    "successful_samples": 45,
+    "passed_samples": 45,
+    "failed_samples": 0,
+    "diagnostic_expected_samples": 0,
+    "diagnostic_successful_samples": 0,
+    "diagnostic_passed_samples": 0,
+    "diagnostic_failed_samples": 0,
+    "accepted": true
+  },
+  "guard_integrity": {
+    "expected_samples": 45,
+    "successful_samples": 45,
+    "passed_samples": 45,
+    "failed_samples": 0,
+    "accepted": true
+  },
+  "applicability": {
+    "groups": [
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "low",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "low",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "low",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "low",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "low",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.4-mini",
+        "thinking": "high",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.4-mini",
+        "thinking": "high",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.4-mini",
+        "thinking": "high",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.4-mini",
+        "thinking": "high",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.4-mini",
+        "thinking": "high",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      }
+    ]
+  }
+}
