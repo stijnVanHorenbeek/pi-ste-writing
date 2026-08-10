@@ -1,0 +1,1163 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-10T00:50:00.728977+00:00",
+  "package_commit": "13a49ee063d74acbb950c670ab212768a3b77315",
+  "pi_version": "0.84.1",
+  "policy": {
+    "activation": "at least 2/3 loads",
+    "semantic": "3/3 pass"
+  },
+  "groups": [
+    {
+      "scenario_id": "ledger-archive-purge-destructive-procedure",
+      "loads": 3,
+      "semantic_passes": 1
+    },
+    {
+      "scenario_id": "vesper-witness-repository-terms",
+      "loads": 3,
+      "semantic_passes": 3
+    },
+    {
+      "scenario_id": "broker-failover-correlation-unknown-cause",
+      "loads": 2,
+      "semantic_passes": 0
+    }
+  ],
+  "results": [
+    {
+      "scenario_id": "ledger-archive-purge-destructive-procedure",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0112627,
+        "available": true
+      },
+      "text": "## Archive Purge Procedure\n\n**Scope:** This job removes expired ledger exports. It never touches active ledger snapshots.\n\n**Prerequisites:** Before running the deletion command, confirm both conditions:\n\n1. Export `export-2027-02-18` is confirmed complete.\n2. Change ticket `OPS-6634` carries approval.\n\n**WARNING:** The deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery afterward requires restoring from cold storage.\n\n**Steps:**\n\n1. Confirm both prerequisite conditions above are satisfied.\n2. Run the deletion command:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\n3. Verify the outcome by running `vaultctl describe bucket ledger-archive-legacy`.",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": true,
+          "failed_rule_ids": [],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 3,
+              "rules_passed": 3,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 1,
+              "rules_passed": 1,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 4,
+              "rules_passed": 4,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "repository_term_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": true,
+          "passed": true,
+          "required_rules": {
+            "applicable": true,
+            "passed": true,
+            "rules_total": 3,
+            "rules_passed": 3,
+            "rules_failed": 0,
+            "pass_rate": 1.0,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": true,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "ledger-archive-purge-destructive-procedure",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 2,
+        "non_read_tool_calls": 0,
+        "read_calls": 2,
+        "successful_read_calls": 2,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 2,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.022029,
+        "available": true
+      },
+      "text": "## Archive Purge Procedure\n\n**Scope:** The archive purge job removes expired ledger exports only. It never touches active ledger snapshots.\n\n**WARNING:** Running the deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery afterward requires restoring from cold storage.\n\nBefore running the deletion command, confirm both conditions:\n\n1. Export `export-2027-02-18` is confirmed complete.\n2. Change ticket `OPS-6634` carries approval.\n\nOnce both conditions are satisfied, run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\nAfter running the command, verify the outcome:\n\n```bash\nvaultctl describe bucket ledger-archive-legacy\n```",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": false,
+          "failed_rule_ids": [
+            "linter.step-numbering",
+            "protected.source-equality",
+            "purge.verify-command"
+          ],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": true,
+              "passed": false,
+              "rules_total": 3,
+              "rules_passed": 1,
+              "rules_failed": 2,
+              "pass_rate": 0.333333,
+              "failures": [
+                {
+                  "rule_id": "purge.verify-command",
+                  "description": "Preserve exact inline verification after deletion.",
+                  "failed_checks": [
+                    {
+                      "type": "inline_code",
+                      "value": "vaultctl describe bucket ledger-archive-legacy",
+                      "count": 1
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "protected.source-equality",
+                  "description": "Preserve nonnumeric protected values and occurrence counts by container.",
+                  "changed_kinds": [
+                    "fenced-code",
+                    "inline-code"
+                  ],
+                  "findings": [
+                    {
+                      "rule": "protected-span",
+                      "category": "semantic",
+                      "severity": "warning",
+                      "source": "development-probe",
+                      "line": 1,
+                      "column": 1,
+                      "text": "missing vaultctl describe bucket ledger-archive-legacy",
+                      "message": "Protected inline-code values differ from source.",
+                      "protected_kind": "inline-code"
+                    },
+                    {
+                      "rule": "protected-span",
+                      "category": "semantic",
+                      "severity": "warning",
+                      "source": "development-probe",
+                      "line": 21,
+                      "column": 1,
+                      "text": "vaultctl describe bucket ledger-archive-legacy\n",
+                      "message": "Protected fenced-code values differ from source.",
+                      "protected_kind": "fenced-code"
+                    }
+                  ]
+                }
+              ]
+            },
+            "required_fact_retention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 1,
+              "rules_passed": 1,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 4,
+              "rules_passed": 4,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "repository_term_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": true,
+          "passed": false,
+          "required_rules": {
+            "applicable": true,
+            "passed": true,
+            "rules_total": 3,
+            "rules_passed": 3,
+            "rules_failed": 0,
+            "pass_rate": 1.0,
+            "failures": []
+          },
+          "warning_count": 2,
+          "warnings": [
+            {
+              "rule": "step-numbering",
+              "category": "procedure",
+              "severity": "warning",
+              "source": "development-probe",
+              "line": 7,
+              "column": 1,
+              "text": "Before running the deletion command, confirm both conditions:",
+              "message": "Put each procedure instruction in a numbered step."
+            },
+            {
+              "rule": "step-numbering",
+              "category": "procedure",
+              "severity": "warning",
+              "source": "development-probe",
+              "line": 18,
+              "column": 1,
+              "text": "After running the command, verify the outcome:",
+              "message": "Put each procedure instruction in a numbered step."
+            }
+          ]
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": false,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "ledger-archive-purge-destructive-procedure",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0110127,
+        "available": true
+      },
+      "text": "## Archive Purge Procedure\n\n**Scope:** This job removes expired ledger exports only. It never touches active ledger snapshots.\n\n**WARNING:** Running the deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery afterward requires restoring from cold storage.\n\nBefore running the deletion command, confirm both conditions:\n\n1. Export `export-2027-02-18` must be confirmed complete.\n2. Change ticket `OPS-6634` must carry approval.\n\nOnce both conditions are satisfied, run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\nAfter running the command, verify the outcome:\n\n```bash\nvaultctl describe bucket ledger-archive-legacy\n```",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": false,
+          "failed_rule_ids": [
+            "linter.step-numbering",
+            "protected.source-equality",
+            "purge.verify-command"
+          ],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": true,
+              "passed": false,
+              "rules_total": 3,
+              "rules_passed": 1,
+              "rules_failed": 2,
+              "pass_rate": 0.333333,
+              "failures": [
+                {
+                  "rule_id": "purge.verify-command",
+                  "description": "Preserve exact inline verification after deletion.",
+                  "failed_checks": [
+                    {
+                      "type": "inline_code",
+                      "value": "vaultctl describe bucket ledger-archive-legacy",
+                      "count": 1
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "protected.source-equality",
+                  "description": "Preserve nonnumeric protected values and occurrence counts by container.",
+                  "changed_kinds": [
+                    "fenced-code",
+                    "inline-code"
+                  ],
+                  "findings": [
+                    {
+                      "rule": "protected-span",
+                      "category": "semantic",
+                      "severity": "warning",
+                      "source": "development-probe",
+                      "line": 1,
+                      "column": 1,
+                      "text": "missing vaultctl describe bucket ledger-archive-legacy",
+                      "message": "Protected inline-code values differ from source.",
+                      "protected_kind": "inline-code"
+                    },
+                    {
+                      "rule": "protected-span",
+                      "category": "semantic",
+                      "severity": "warning",
+                      "source": "development-probe",
+                      "line": 21,
+                      "column": 1,
+                      "text": "vaultctl describe bucket ledger-archive-legacy\n",
+                      "message": "Protected fenced-code values differ from source.",
+                      "protected_kind": "fenced-code"
+                    }
+                  ]
+                }
+              ]
+            },
+            "required_fact_retention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 1,
+              "rules_passed": 1,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 4,
+              "rules_passed": 4,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "repository_term_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": true,
+          "passed": false,
+          "required_rules": {
+            "applicable": true,
+            "passed": true,
+            "rules_total": 3,
+            "rules_passed": 3,
+            "rules_failed": 0,
+            "pass_rate": 1.0,
+            "failures": []
+          },
+          "warning_count": 2,
+          "warnings": [
+            {
+              "rule": "step-numbering",
+              "category": "procedure",
+              "severity": "warning",
+              "source": "development-probe",
+              "line": 7,
+              "column": 1,
+              "text": "Before running the deletion command, confirm both conditions:",
+              "message": "Put each procedure instruction in a numbered step."
+            },
+            {
+              "rule": "step-numbering",
+              "category": "procedure",
+              "severity": "warning",
+              "source": "development-probe",
+              "line": 18,
+              "column": 1,
+              "text": "After running the command, verify the outcome:",
+              "message": "Put each procedure instruction in a numbered step."
+            }
+          ]
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": false,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "vesper-witness-repository-terms",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0138078,
+        "available": true
+      },
+      "text": "## Repository Terminology\n\nThis repository defines three terms that must stay distinct:\n\n- `chronicle` \u2014 append-only signed artifact histories\n- `sandpit` \u2014 local checkout state\n- `blueprint` \u2014 build-specific transformation rules\n\n## Before You Begin\n\nBefore calling `ForgeProof`, supply API field `proof.thresholdSlots`.\n\nFull background lives at [witness anchor guide](https://handbook.vesper.invalid/witness/anchors?revision=83#matrix). Once there, choose **Witness Matrix**.\n\nThe reader path is `/var/lib/vesper/anchor.ron`, and the writer uses that identical path, `/var/lib/vesper/anchor.ron`.\n\n## Running the Attestation\n\nExecute the following:\n\n```bash\nvesperctl chronicle attest --anchor /var/lib/vesper/anchor.ron --slots 83\n```\n\nLeave the snippet below exactly as written:\n\n```go\nproof := ForgeProof(chronicle, blueprint)\n```\n\n## Diagnostics\n\nThese three diagnostics must carry over untouched:\n\n- Error: `witness slot 83 unavailable for proof`\n- Log: `time=2044-02-23T16:52:08Z unit=attestor trace=b7e29c phase=waiting`\n- Test: `FAILED spec::anchor_rejects_hollow_witness in 0.137s`",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": true,
+          "failed_rule_ids": [],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 11,
+              "rules_passed": 11,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 2,
+              "rules_passed": 2,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "repository_term_preservation": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 1,
+              "rules_passed": 1,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": false,
+          "passed": null,
+          "required_rules": {
+            "applicable": false,
+            "passed": null,
+            "rules_total": 0,
+            "rules_passed": 0,
+            "rules_failed": 0,
+            "pass_rate": null,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": true,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "vesper-witness-repository-terms",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0135303,
+        "available": true
+      },
+      "text": "## Repository terminology\n\nThis repository defines three terms that must stay distinct:\n\n- `chronicle` \u2014 append-only signed artifact histories\n- `sandpit` \u2014 local checkout state\n- `blueprint` \u2014 build-specific transformation rules\n\n## Before you start\n\nBefore calling `ForgeProof`, supply API field `proof.thresholdSlots`.\n\nFull background lives at [witness anchor guide](https://handbook.vesper.invalid/witness/anchors?revision=83#matrix). Once there, choose **Witness Matrix**.\n\nThe reader path is `/var/lib/vesper/anchor.ron`, and the writer uses that identical path, `/var/lib/vesper/anchor.ron`.\n\n## Run the attestation\n\nExecute the following:\n\n```bash\nvesperctl chronicle attest --anchor /var/lib/vesper/anchor.ron --slots 83\n```\n\nLeave the snippet below exactly as written:\n\n```go\nproof := ForgeProof(chronicle, blueprint)\n```\n\n## Diagnostics\n\nThese three diagnostics must carry over untouched:\n\n- Error: `witness slot 83 unavailable for proof`\n- Log: `time=2044-02-23T16:52:08Z unit=attestor trace=b7e29c phase=waiting`\n- Test: `FAILED spec::anchor_rejects_hollow_witness in 0.137s`",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": true,
+          "failed_rule_ids": [],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 11,
+              "rules_passed": 11,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 2,
+              "rules_passed": 2,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "repository_term_preservation": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 1,
+              "rules_passed": 1,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": false,
+          "passed": null,
+          "required_rules": {
+            "applicable": false,
+            "passed": null,
+            "rules_total": 0,
+            "rules_passed": 0,
+            "rules_failed": 0,
+            "pass_rate": null,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": true,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "vesper-witness-repository-terms",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0135849,
+        "available": true
+      },
+      "text": "# Repository Terminology and Setup\n\nThis repository defines three terms that must stay distinct:\n\n- `chronicle` \u2014 append-only signed artifact histories\n- `sandpit` \u2014 local checkout state\n- `blueprint` \u2014 build-specific transformation rules\n\n## Before you begin\n\nBefore calling `ForgeProof`, supply API field `proof.thresholdSlots`.\n\nFull background lives at [witness anchor guide](https://handbook.vesper.invalid/witness/anchors?revision=83#matrix). Once there, choose **Witness Matrix**.\n\nThe reader path is `/var/lib/vesper/anchor.ron`, and the writer uses that identical path, `/var/lib/vesper/anchor.ron`.\n\n## Run the attestation\n\nExecute the following:\n\n```bash\nvesperctl chronicle attest --anchor /var/lib/vesper/anchor.ron --slots 83\n```\n\nLeave the snippet below exactly as written:\n\n```go\nproof := ForgeProof(chronicle, blueprint)\n```\n\n## Diagnostics\n\nThese three diagnostics must carry over untouched:\n\n- Error: `witness slot 83 unavailable for proof`\n- Log: `time=2044-02-23T16:52:08Z unit=attestor trace=b7e29c phase=waiting`\n- Test: `FAILED spec::anchor_rejects_hollow_witness in 0.137s`",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": true,
+          "failed_rule_ids": [],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 11,
+              "rules_passed": 11,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 2,
+              "rules_passed": 2,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "repository_term_preservation": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 1,
+              "rules_passed": 1,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": false,
+          "passed": null,
+          "required_rules": {
+            "applicable": false,
+            "passed": null,
+            "rules_total": 0,
+            "rules_passed": 0,
+            "rules_failed": 0,
+            "pass_rate": null,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": true,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "broker-failover-correlation-unknown-cause",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0093631,
+        "available": true
+      },
+      "text": "Queue depth rose from 1,200 to 4,600 messages, and investigators still cannot explain why. This rise occurred within the same 9-minute failover window, so the two events are correlated in time; the evidence neither confirms nor rules out the failover as the cause. Disk I/O contention, once suspected, was ruled out after review.",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": false,
+          "failed_rule_ids": [
+            "broker.correlation",
+            "broker.unknown-cause"
+          ],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 2,
+              "rules_passed": 2,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 4,
+              "rules_passed": 4,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": true,
+              "passed": false,
+              "rules_total": 2,
+              "rules_passed": 0,
+              "rules_failed": 2,
+              "pass_rate": 0.0,
+              "failures": [
+                {
+                  "rule_id": "broker.correlation",
+                  "description": "Preserve temporal correlation without proving or disproving a link.",
+                  "failed_checks": [
+                    {
+                      "type": "regex",
+                      "pattern": "(?is)(correlat(ed|ing)? (the two events )?in time only|only a temporal correlation|temporal correlation|causal link (is )?neither confirmed nor ruled out|evidence neither confirms.{0,50}nor (rules out|excludes) a link|nothing in the evidence confirms.{0,100}nothing in the evidence rules a link out)"
+                    }
+                  ]
+                },
+                {
+                  "rule_id": "broker.unknown-cause",
+                  "description": "Keep root cause unknown.",
+                  "failed_checks": [
+                    {
+                      "type": "regex",
+                      "pattern": "(?i)((root )?cause.{0,60}(remains|is still|is).{0,20}(unknown|unexplained)|cannot explain why.{0,80}explanation gap remains open)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "repository_term_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": false,
+          "passed": null,
+          "required_rules": {
+            "applicable": false,
+            "passed": null,
+            "rules_total": 0,
+            "rules_passed": 0,
+            "rules_failed": 0,
+            "pass_rate": null,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": false,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "broker-failover-correlation-unknown-cause",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.0042065,
+        "available": true
+      },
+      "text": "Queue depth rose from 1,200 to 4,600 messages during the same 9-minute failover window\u2014correlated in time, with no evidence confirming or ruling out a causal link. The root cause remains unexplained. Disk I/O contention has been ruled out.",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": false,
+          "failed_rule_ids": [
+            "broker.correlation"
+          ],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 2,
+              "rules_passed": 2,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 4,
+              "rules_passed": 4,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": true,
+              "passed": false,
+              "rules_total": 2,
+              "rules_passed": 1,
+              "rules_failed": 1,
+              "pass_rate": 0.5,
+              "failures": [
+                {
+                  "rule_id": "broker.correlation",
+                  "description": "Preserve temporal correlation without proving or disproving a link.",
+                  "failed_checks": [
+                    {
+                      "type": "regex",
+                      "pattern": "(?is)(correlat(ed|ing)? (the two events )?in time only|only a temporal correlation|temporal correlation|causal link (is )?neither confirmed nor ruled out|evidence neither confirms.{0,50}nor (rules out|excludes) a link|nothing in the evidence confirms.{0,100}nothing in the evidence rules a link out)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "repository_term_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": false,
+          "passed": null,
+          "required_rules": {
+            "applicable": false,
+            "passed": null,
+            "rules_total": 0,
+            "rules_passed": 0,
+            "rules_failed": 0,
+            "pass_rate": null,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": false,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    },
+    {
+      "scenario_id": "broker-failover-correlation-unknown-cause",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0092858,
+        "available": true
+      },
+      "text": "Queue depth rose from 1,200 to 4,600 messages during the same 9-minute window as a failover, but investigators still cannot explain the rise. The two events are correlated in time only: evidence neither confirms nor rules out a link between them. Disk I/O contention, once suspected, has been ruled out.",
+      "evaluation": {
+        "semantic": {
+          "gate_passed": false,
+          "failed_rule_ids": [
+            "broker.unknown-cause"
+          ],
+          "metrics": {
+            "protected_span_equality": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            },
+            "required_fact_retention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 2,
+              "rules_passed": 2,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "forbidden_fact_invention": {
+              "applicable": true,
+              "passed": true,
+              "rules_total": 4,
+              "rules_passed": 4,
+              "rules_failed": 0,
+              "pass_rate": 1.0,
+              "failures": []
+            },
+            "modality_and_certainty_preservation": {
+              "applicable": true,
+              "passed": false,
+              "rules_total": 2,
+              "rules_passed": 1,
+              "rules_failed": 1,
+              "pass_rate": 0.5,
+              "failures": [
+                {
+                  "rule_id": "broker.unknown-cause",
+                  "description": "Keep root cause unknown.",
+                  "failed_checks": [
+                    {
+                      "type": "regex",
+                      "pattern": "(?i)((root )?cause.{0,60}(remains|is still|is).{0,20}(unknown|unexplained)|cannot explain why.{0,80}explanation gap remains open)"
+                    }
+                  ]
+                }
+              ]
+            },
+            "repository_term_preservation": {
+              "applicable": false,
+              "passed": null,
+              "rules_total": 0,
+              "rules_passed": 0,
+              "rules_failed": 0,
+              "pass_rate": null,
+              "failures": []
+            }
+          }
+        },
+        "procedure": {
+          "applicable": false,
+          "passed": null,
+          "required_rules": {
+            "applicable": false,
+            "passed": null,
+            "rules_total": 0,
+            "rules_passed": 0,
+            "rules_failed": 0,
+            "pass_rate": null,
+            "failures": []
+          },
+          "warning_count": 0,
+          "warnings": []
+        },
+        "output_contract": {
+          "type": "text",
+          "passed": true,
+          "violations": []
+        },
+        "semantic_gate_passed": false,
+        "style": {
+          "advisory": true,
+          "warning_count": 0,
+          "warnings_by_rule": {},
+          "findings": []
+        },
+        "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+      }
+    }
+  ],
+  "accepted": false
+}

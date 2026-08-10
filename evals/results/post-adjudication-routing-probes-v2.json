@@ -1,0 +1,342 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-10T00:47:54.222247+00:00",
+  "package_commit": "13a49ee063d74acbb950c670ab212768a3b77315",
+  "pi_version": "0.84.1",
+  "policy": {
+    "positive": "at least 2/3 loads",
+    "negative": "0/3 loads"
+  },
+  "probes": [
+    {
+      "id": "incident-correlation-positive",
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "expect": true,
+      "task": "Condense this incident report finding for operators: queue depth rose during failover; timing shows correlation only; root cause remains unknown.",
+      "loads": 3,
+      "threshold_passed": true
+    },
+    {
+      "id": "root-cause-positive",
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "expect": true,
+      "task": "Rewrite this root-cause analysis for clarity: logs confirm one cause for some failures, while the rest remain unexplained.",
+      "loads": 3,
+      "threshold_passed": true
+    },
+    {
+      "id": "quoted-diagnostic-claude-negative",
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "expect": false,
+      "task": "Rewrite this quoted diagnostic to sound clearer: \"ERROR E731: shard quorum unavailable\"",
+      "loads": 0,
+      "threshold_passed": true
+    },
+    {
+      "id": "quoted-diagnostic-gemini-negative",
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "low",
+      "expect": false,
+      "task": "Rewrite this quoted diagnostic to sound clearer: \"ERROR E731: shard quorum unavailable\"",
+      "loads": 0,
+      "threshold_passed": true
+    }
+  ],
+  "results": [
+    {
+      "probe_id": "incident-correlation-positive",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.008228,
+        "available": true
+      },
+      "text": "Queue depth increased during failover. This coincided with the failover but has not been confirmed as its cause. Root cause is still unknown."
+    },
+    {
+      "probe_id": "incident-correlation-positive",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0080357,
+        "available": true
+      },
+      "text": "Queue depth increased during failover. Timing coincided but does not establish cause. Root cause is still unknown."
+    },
+    {
+      "probe_id": "incident-correlation-positive",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0081903,
+        "available": true
+      },
+      "text": "Queue depth increased during failover. This coincided in time with the failover, but no causal link has been established. Root cause is still unknown."
+    },
+    {
+      "probe_id": "root-cause-positive",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 2,
+        "non_read_tool_calls": 0,
+        "read_calls": 2,
+        "successful_read_calls": 2,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 2,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0220058,
+        "available": true
+      },
+      "text": "No source root-cause analysis text was included in your message \u2014 please paste the actual report you want rewritten. Based only on your one-line summary, here's a version that preserves the same evidence level:\n\n**Root Cause Analysis**\n\nLog analysis confirms one cause for a portion of the observed failures. The remaining failures have no confirmed cause; their root cause is currently unknown.\n\nIf you share the full original document, I can produce a clearer rewrite while preserving all facts, evidence levels, and figures exactly as reported."
+    },
+    {
+      "probe_id": "root-cause-positive",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0091459,
+        "available": true
+      },
+      "text": "I don't see the actual root-cause analysis text to rewrite \u2014 could you paste the report content? Once I have it, I'll apply the clarity guidelines (preserving confirmed facts, log evidence, and clearly flagging the unexplained portion without implying a cause that isn't proven)."
+    },
+    {
+      "probe_id": "root-cause-positive",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": true,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 1,
+        "non_read_tool_calls": 0,
+        "read_calls": 1,
+        "successful_read_calls": 1,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 1,
+        "skill_tree_read_calls": 1,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": true
+      },
+      "cost_usd": {
+        "value": 0.0098732,
+        "available": true
+      },
+      "text": "Log evidence confirms one specific cause for a subset of the failures. The remaining failures have no confirmed cause yet."
+    },
+    {
+      "probe_id": "quoted-diagnostic-claude-negative",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.0038065,
+        "available": true
+      },
+      "text": "\"ERROR E731: shard quorum unavailable\" \u2014 this diagnostic is a quoted error message, and per my guidelines I don't rewrite quoted errors or diagnostics, so I'm leaving it as-is.\n\nIf it would help, I can explain what it likely means or suggest next steps for troubleshooting it instead."
+    },
+    {
+      "probe_id": "quoted-diagnostic-claude-negative",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.0029315,
+        "available": true
+      },
+      "text": "ERROR E731: shard quorum unavailable"
+    },
+    {
+      "probe_id": "quoted-diagnostic-claude-negative",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.002929,
+        "available": true
+      },
+      "text": "ERROR E731: shard quorum unavailable"
+    },
+    {
+      "probe_id": "quoted-diagnostic-gemini-negative",
+      "repetition": 1,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.0008865,
+        "available": true
+      },
+      "text": "Error E731: Cannot reach a shard quorum. Ensure that a majority of shard nodes are online and accessible."
+    },
+    {
+      "probe_id": "quoted-diagnostic-gemini-negative",
+      "repetition": 2,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.0008805,
+        "available": true
+      },
+      "text": "ERROR E731: Unable to reach a shard quorum because a majority of replica nodes are offline or unreachable."
+    },
+    {
+      "probe_id": "quoted-diagnostic-gemini-negative",
+      "repetition": 3,
+      "status": "success",
+      "error": null,
+      "skill_loaded": false,
+      "response_model": null,
+      "routing": {
+        "tool_calls": 0,
+        "non_read_tool_calls": 0,
+        "read_calls": 0,
+        "successful_read_calls": 0,
+        "failed_read_calls": 0,
+        "skill_entrypoint_read_calls": 0,
+        "skill_tree_read_calls": 0,
+        "outside_skill_read_calls": 0,
+        "skill_loaded": false
+      },
+      "cost_usd": {
+        "value": 0.000879,
+        "available": true
+      },
+      "text": "Error E731: Cannot reach shard quorum. Too many nodes are offline or unreachable to establish a majority."
+    }
+  ]
+}
