@@ -1,0 +1,125 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "gemini-3.6-flash",
+    "thinking": "medium",
+    "condition": "native-skill",
+    "scenario_id": "meridian-device-calibration",
+    "repetition": 2
+  },
+  "provenance": {
+    "runner_version": "9",
+    "matrix_sha256": "98d36a80267e64f6bd271dd1ca805d53344f00fb24044068896da128c88fdcb7",
+    "package_commit": "bbffefd4b8e843e7057195ccc4e39df418b3fe79",
+    "package_dirty": false,
+    "skill_sha256": "908f5c9aff34a7f34a771e1db0a2e2e421f53ec93b3f8af45926336e48b431fc",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "3c8232a849c0352edaefa17ccb9bf73a5e65be7be7f7578397ae846a36205c6a",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426",
+    "preregistered_judge_config_sha256": "6829c01ce8a7b5a6d22c1b0cb73ecd334add76097857b12f84942b0011e340a3",
+    "preregistered_judge_config_path": "semantic-boundary-release-candidate-quality-judge.json"
+  },
+  "prompt_sha256": "6280a04e8a014e3980fb59cae9752bf45ea3f572b5bf2ecb8e852fca532b946b",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T12:46:03.828687+00:00",
+      "status": "success",
+      "duration_ms": 17179
+    }
+  ],
+  "updated_at": "2026-08-10T12:46:21.008910+00:00",
+  "duration_ms": 17179,
+  "response": {
+    "text": "Technicians must calibrate the Meridian pulse oximeter every 90 days. Technicians should verify sensor linearity before each patient session. Operators can adjust alarm thresholds in the Settings panel. Adjustment may interrupt the current measurement cycle. Stabilization might require up to 45 seconds. With firmware `v8.2.1`, older probes could produce SpO\u2082 readings without recalibration.",
+    "provider": "github-copilot",
+    "model": "gemini-3.6-flash",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 9246,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 303,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 303,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 4007,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 13556,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.01674255,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 3,
+      "non_read_tool_calls": 0,
+      "read_calls": 3,
+      "successful_read_calls": 3,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 1,
+      "skill_tree_read_calls": 3,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": true,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": false,
+      "passed": null,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "text",
+      "gated": true,
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

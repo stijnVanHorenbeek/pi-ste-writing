@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "guarded",
+    "scenario_id": "release-facts-and-causes",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "9",
+    "matrix_sha256": "57708f855a0e019032b904bcbfda89de379091363d285474a1fd4c7045e01920",
+    "package_commit": "bbffefd4b8e843e7057195ccc4e39df418b3fe79",
+    "package_dirty": false,
+    "skill_sha256": "908f5c9aff34a7f34a771e1db0a2e2e421f53ec93b3f8af45926336e48b431fc",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "3c8232a849c0352edaefa17ccb9bf73a5e65be7be7f7578397ae846a36205c6a",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "7ca4c84186e45cd42225b8cffe7acb1f262439c344f87e5c9db549f8c37e245c",
+    "scenario_sha256": "ac4e0cf8c28dc20f47ac221825e9afa5bf8e5d6eb1767fb60c45b2cad4f7b619"
+  },
+  "prompt_sha256": "712b2a2c6b65a6f8b2f28e43d034dc70c5fab6bedd0b74d5eb914c676638be5e",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T12:42:00.024740+00:00",
+      "status": "success",
+      "duration_ms": 11532
+    }
+  ],
+  "updated_at": "2026-08-10T12:42:11.558190+00:00",
+  "duration_ms": 11532,
+  "response": {
+    "text": "On 2026-07-14, Acme API v3.8.2 processed 48,120 requests. After the cache TTL changed from 5 to 15 minutes, the error rate fell from 2.4% to 0.7%. Trace data confirmed that stale cache entries caused 73% of 860 failed requests. The cause of the remaining failures is unknown. The supported retry-delay range is 100-500 ms.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "toolUse",
+    "usage": {
+      "input_tokens": {
+        "value": 3563,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 247,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 106,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 141,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 3810,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.025225,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 1,
+      "non_read_tool_calls": 1,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    },
+    "guard": {
+      "observed": true,
+      "max_submissions": 3,
+      "submissions": [
+        {
+          "sequence": 1,
+          "tool_call_id_sha256": "3f7b954813250b05f61cfed254ffee332c52ec305b57e5fd58681101c37986ae",
+          "job_id_sha256": "344a5a2bb2a71363ecd95d532ede3fcb4ac288329056e87a42ec912076a5cc9d",
+          "draft_sha256": "ce5e66c50206a6b8720e7d8f3bcc37e8e521d744186e4c21c8c80410946d010e",
+          "draft_bytes": 322,
+          "result_status": "accepted",
+          "result_attempt": 1,
+          "result_draft_sha256": "ce5e66c50206a6b8720e7d8f3bcc37e8e521d744186e4c21c8c80410946d010e",
+          "result_text_sha256": "ce5e66c50206a6b8720e7d8f3bcc37e8e521d744186e4c21c8c80410946d010e",
+          "is_error": false,
+          "submission_message_valid": true
+        }
+      ],
+      "accepted_submission": 1,
+      "accepted_draft_sha256": "ce5e66c50206a6b8720e7d8f3bcc37e8e521d744186e4c21c8c80410946d010e",
+      "final_text_sha256": "ce5e66c50206a6b8720e7d8f3bcc37e8e521d744186e4c21c8c80410946d010e",
+      "exact_accepted_output": true,
+      "malformed_submission_messages": 0,
+      "direct_output_messages": 0,
+      "unauthorized_tool_calls": 0,
+      "unmatched_tool_events": 0,
+      "ambient_resources_disabled": true,
+      "terminal_artifact_valid": true,
+      "same_job_id": true,
+      "attempts_contiguous": true,
+      "passed": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": true,
+      "failed_rule_ids": [],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "required_fact_retention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 3,
+          "rules_passed": 3,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 3,
+          "rules_passed": 3,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 3,
+          "rules_passed": 3,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "repository_term_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "gated": true,
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

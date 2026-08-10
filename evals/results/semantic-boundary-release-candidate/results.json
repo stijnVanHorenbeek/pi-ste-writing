@@ -1,0 +1,1358 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-10T12:55:44.521520+00:00",
+  "provenance": {
+    "runner_version": "9",
+    "matrix_sha256": "98d36a80267e64f6bd271dd1ca805d53344f00fb24044068896da128c88fdcb7",
+    "package_commit": "bbffefd4b8e843e7057195ccc4e39df418b3fe79",
+    "package_dirty": false,
+    "skill_sha256": "908f5c9aff34a7f34a771e1db0a2e2e421f53ec93b3f8af45926336e48b431fc",
+    "pi_version": "0.84.1",
+    "extension_sha256": "a36a7cd3b97555717f81a4016d2add6f627b2a550ce436e3d308ec54c801062c",
+    "runner_sha256": "3c8232a849c0352edaefa17ccb9bf73a5e65be7be7f7578397ae846a36205c6a",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426",
+    "preregistered_judge_config_sha256": "6829c01ce8a7b5a6d22c1b0cb73ecd334add76097857b12f84942b0011e340a3",
+    "preregistered_judge_config_path": "semantic-boundary-release-candidate-quality-judge.json"
+  },
+  "matrix": {
+    "id": "semantic-boundary-release-candidate",
+    "version": 1,
+    "conditions": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "repetitions": 3
+  },
+  "completeness": {
+    "expected": 153,
+    "successful": 151,
+    "failed": 2,
+    "missing": 0,
+    "stale": 0,
+    "invalid": 0,
+    "complete": false
+  },
+  "condition_integrity": {
+    "expected_samples": 153,
+    "successful_samples": 151,
+    "integrity_passed_samples": 151,
+    "model_identity_passed_samples": 151,
+    "routing_safety_passed_samples": 151,
+    "activation_groups_expected": 18,
+    "activation_groups_passed": 17,
+    "expected_native_samples": 54,
+    "successful_native_samples": 53,
+    "expected_skill_loaded_samples": 45,
+    "skill_loaded_samples": 44,
+    "accepted": false
+  },
+  "objective_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 99,
+    "successful_samples": 97,
+    "passed_samples": 97,
+    "failed_samples": 0,
+    "accepted": false
+  },
+  "condition_results": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 17,
+        "samples_failed": 1,
+        "contracts": {
+          "passed_samples": 17,
+          "failed_samples": 1
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 2,
+          "failed_samples": 1
+        },
+        "output_contract": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3633,
+          "mean": 201.833333,
+          "stddev": 37.585828
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 4256,
+          "mean": 236.444444,
+          "stddev": 270.832712
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2300,
+          "mean": 127.777778,
+          "stddev": 272.303457
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 1956,
+          "mean": 108.666667,
+          "stddev": 59.095027
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.145845,
+          "mean": 0.008103,
+          "stddev": 0.008112
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 201254,
+          "mean": 11180.777778,
+          "stddev": 7767.082196
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 18
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "native-skill",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 18,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 118675,
+          "mean": 6593.055556,
+          "stddev": 3350.316378
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 9853,
+          "mean": 547.388889,
+          "stddev": 401.448784
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 5321,
+          "mean": 295.611111,
+          "stddev": 298.411934
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 4532,
+          "mean": 251.777778,
+          "stddev": 120.270323
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.888965,
+          "mean": 0.049387,
+          "stddev": 0.028131
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 368365,
+          "mean": 20464.722222,
+          "stddev": 9612.15911
+        },
+        "routing": {
+          "applicable_runs": 18,
+          "skill_loaded_runs": 15
+        },
+        "response_models": {
+          "gpt-5.6-sol": 18
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 53791,
+          "mean": 3586.066667,
+          "stddev": 34.870172
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 5235,
+          "mean": 349,
+          "stddev": 133.358164
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2649,
+          "mean": 176.6,
+          "stddev": 103.379431
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2586,
+          "mean": 172.4,
+          "stddev": 47.161849
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.426005,
+          "mean": 0.0284,
+          "stddev": 0.004117
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 207623,
+          "mean": 13841.533333,
+          "stddev": 4343.974307
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 15
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 16,
+        "samples_failed": 2,
+        "contracts": {
+          "passed_samples": 16,
+          "failed_samples": 2
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 5721,
+          "mean": 317.833333,
+          "stddev": 62.825375
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3249,
+          "mean": 180.5,
+          "stddev": 93.61876
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3249,
+          "mean": 180.5,
+          "stddev": 93.61876
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.043932,
+          "mean": 0.002441,
+          "stddev": 0.001059
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 65141,
+          "mean": 3618.944444,
+          "stddev": 862.908999
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "claude-sonnet-5": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "native-skill",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 18,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 88,
+          "mean": 4.888889,
+          "stddev": 1.523479
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 8169,
+          "mean": 453.833333,
+          "stddev": 274.558686
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 1414,
+          "mean": 78.555556,
+          "stddev": 160.374292
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 6755,
+          "mean": 375.277778,
+          "stddev": 171.084062
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.3539965,
+          "mean": 0.019666,
+          "stddev": 0.010921
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 165511,
+          "mean": 9195.055556,
+          "stddev": 3612.104011
+        },
+        "routing": {
+          "applicable_runs": 18,
+          "skill_loaded_runs": 15
+        },
+        "response_models": {
+          "claude-sonnet-5": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "guarded",
+      "runs": 14,
+      "objective": {
+        "samples_passed": 14,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 14,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 2,
+          "passed_samples": 2,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 14,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 14,
+          "missing_runs": 0,
+          "sum": 32,
+          "mean": 2.285714,
+          "stddev": 0.699854
+        },
+        "output_tokens": {
+          "available_runs": 14,
+          "missing_runs": 0,
+          "sum": 4712,
+          "mean": 336.571429,
+          "stddev": 92.472169
+        },
+        "reasoning_tokens": {
+          "available_runs": 14,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 14,
+          "missing_runs": 0,
+          "sum": 4712,
+          "mean": 336.571429,
+          "stddev": 92.472169
+        },
+        "cost_usd": {
+          "available_runs": 14,
+          "missing_runs": 0,
+          "sum": 0.2773261,
+          "mean": 0.019809,
+          "stddev": 0.001625
+        },
+        "duration_ms": {
+          "available_runs": 14,
+          "missing_runs": 0,
+          "sum": 67796,
+          "mean": 4842.571429,
+          "stddev": 1147.156965
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "claude-sonnet-5": 14
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 18,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3741,
+          "mean": 207.833333,
+          "stddev": 34.155283
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2143,
+          "mean": 119.055556,
+          "stddev": 71.053557
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2143,
+          "mean": 119.055556,
+          "stddev": 71.053557
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.021684,
+          "mean": 0.001205,
+          "stddev": 0.000582
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 124970,
+          "mean": 6942.777778,
+          "stddev": 2705.112209
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gemini-3.6-flash": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "runs": 17,
+      "objective": {
+        "samples_passed": 17,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 17,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 14,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 89678,
+          "mean": 5275.176471,
+          "stddev": 3296.57509
+        },
+        "output_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 3794,
+          "mean": 223.176471,
+          "stddev": 97.825316
+        },
+        "reasoning_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 3794,
+          "mean": 223.176471,
+          "stddev": 97.825316
+        },
+        "cost_usd": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 0.16357305,
+          "mean": 0.009622,
+          "stddev": 0.005584
+        },
+        "duration_ms": {
+          "available_runs": 17,
+          "missing_runs": 0,
+          "sum": 227766,
+          "mean": 13398,
+          "stddev": 6721.937685
+        },
+        "routing": {
+          "applicable_runs": 17,
+          "skill_loaded_runs": 14
+        },
+        "response_models": {
+          "gemini-3.6-flash": 17
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 57460,
+          "mean": 3830.666667,
+          "stddev": 33.922788
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2637,
+          "mean": 175.8,
+          "stddev": 38.391318
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2637,
+          "mean": 175.8,
+          "stddev": 38.391318
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.1059675,
+          "mean": 0.007064,
+          "stddev": 0.000338
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 214222,
+          "mean": 14281.466667,
+          "stddev": 8138.897606
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gemini-3.6-flash": 15
+        }
+      }
+    }
+  ],
+  "partial_outputs": [
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "meridian-device-calibration",
+        "repetition": 1
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "nexus-protocol-state",
+        "repetition": 3
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "nexus-protocol-state",
+        "repetition": 3
+      },
+      "attempt": 2,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    }
+  ],
+  "unresolved": [
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "condition": "guarded",
+        "scenario_id": "hyperion-refuel-sequence",
+        "repetition": 2
+      },
+      "error": {
+        "kind": "output",
+        "message": "Pi benchmark call returned no final assistant text"
+      },
+      "attempts": 1,
+      "completed_outputs": 0
+    },
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "nexus-protocol-state",
+        "repetition": 3
+      },
+      "error": {
+        "kind": "condition-integrity",
+        "message": "Model identity or routing safety did not pass."
+      },
+      "attempts": 2,
+      "completed_outputs": 2
+    }
+  ],
+  "objective_procedure_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 18,
+    "successful_samples": 17,
+    "passed_samples": 17,
+    "failed_samples": 0,
+    "accepted": false
+  },
+  "output_contract_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 90,
+    "successful_samples": 88,
+    "passed_samples": 88,
+    "failed_samples": 0,
+    "diagnostic_expected_samples": 9,
+    "diagnostic_successful_samples": 9,
+    "diagnostic_passed_samples": 3,
+    "diagnostic_failed_samples": 6,
+    "accepted": false
+  },
+  "guard_integrity": {
+    "expected_samples": 45,
+    "successful_samples": 44,
+    "passed_samples": 44,
+    "failed_samples": 0,
+    "accepted": false
+  },
+  "applicability": {
+    "groups": [
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "atlas-inventory-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "atlas-inventory-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 2
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "atlas-inventory-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "atlas-inventory-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "phoenix-telemetry-diagnostics",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "meridian-device-calibration",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "hyperion-refuel-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 2
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "nexus-protocol-state",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "quartz-sensor-correlation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "atlas-inventory-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "atlas-inventory-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      }
+    ]
+  }
+}

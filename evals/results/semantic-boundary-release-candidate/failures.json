@@ -1,0 +1,36 @@
+[
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "guarded",
+      "scenario_id": "hyperion-refuel-sequence",
+      "repetition": 2
+    },
+    "error": {
+      "kind": "output",
+      "message": "Pi benchmark call returned no final assistant text"
+    },
+    "attempts": 1,
+    "completed_outputs": 0
+  },
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "scenario_id": "nexus-protocol-state",
+      "repetition": 3
+    },
+    "error": {
+      "kind": "condition-integrity",
+      "message": "Model identity or routing safety did not pass."
+    },
+    "attempts": 2,
+    "completed_outputs": 2
+  }
+]
