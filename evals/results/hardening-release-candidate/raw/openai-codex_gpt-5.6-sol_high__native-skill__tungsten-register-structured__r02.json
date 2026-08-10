@@ -1,0 +1,125 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "native-skill",
+    "scenario_id": "tungsten-register-structured",
+    "repetition": 2
+  },
+  "provenance": {
+    "runner_version": "11",
+    "matrix_sha256": "6aa0649d56cc8a04b141d686e1f0b2d57e0b9ee880a9cbfb146e1af02391d2d1",
+    "package_commit": "11678942691506a2a61c4c825f9e36985322d86e",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "9f0e4bfe4b99555b332b29af93c06757261bce00280e31c8f7eaec018d0abcfe",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "d418b4c380de69c69f9b78ea57870721d72903214aa3b0a64220041ffeeb78e1",
+    "scenario_sha256": "34813b7d6f9577b40eec257c4bb346e5c6113a2336bcd4e0fc6cb535bbc980a6",
+    "preregistered_judge_config_sha256": "831a8b9f1bc0c79d59a9837d7a14be93a98e88bfbdb2b0a1eab92a1e20232b3b",
+    "preregistered_judge_config_path": "hardening-release-candidate-quality-judge.json"
+  },
+  "prompt_sha256": "801b448d42752c1d72777d5955c89e2a35900cd2ab1733d647f43a83eb7593d9",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T14:46:15.683707+00:00",
+      "status": "success",
+      "duration_ms": 5364
+    }
+  ],
+  "updated_at": "2026-08-10T14:46:21.048485+00:00",
+  "duration_ms": 5364,
+  "response": {
+    "text": "{\"station\":\"Tungsten-East\",\"sensors\":[\"SEN-801\",\"SEN-802\",\"SEN-803\"]}",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 583,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 31,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 31,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 614,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.003845,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": false,
+      "passed": null,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "exact_text",
+      "gated": false,
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

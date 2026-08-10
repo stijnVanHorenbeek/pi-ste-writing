@@ -1,0 +1,36 @@
+[
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "scenario_id": "obsidian-sonar-anomaly",
+      "repetition": 2
+    },
+    "error": {
+      "kind": "condition-integrity",
+      "message": "Model identity or routing safety did not pass."
+    },
+    "attempts": 2,
+    "completed_outputs": 2
+  },
+  {
+    "kind": "failed",
+    "cell": {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "scenario_id": "obsidian-sonar-anomaly",
+      "repetition": 3
+    },
+    "error": {
+      "kind": "condition-integrity",
+      "message": "Model identity or routing safety did not pass."
+    },
+    "attempts": 2,
+    "completed_outputs": 2
+  }
+]

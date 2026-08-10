@@ -1,0 +1,1397 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-08-10T14:46:30.209996+00:00",
+  "provenance": {
+    "runner_version": "11",
+    "matrix_sha256": "6aa0649d56cc8a04b141d686e1f0b2d57e0b9ee880a9cbfb146e1af02391d2d1",
+    "package_commit": "11678942691506a2a61c4c825f9e36985322d86e",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "9f0e4bfe4b99555b332b29af93c06757261bce00280e31c8f7eaec018d0abcfe",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "d418b4c380de69c69f9b78ea57870721d72903214aa3b0a64220041ffeeb78e1",
+    "scenario_sha256": "34813b7d6f9577b40eec257c4bb346e5c6113a2336bcd4e0fc6cb535bbc980a6",
+    "preregistered_judge_config_sha256": "831a8b9f1bc0c79d59a9837d7a14be93a98e88bfbdb2b0a1eab92a1e20232b3b",
+    "preregistered_judge_config_path": "hardening-release-candidate-quality-judge.json"
+  },
+  "matrix": {
+    "id": "hardening-release-candidate",
+    "version": 1,
+    "conditions": [
+      "baseline",
+      "native-skill",
+      "guarded"
+    ],
+    "repetitions": 3
+  },
+  "completeness": {
+    "expected": 153,
+    "successful": 151,
+    "failed": 2,
+    "missing": 0,
+    "stale": 0,
+    "invalid": 0,
+    "complete": false
+  },
+  "condition_integrity": {
+    "expected_samples": 153,
+    "successful_samples": 151,
+    "integrity_passed_samples": 151,
+    "model_identity_passed_samples": 151,
+    "routing_safety_passed_samples": 151,
+    "activation_groups_expected": 18,
+    "activation_groups_passed": 17,
+    "expected_native_samples": 54,
+    "successful_native_samples": 52,
+    "expected_skill_loaded_samples": 45,
+    "skill_loaded_samples": 43,
+    "accepted": false
+  },
+  "objective_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 99,
+    "successful_samples": 97,
+    "passed_samples": 96,
+    "failed_samples": 1,
+    "accepted": false
+  },
+  "condition_results": [
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 18,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3929,
+          "mean": 218.277778,
+          "stddev": 34.344344
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3601,
+          "mean": 200.055556,
+          "stddev": 126.450461
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 1361,
+          "mean": 75.611111,
+          "stddev": 120.055144
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2240,
+          "mean": 124.444444,
+          "stddev": 54.475501
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.127675,
+          "mean": 0.007093,
+          "stddev": 0.003815
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 173254,
+          "mean": 9625.222222,
+          "stddev": 4213.433379
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 18
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "native-skill",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 18,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 18,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 121595,
+          "mean": 6755.277778,
+          "stddev": 3504.869546
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 12410,
+          "mean": 689.444444,
+          "stddev": 467.145376
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 7455,
+          "mean": 414.166667,
+          "stddev": 359.151662
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 4955,
+          "mean": 275.277778,
+          "stddev": 124.118136
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.981043,
+          "mean": 0.054502,
+          "stddev": 0.030951
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 454392,
+          "mean": 25244,
+          "stddev": 14060.092931
+        },
+        "routing": {
+          "applicable_runs": 18,
+          "skill_loaded_runs": 15
+        },
+        "response_models": {
+          "gpt-5.6-sol": 18
+        }
+      }
+    },
+    {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinking": "high",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 54035,
+          "mean": 3602.333333,
+          "stddev": 28.394053
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 7064,
+          "mean": 470.933333,
+          "stddev": 138.926103
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 4236,
+          "mean": 282.4,
+          "stddev": 114.300656
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2828,
+          "mean": 188.533333,
+          "stddev": 39.479728
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.482095,
+          "mean": 0.03214,
+          "stddev": 0.00423
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 222056,
+          "mean": 14803.733333,
+          "stddev": 3615.362305
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gpt-5.6-sol": 15
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 11,
+        "samples_failed": 7,
+        "contracts": {
+          "passed_samples": 11,
+          "failed_samples": 7
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 2,
+          "failed_samples": 1
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 6173,
+          "mean": 342.944444,
+          "stddev": 62.933362
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3889,
+          "mean": 216.055556,
+          "stddev": 92.905252
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 178,
+          "mean": 9.888889,
+          "stddev": 24.843709
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 3711,
+          "mean": 206.166667,
+          "stddev": 95.896501
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.051236,
+          "mean": 0.002846,
+          "stddev": 0.001043
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 75633,
+          "mean": 4201.833333,
+          "stddev": 958.703769
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "claude-sonnet-5": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "native-skill",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 17,
+        "samples_failed": 1,
+        "contracts": {
+          "passed_samples": 17,
+          "failed_samples": 1
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 96,
+          "mean": 5.333333,
+          "stddev": 1.490712
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 8154,
+          "mean": 453,
+          "stddev": 206.062558
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 445,
+          "mean": 24.722222,
+          "stddev": 83.556239
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 7709,
+          "mean": 428.277778,
+          "stddev": 176.441619
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.3982367,
+          "mean": 0.022124,
+          "stddev": 0.009235
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 177726,
+          "mean": 9873.666667,
+          "stddev": 3748.017758
+        },
+        "routing": {
+          "applicable_runs": 18,
+          "skill_loaded_runs": 15
+        },
+        "response_models": {
+          "claude-sonnet-5": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "claude-sonnet-5",
+      "thinking": "low",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 32,
+          "mean": 2.133333,
+          "stddev": 0.498888
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 5342,
+          "mean": 356.133333,
+          "stddev": 81.364912
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 54,
+          "mean": 3.6,
+          "stddev": 13.469967
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 5288,
+          "mean": 352.533333,
+          "stddev": 71.740148
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.2986403,
+          "mean": 0.019909,
+          "stddev": 0.001303
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 75694,
+          "mean": 5046.266667,
+          "stddev": 1062.045603
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "claude-sonnet-5": 15
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "baseline",
+      "runs": 18,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 3,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 1,
+          "failed_samples": 2
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 4036,
+          "mean": 224.222222,
+          "stddev": 33.36924
+        },
+        "output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2636,
+          "mean": 146.444444,
+          "stddev": 80.551034
+        },
+        "reasoning_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 2636,
+          "mean": 146.444444,
+          "stddev": 80.551034
+        },
+        "cost_usd": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 0.025824,
+          "mean": 0.001435,
+          "stddev": 0.000653
+        },
+        "duration_ms": {
+          "available_runs": 18,
+          "missing_runs": 0,
+          "sum": 147261,
+          "mean": 8181.166667,
+          "stddev": 5317.262759
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gemini-3.6-flash": 18
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "native-skill",
+      "runs": 16,
+      "objective": {
+        "samples_passed": 16,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 16,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 13,
+          "failed_samples": 3
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 16,
+          "missing_runs": 0,
+          "sum": 85559,
+          "mean": 5347.4375,
+          "stddev": 3197.084277
+        },
+        "output_tokens": {
+          "available_runs": 16,
+          "missing_runs": 0,
+          "sum": 3819,
+          "mean": 238.6875,
+          "stddev": 105.208554
+        },
+        "reasoning_tokens": {
+          "available_runs": 16,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 16,
+          "missing_runs": 0,
+          "sum": 3819,
+          "mean": 238.6875,
+          "stddev": 105.208554
+        },
+        "cost_usd": {
+          "available_runs": 16,
+          "missing_runs": 0,
+          "sum": 0.156981,
+          "mean": 0.009811,
+          "stddev": 0.005444
+        },
+        "duration_ms": {
+          "available_runs": 16,
+          "missing_runs": 0,
+          "sum": 222051,
+          "mean": 13878.1875,
+          "stddev": 6090.163588
+        },
+        "routing": {
+          "applicable_runs": 16,
+          "skill_loaded_runs": 13
+        },
+        "response_models": {
+          "gemini-3.6-flash": 16
+        }
+      }
+    },
+    {
+      "provider": "github-copilot",
+      "model": "gemini-3.6-flash",
+      "thinking": "medium",
+      "condition": "guarded",
+      "runs": 15,
+      "objective": {
+        "samples_passed": 15,
+        "samples_failed": 0,
+        "contracts": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        },
+        "procedure": {
+          "applicable_samples": 3,
+          "passed_samples": 3,
+          "failed_samples": 0
+        },
+        "output_contract": {
+          "passed_samples": 15,
+          "failed_samples": 0
+        }
+      },
+      "style": {
+        "advisory": true,
+        "warning_count": 0,
+        "warnings_by_rule": {}
+      },
+      "operations": {
+        "input_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 57760,
+          "mean": 3850.666667,
+          "stddev": 29.870089
+        },
+        "output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2893,
+          "mean": 192.866667,
+          "stddev": 35.747012
+        },
+        "reasoning_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0,
+          "mean": 0,
+          "stddev": 0.0
+        },
+        "visible_output_tokens": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 2893,
+          "mean": 192.866667,
+          "stddev": 35.747012
+        },
+        "cost_usd": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 0.1083375,
+          "mean": 0.007222,
+          "stddev": 0.000312
+        },
+        "duration_ms": {
+          "available_runs": 15,
+          "missing_runs": 0,
+          "sum": 210893,
+          "mean": 14059.533333,
+          "stddev": 5601.108627
+        },
+        "routing": {
+          "applicable_runs": 0,
+          "skill_loaded_runs": 0
+        },
+        "response_models": {
+          "gemini-3.6-flash": 15
+        }
+      }
+    }
+  ],
+  "partial_outputs": [
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "repetition": 2
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "repetition": 2
+      },
+      "attempt": 2,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "repetition": 3
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "repetition": 3
+      },
+      "attempt": 2,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "repetition": 3
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    },
+    {
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "prism-eventbus-pipeline",
+        "repetition": 3
+      },
+      "attempt": 1,
+      "stop_reason": "stop",
+      "semantic_gate_passed": null
+    }
+  ],
+  "unresolved": [
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "repetition": 2
+      },
+      "error": {
+        "kind": "condition-integrity",
+        "message": "Model identity or routing safety did not pass."
+      },
+      "attempts": 2,
+      "completed_outputs": 2
+    },
+    {
+      "kind": "failed",
+      "cell": {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "condition": "native-skill",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "repetition": 3
+      },
+      "error": {
+        "kind": "condition-integrity",
+        "message": "Model identity or routing safety did not pass."
+      },
+      "attempts": 2,
+      "completed_outputs": 2
+    }
+  ],
+  "objective_procedure_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 18,
+    "successful_samples": 18,
+    "passed_samples": 18,
+    "failed_samples": 0,
+    "accepted": true
+  },
+  "output_contract_acceptance": {
+    "conditions": [
+      "native-skill",
+      "guarded"
+    ],
+    "expected_samples": 90,
+    "successful_samples": 88,
+    "passed_samples": 88,
+    "failed_samples": 0,
+    "diagnostic_expected_samples": 9,
+    "diagnostic_successful_samples": 9,
+    "diagnostic_passed_samples": 3,
+    "diagnostic_failed_samples": 6,
+    "accepted": false
+  },
+  "guard_integrity": {
+    "expected_samples": 45,
+    "successful_samples": 45,
+    "passed_samples": 45,
+    "failed_samples": 0,
+    "accepted": true
+  },
+  "applicability": {
+    "groups": [
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "tungsten-register-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "openai-codex",
+        "model": "gpt-5.6-sol",
+        "thinking": "high",
+        "scenario_id": "tungsten-register-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "tungsten-register-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "claude-sonnet-5",
+        "thinking": "low",
+        "scenario_id": "tungsten-register-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 1
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "obsidian-sonar-anomaly",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "zenith-cryovalve-obligation",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "titan-deorbit-sequence",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "cedar-ventilation-threshold",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "prism-eventbus-pipeline",
+        "condition": "guarded",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "tungsten-register-structured",
+        "condition": "baseline",
+        "expected_samples": 3,
+        "successful_samples": 3
+      },
+      {
+        "provider": "github-copilot",
+        "model": "gemini-3.6-flash",
+        "thinking": "medium",
+        "scenario_id": "tungsten-register-structured",
+        "condition": "native-skill",
+        "expected_samples": 3,
+        "successful_samples": 3
+      }
+    ]
+  }
+}
