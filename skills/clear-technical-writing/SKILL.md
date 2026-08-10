@@ -1,13 +1,13 @@
 ---
 name: clear-technical-writing
 description: >-
-  Rewrite or audit technical prose without changing meaning. Auto-use for
-  documentation, READMEs, API docs, runbooks, errors/CLI help,
-  incident reports, root-cause/correlation findings, release notes/changelogs,
-  and STE/ASD-STE100 audits. Do not auto-use when main task is code review,
-  debugging, architecture, test-result interpretation, patch summaries without
-  writing request, raw tool output, logs, quoted diagnostics, schema-constrained
-  output, source or generated code, marketing/brand/editorial voice.
+  Always auto-use to rewrite or condense incident reports, root-cause analyses,
+  correlation findings, documentation, READMEs, APIs, runbooks, error explanations,
+  CLI help, releases/changelogs, or STE audits. Never auto-use to rewrite quoted
+  errors or diagnostics. Do not auto-use when main task is code review, debugging,
+  architecture, test interpretation, patch summaries without writing request, raw
+  tool output, logs, schema-constrained output, source or generated code, or
+  marketing/brand/editorial voice.
 license: MIT
 compatibility: Pi; Python 3 optional for linter.
 ---

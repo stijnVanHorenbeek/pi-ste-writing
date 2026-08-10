@@ -52,7 +52,7 @@ class SkillRouterTest(unittest.TestCase):
     def test_frontmatter_is_valid_and_routing_description_is_bounded(self):
         text = SKILL.read_text()
         metadata = frontmatter(text)
-        description = folded_description(metadata)
+        description = folded_description(metadata).lower()
 
         self.assertRegex(metadata, r"(?m)^name: clear-technical-writing$")
         self.assertRegex(metadata, r"(?m)^license: MIT$")
@@ -60,14 +60,16 @@ class SkillRouterTest(unittest.TestCase):
         for routing_term in (
             "documentation",
             "runbooks",
+            "always auto-use",
             "incident reports",
             "root-cause",
             "correlation findings",
+            "error explanations",
+            "never auto-use to rewrite quoted errors or diagnostics",
             "main task",
             "code review",
             "raw tool output",
             "logs",
-            "quoted diagnostics",
             "schema-constrained output",
             "source or generated code",
         ):
