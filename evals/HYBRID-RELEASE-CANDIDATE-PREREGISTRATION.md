@@ -16,6 +16,7 @@ Frozen artifacts:
 - Objective scorer: `evals/score_fixtures.py`
 - Judge runner: `evals/run_quality_judge.py`
 - Required smoke: `evals/development-guard-smoke-matrix.json`
+- Required smoke evidence: `evals/results/hybrid-development-guard-smoke/`
 
 ## Evidence design
 

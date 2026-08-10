@@ -2,12 +2,16 @@
   "schema_version": 3,
   "run_kind": "release-candidate",
   "matrix_id": "hybrid-release-candidate",
-  "version": 1,
+  "version": 2,
   "description": "Preregistered hybrid release evidence matrix.",
   "amendments": [
     {
       "version": 1,
       "reason": "Initial schema-v3 hybrid preregistration before candidate generation."
+    },
+    {
+      "version": 2,
+      "reason": "Use a new runner-version-7 smoke evidence directory instead of overwriting retained runner-version-6 smoke evidence. No held-out generation occurred before this amendment."
     }
   ],
   "scenario_ids": [
@@ -125,7 +129,7 @@
   "judge_config_path": "hybrid-release-candidate-quality-judge.json",
   "prerequisite_smoke": {
     "matrix_path": "development-guard-smoke-matrix.json",
-    "results_directory": "results/development-guard-smoke"
+    "results_directory": "results/hybrid-development-guard-smoke"
   },
   "evidence_policy": {
     "development_smoke_required_before_unseen_generation": true,

@@ -3520,7 +3520,7 @@ class HybridReleaseMatrixTest(unittest.TestCase):
         cells = list(run_pi_bench.iter_cells(matrix, scenarios))
 
         self.assertEqual(matrix["schema_version"], 3)
-        self.assertEqual(matrix["version"], 1)
+        self.assertEqual(matrix["version"], 2)
         self.assertEqual(len(fixtures), 5)
         self.assertEqual(len(matrix["scenario_ids"]), 6)
         self.assertEqual(len(cells), 153)
