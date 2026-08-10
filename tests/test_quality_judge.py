@@ -22,6 +22,8 @@ INDEPENDENT_CONFIG_PATH = ARCHIVE_CONFIG / "independent-review-quality-judge.jso
 INDEPENDENT_MATRIX_PATH = ARCHIVE_CONFIG / "independent-review-matrix.json"
 RELEASE_CANDIDATE_CONFIG_PATH = EVALS / "release-candidate-quality-judge.json"
 RELEASE_CANDIDATE_MATRIX_PATH = EVALS / "release-candidate-matrix.json"
+HYBRID_RELEASE_CONFIG_PATH = EVALS / "hybrid-release-candidate-quality-judge.json"
+HYBRID_RELEASE_MATRIX_PATH = EVALS / "hybrid-release-candidate-matrix.json"
 sys.path.insert(0, str(EVALS))
 
 import run_quality_judge
@@ -1374,6 +1376,45 @@ class AuthorityAndInvocationTest(unittest.TestCase):
         self.assertIn("--no-approve", command)
         self.assertIn("--offline", command)
         self.assertEqual(command[-1], prompt)
+
+
+class HybridReleaseJudgeConfigTest(unittest.TestCase):
+    def test_preregisters_90_applicable_paired_semantic_judgments(self):
+        matrix = run_quality_judge.run_pi_bench.load_matrix(
+            HYBRID_RELEASE_MATRIX_PATH
+        )
+        _fixtures, scenarios = run_quality_judge.run_pi_bench.load_matrix_scenarios(
+            matrix
+        )
+        config = run_quality_judge.load_judge_config(
+            HYBRID_RELEASE_CONFIG_PATH
+        )
+        run_quality_judge.validate_judge_matrix(config, matrix)
+        cells = list(
+            run_quality_judge.iter_judge_cells(matrix, config, scenarios)
+        )
+
+        self.assertEqual(config["schema_version"], 3)
+        self.assertEqual(config["version"], 1)
+        self.assertEqual(len(cells), 90)
+        self.assertEqual(
+            {cell["comparison_id"] for cell in cells},
+            {"baseline-vs-native", "native-vs-guarded"},
+        )
+        self.assertTrue(
+            all(
+                cell["judge"]["provider"]
+                != cell["source_model"]["provider"]
+                for cell in cells
+            )
+        )
+        self.assertEqual(
+            config["semantic_gate"]["adverse_labels"],
+            ["not_equivalent", "uncertain"],
+        )
+        self.assertEqual(
+            config["acceptance_thresholds"]["maximum_conflicts"], 0
+        )
 
 
 class HybridSemanticJudgeTest(unittest.TestCase):

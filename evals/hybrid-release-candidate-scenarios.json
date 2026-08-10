@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "description": "Preregistered machine-output routing control and candidate matrix for the hybrid release candidate.",
+  "scenarios": [
+    {
+      "id": "kestrel-flight-log-structured",
+      "mode": "structured",
+      "task": "Return exactly one JSON array containing string identifiers: `K-10`, `K-11`, `K-12`. Do not output a markdown block, commentary, or multiple arrays.",
+      "source": "Flight logs show K-10, K-11, and K-12 landed safely.",
+      "expect_skill_loaded": false,
+      "output_contract": {
+        "type": "exact_text",
+        "value": "[\"K-10\",\"K-11\",\"K-12\"]",
+        "allow_terminal_newline": true
+      }
+    }
+  ]
+}

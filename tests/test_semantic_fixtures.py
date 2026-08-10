@@ -16,6 +16,9 @@ INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json
 RELEASE_CANDIDATE_CORPUS_PATH = (
     ROOT / "evals" / "fixtures" / "release-candidate.json"
 )
+HYBRID_RELEASE_CORPUS_PATH = (
+    ROOT / "evals" / "fixtures" / "hybrid-release-candidate.json"
+)
 
 REQUIRED_TAGS = {
     "fact",
@@ -351,6 +354,48 @@ class SemanticFixtureCorpusTest(unittest.TestCase):
                     self.assertTrue(expected)
                     self.assertLessEqual(expected, rule_ids)
                     self.assertEqual(violated_rules(fixture, baseline["rewrite"]), expected)
+
+
+class HybridReleaseCorpusTest(unittest.TestCase):
+    def test_hybrid_release_corpus_is_new_objective_only_evidence(self):
+        corpus = json.loads(HYBRID_RELEASE_CORPUS_PATH.read_text())
+        score_fixtures.validate_corpus(corpus)
+        self.assertEqual(corpus["schema_version"], 2)
+        self.assertEqual(len(corpus["fixtures"]), 5)
+
+        previous = json.loads(RELEASE_CANDIDATE_CORPUS_PATH.read_text())
+        previous_ids = {fixture["id"] for fixture in previous["fixtures"]}
+        fixture_ids = {fixture["id"] for fixture in corpus["fixtures"]}
+        self.assertTrue(fixture_ids.isdisjoint(previous_ids))
+
+        serialized = json.dumps(corpus)
+        for forbidden in (
+            "Morrowglass",
+            "Sablefen",
+            "Calder",
+            "Brineglass",
+            "Mireglass",
+            '"regex"',
+            '"word_window"',
+            '"semantic_regex"',
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, serialized)
+
+        for fixture in corpus["fixtures"]:
+            with self.subTest(fixture=fixture["id"]):
+                self.assertEqual(
+                    fixture["task"],
+                    f"Rewrite following source in {fixture['mode']} mode. "
+                    "Return only rewritten text.",
+                )
+                self.assertTrue(fixture["expect_skill_loaded"])
+                self.assertTrue(fixture["semantic_review_applicable"])
+                self.assertTrue(fixture["semantic_claims"])
+                self.assertEqual(
+                    set(fixture["objective_contract"]),
+                    {"source_equality", "ordered_anchors"},
+                )
 
 
 class HybridObjectiveFixtureTest(unittest.TestCase):

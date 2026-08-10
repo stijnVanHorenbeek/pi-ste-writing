@@ -14,12 +14,14 @@ ARCHIVE_CONFIG = ROOT / "archive" / "pre-release" / "evals" / "config"
 MATRIX_PATH = ARCHIVE_CONFIG / "initial-skill-matrix.json"
 INDEPENDENT_MATRIX_PATH = ARCHIVE_CONFIG / "independent-review-matrix.json"
 RELEASE_CANDIDATE_MATRIX_PATH = ROOT / "evals" / "release-candidate-matrix.json"
+HYBRID_RELEASE_MATRIX_PATH = ROOT / "evals" / "hybrid-release-candidate-matrix.json"
 DEVELOPMENT_SMOKE_MATRIX_PATH = (
     ROOT / "evals" / "development-guard-smoke-matrix.json"
 )
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 RELEASE_CANDIDATE_CORPUS_PATH = ROOT / "evals" / "fixtures" / "release-candidate.json"
 RELEASE_CANDIDATE_SCENARIOS_PATH = ROOT / "evals" / "release-candidate-scenarios.json"
+HYBRID_RELEASE_SCENARIOS_PATH = ROOT / "evals" / "hybrid-release-candidate-scenarios.json"
 BENCHMARK_SCENARIOS_PATH = ROOT / "evals" / "benchmark-scenarios.json"
 EVALS_DIR = ROOT / "evals"
 sys.path.insert(0, str(EVALS_DIR))
@@ -3509,6 +3511,47 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         )
         self.assertEqual(matrix["output_contract"]["type"], "text")
         self.assertTrue(matrix["output_contract"]["forbidden_patterns"])
+
+
+class HybridReleaseMatrixTest(unittest.TestCase):
+    def test_preregisters_hybrid_release_matrix_and_expected_cells(self):
+        matrix = run_pi_bench.load_matrix(HYBRID_RELEASE_MATRIX_PATH)
+        fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
+        cells = list(run_pi_bench.iter_cells(matrix, scenarios))
+
+        self.assertEqual(matrix["schema_version"], 3)
+        self.assertEqual(matrix["version"], 1)
+        self.assertEqual(len(fixtures), 5)
+        self.assertEqual(len(matrix["scenario_ids"]), 6)
+        self.assertEqual(len(cells), 153)
+        self.assertEqual(sum(cell["condition"] == "guarded" for cell in cells), 45)
+        self.assertEqual(matrix["max_parallel_calls"], 3)
+        self.assertEqual(
+            matrix["max_parallel_calls_by_provider"],
+            {"openai-codex": 1, "github-copilot": 2},
+        )
+        self.assertEqual(
+            matrix["models"],
+            [
+                {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "high"},
+                {"provider": "github-copilot", "model": "claude-sonnet-5", "thinking": "low"},
+                {"provider": "github-copilot", "model": "gemini-3.6-flash", "thinking": "medium"},
+            ],
+        )
+        fixture_ids = set(fixtures)
+        external_ids = set(matrix["scenario_ids"]) - fixture_ids
+        self.assertEqual(len(external_ids), 1)
+        external_id = next(iter(external_ids))
+        self.assertEqual(
+            matrix["conditions_by_scenario"][external_id],
+            ["baseline", "native-skill"],
+        )
+        self.assertFalse(scenarios[external_id]["expect_skill_loaded"])
+        self.assertTrue(
+            matrix["evidence_policy"][
+                "no_repairs_based_on_release_candidate_outputs"
+            ]
+        )
 
 
 class HybridSchemaV3Test(unittest.TestCase):

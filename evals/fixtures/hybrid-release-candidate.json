@@ -1,0 +1,260 @@
+{
+  "schema_version": 2,
+  "description": "Converted schema_version 2 fixture corpus containing exactly-ordered anchor validation and objective cross-domain semantic validation.",
+  "fixtures": [
+    {
+      "id": "lumina-threshold-causality",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "Lumina sensor array logged 18 false positives on 2039-11-04 when ambient dust rose above 40 \u03bcg/m\u00b3. Cross-referencing proved that a laser calibration drift of 2.1 mm caused 12 of the false positives. The evidence does not show what caused the remaining 6 false positives. During the spike, internal temperatures increased from 28\u00b0C to 34\u00b0C. The evidence neither establishes the temperature increase as the cause of the remaining 6 nor excludes it. Signal reflection was ruled out as a cause.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "source_equality": {
+          "kinds": [
+            "identifier",
+            "number",
+            "date",
+            "unit"
+          ],
+          "occurrence_count": "exact",
+          "container": "exact"
+        },
+        "ordered_anchors": []
+      },
+      "semantic_claims": [
+        {
+          "id": "lumina.laser",
+          "risk": "essential",
+          "proposition": "Laser calibration drift of 2.1 mm caused 12 of the false positives."
+        },
+        {
+          "id": "lumina.remainder",
+          "risk": "essential",
+          "proposition": "The cause for the remaining 6 false positives is not established by the evidence."
+        },
+        {
+          "id": "lumina.temperature",
+          "risk": "essential",
+          "proposition": "The internal temperature increase is neither proven nor excluded as the cause of the remaining 6 false positives."
+        },
+        {
+          "id": "lumina.reflection",
+          "risk": "essential",
+          "proposition": "Signal reflection was ruled out as a cause of the false positives."
+        },
+        {
+          "id": "lumina.dust_limit",
+          "risk": "essential",
+          "proposition": "The Lumina sensor array logged 18 false positives on 2039-11-04 when ambient dust rose above 40 \u03bcg/m\u00b3."
+        },
+        {
+          "id": "lumina.temp_increase",
+          "risk": "essential",
+          "proposition": "During the spike, internal temperatures increased from 28\u00b0C to 34\u00b0C."
+        }
+      ]
+    },
+    {
+      "id": "aethel-actor-capability",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "At Aethel Facility, shift supervisors must lock bay `B-42` when radiation exceeds 15 mSv/h. While radiation is below 15 mSv/h, the shift supervisor may unlock `B-42` only if authorization `AUTH-992` is valid. The supervisor is not obligated to unlock it even if authorized. If secondary sensors show anomalies, the supervisor should request a sweep before unlocking. Maintenance technicians can monitor radiation levels on the dashboard, but they must not authorize `AUTH-992` or unlock the bay.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "source_equality": {
+          "kinds": [
+            "inline_code",
+            "number",
+            "unit",
+            "identifier"
+          ],
+          "occurrence_count": "exact",
+          "container": "exact"
+        },
+        "ordered_anchors": []
+      },
+      "semantic_claims": [
+        {
+          "id": "aethel.lock",
+          "risk": "essential",
+          "proposition": "At Aethel Facility, shift supervisors must lock bay B-42 when radiation exceeds 15 mSv/h."
+        },
+        {
+          "id": "aethel.unlock",
+          "risk": "essential",
+          "proposition": "While radiation is below 15 mSv/h, the shift supervisor may unlock bay B-42 only if authorization AUTH-992 is valid."
+        },
+        {
+          "id": "aethel.no_obligation",
+          "risk": "essential",
+          "proposition": "The shift supervisor is not obligated to unlock bay B-42 even if authorized."
+        },
+        {
+          "id": "aethel.techs",
+          "risk": "essential",
+          "proposition": "Maintenance technicians can monitor radiation levels on the dashboard but must not authorize AUTH-992 or unlock the bay."
+        },
+        {
+          "id": "aethel.sweep_recommendation",
+          "risk": "essential",
+          "proposition": "If secondary sensors show anomalies, the supervisor should request a sweep before unlocking bay B-42."
+        }
+      ]
+    },
+    {
+      "id": "valerius-factual-assurance",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "Notice for payload engineers. Since 2041-02-18, Valerius firmware 4.1.9 displays `overpressure` when the auxiliary tank exceeds 450 kPa. The `overpressure` state means the panel freezes the last validated flow rate. The display of `overpressure` does not mean the main valve has failed. If `overpressure` persists for 5 minutes, engineers should inspect the relief valve. When bypass `BYP-11` is active, engineers must not reset the module. A reset clears the display but does not vent the tank.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "source_equality": {
+          "kinds": [
+            "inline_code",
+            "date",
+            "version",
+            "number",
+            "unit",
+            "identifier"
+          ],
+          "occurrence_count": "exact",
+          "container": "exact"
+        },
+        "ordered_anchors": []
+      },
+      "semantic_claims": [
+        {
+          "id": "valerius.trigger",
+          "risk": "essential",
+          "proposition": "Valerius firmware 4.1.9 displays overpressure when the auxiliary tank exceeds 450 kPa."
+        },
+        {
+          "id": "valerius.meaning",
+          "risk": "essential",
+          "proposition": "The overpressure state means the panel freezes the last validated flow rate and does not mean the main valve has failed."
+        },
+        {
+          "id": "valerius.action",
+          "risk": "essential",
+          "proposition": "If overpressure persists for 5 minutes, engineers should inspect the relief valve, and when bypass BYP-11 is active, they must not reset the module."
+        },
+        {
+          "id": "valerius.reset",
+          "risk": "essential",
+          "proposition": "A reset of the module clears the overpressure display but does not vent the tank."
+        },
+        {
+          "id": "valerius.firmware_scope",
+          "risk": "essential",
+          "proposition": "These overpressure display and reset characteristics apply to Valerius firmware 4.1.9 starting from 2041-02-18."
+        }
+      ]
+    },
+    {
+      "id": "ciphera-repository-terms",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "In the Ciphera repository, `glyph` refers to raw sensor inputs, and `sigil` refers to processed classifications. `NodeGate` reads `glyph` from `/var/ciphera/in/node.glf` via `data.input_path`. It writes `sigil` to `/var/ciphera/out/node.sig` via `data.output_path`. For input specs, see [glyph spec](https://doc.ciphera.invalid/glyph) and select **Raw Glyph**. For output specs, see [sigil spec](https://doc.ciphera.invalid/sigil) and select **Processed Sigil**. Preserve error `ERR_GLYPH expected glyph got sigil`.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "source_equality": {
+          "kinds": [
+            "inline_code",
+            "markdown_link",
+            "bold_text",
+            "identifier"
+          ],
+          "occurrence_count": "exact",
+          "container": "exact"
+        },
+        "ordered_anchors": []
+      },
+      "semantic_claims": [
+        {
+          "id": "ciphera.terms",
+          "risk": "essential",
+          "proposition": "In the Ciphera repository, glyph refers to raw sensor inputs and sigil refers to processed classifications."
+        },
+        {
+          "id": "ciphera.roles",
+          "risk": "essential",
+          "proposition": "NodeGate reads glyph and writes sigil."
+        },
+        {
+          "id": "ciphera.specs",
+          "risk": "essential",
+          "proposition": "Input specifications are at https://doc.ciphera.invalid/glyph and output specifications are at https://doc.ciphera.invalid/sigil."
+        },
+        {
+          "id": "ciphera.paths",
+          "risk": "essential",
+          "proposition": "NodeGate reads glyph from /var/ciphera/in/node.glf via data.input_path and writes sigil to /var/ciphera/out/node.sig via data.output_path."
+        },
+        {
+          "id": "ciphera.spec_selection",
+          "risk": "essential",
+          "proposition": "Users must select Raw Glyph for input specifications and Processed Sigil for output specifications."
+        },
+        {
+          "id": "ciphera.error",
+          "risk": "essential",
+          "proposition": "The system preserves the error code ERR_GLYPH expected glyph got sigil."
+        }
+      ]
+    },
+    {
+      "id": "thalassa-destructive-procedure",
+      "mode": "procedure",
+      "task": "Rewrite following source in procedure mode. Return only rewritten text.",
+      "source": "This wipes memory on idle buoy `T-10`. It does not affect active buoy `T-12`. Confirm that permit `WIPE-44` is valid, `T-10` is disconnected, and the console shows **Safe to Purge**. Run `thalassactl buoy check T-10`. Proceed only if it returns `status=idle mem=full`. WARNING: The next command permanently deletes all data on `T-10`. A remote restore is impossible. Run `thalassactl buoy purge T-10 --permit WIPE-44`. Run `thalassactl buoy verify T-10` and confirm it returns `mem=empty`.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "source_equality": {
+          "kinds": [
+            "inline_code",
+            "bold_text",
+            "identifier",
+            "number"
+          ],
+          "occurrence_count": "exact",
+          "container": "exact"
+        },
+        "ordered_anchors": [
+          [
+            "Confirm that permit `WIPE-44` is valid, `T-10` is disconnected, and the console shows **Safe to Purge**.",
+            "WARNING: The next command permanently deletes all data on `T-10`.",
+            "Run `thalassactl buoy purge T-10 --permit WIPE-44`.",
+            "Run `thalassactl buoy verify T-10` and confirm it returns `mem=empty`."
+          ]
+        ]
+      },
+      "semantic_claims": [
+        {
+          "id": "thalassa.scope",
+          "risk": "essential",
+          "proposition": "The memory wipe procedure affects idle buoy T-10 but does not affect active buoy T-12."
+        },
+        {
+          "id": "thalassa.preconditions",
+          "risk": "essential",
+          "proposition": "Before purge execution, confirm permit WIPE-44 is valid, buoy T-10 is disconnected, the console displays Safe to Purge, and thalassactl buoy check T-10 returns status=idle mem=full."
+        },
+        {
+          "id": "thalassa.warning",
+          "risk": "essential",
+          "proposition": "The purge command permanently deletes all data on buoy T-10 and a remote restore is impossible."
+        },
+        {
+          "id": "thalassa.post",
+          "risk": "essential",
+          "proposition": "After the purge, running thalassactl buoy verify T-10 must return mem=empty."
+        }
+      ]
+    }
+  ]
+}
