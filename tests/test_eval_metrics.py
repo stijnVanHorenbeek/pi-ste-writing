@@ -13,6 +13,9 @@ INDEPENDENT_CORPUS_PATH = ROOT / "evals" / "fixtures" / "independent-review.json
 RELEASE_CANDIDATE_CORPUS_PATH = (
     ROOT / "evals" / "fixtures" / "release-candidate.json"
 )
+HYBRID_REGRESSION_CORPUS_PATH = (
+    ROOT / "evals" / "fixtures" / "hybrid-regressions.json"
+)
 PRE_RELEASE_EVIDENCE = (
     ROOT / "archive" / "pre-release" / "evals" / "evidence"
 )
@@ -118,6 +121,50 @@ class ReleaseCandidateScoringTest(unittest.TestCase):
                         fixture, candidate["rewrite"], candidate["id"]
                     )
                     self.assertFalse(score["semantic"]["gate_passed"])
+
+
+class SemanticBoundaryScoringTest(unittest.TestCase):
+    def test_cli_reports_schema_v3_objective_result(self):
+        corpus = json.loads(HYBRID_REGRESSION_CORPUS_PATH.read_text())
+        fixture = corpus["fixtures"][0]
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                fixture["id"],
+                "--corpus",
+                str(HYBRID_REGRESSION_CORPUS_PATH),
+                "--format",
+                "json",
+                "-",
+            ],
+            input=fixture["source"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertTrue(report["objective_contract"]["passed"])
+        self.assertNotIn("semantic", report)
+
+        text_result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                fixture["id"],
+                "--corpus",
+                str(HYBRID_REGRESSION_CORPUS_PATH),
+                "-",
+            ],
+            input=fixture["source"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(text_result.returncode, 0, text_result.stderr)
+        self.assertIn("objective contract: PASS", text_result.stdout)
 
 
 class SemanticParaphraseRegressionTest(unittest.TestCase):

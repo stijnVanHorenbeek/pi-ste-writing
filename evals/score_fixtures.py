@@ -29,6 +29,12 @@ OBJECTIVE_SOURCE_KINDS = {
     "version",
     "unit",
 }
+OBJECTIVE_LITERAL_KINDS = {
+    "inline_code",
+    "fenced_code",
+    "markdown_link",
+    "bold_text",
+}
 DISCLAIMER = (
     "Deterministic checks cover only enumerated fixture rules; they do not prove "
     "full semantic equivalence or certify ASD-STE100 compliance."
@@ -50,9 +56,63 @@ def objective_values(text, kind):
     return re.findall(patterns[kind], text)
 
 
+def normalized_literal_value(kind, value):
+    if kind == "markdown_link":
+        if (
+            not isinstance(value, list)
+            or len(value) != 2
+            or not all(isinstance(item, str) and item for item in value)
+        ):
+            raise ValueError("markdown-link literal value must be [label, destination]")
+        return tuple(value)
+    if not isinstance(value, str) or not value:
+        raise ValueError("objective literal value must be a nonempty string")
+    return value
+
+
+def literal_key(literal):
+    if not isinstance(literal, dict) or set(literal) != {"kind", "value"}:
+        raise ValueError("schema-v3 objective literal fields are invalid")
+    kind = literal["kind"]
+    if kind not in OBJECTIVE_LITERAL_KINDS:
+        raise ValueError("schema-v3 objective literal kind is invalid")
+    return kind, normalized_literal_value(kind, literal["value"])
+
+
+def extracted_occurrences(text, check_type):
+    if check_type == "inline_code":
+        pattern = re.compile(r"(?<!`)`([^`\n]+)`(?!`)")
+        return [(match.group(1), match.start(), match.end()) for match in pattern.finditer(text)]
+    if check_type == "fenced_code":
+        pattern = re.compile(
+            r"^(?P<indent>[ \t]{0,3})```[^\n]*\n(?P<value>.*?)"
+            r"^[ \t]{0,3}```[ \t]*$",
+            re.DOTALL | re.MULTILINE,
+        )
+        occurrences = []
+        for match in pattern.finditer(text):
+            indent = match.group("indent")
+            value = "\n".join(
+                line[len(indent) :] if indent and line.startswith(indent) else line
+                for line in match.group("value").splitlines()
+            )
+            occurrences.append((value, match.start(), match.end()))
+        return occurrences
+    if check_type == "markdown_link":
+        pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+        return [
+            ((match.group(1), match.group(2)), match.start(), match.end())
+            for match in pattern.finditer(text)
+        ]
+    if check_type == "bold_text":
+        pattern = re.compile(r"\*\*([^*\n]+)\*\*")
+        return [(match.group(1), match.start(), match.end()) for match in pattern.finditer(text)]
+    raise ValueError(f"unsupported check type: {check_type}")
+
+
 def validate_corpus(corpus):
-    if not isinstance(corpus, dict) or corpus.get("schema_version") not in {1, 2}:
-        raise ValueError("fixture corpus schema_version must be 1 or 2")
+    if not isinstance(corpus, dict) or corpus.get("schema_version") not in {1, 2, 3}:
+        raise ValueError("fixture corpus schema_version must be 1, 2, or 3")
     fixtures = corpus.get("fixtures")
     if not isinstance(fixtures, list) or not fixtures:
         raise ValueError("fixture corpus fixtures must be nonempty")
@@ -79,41 +139,100 @@ def validate_corpus(corpus):
         ):
             raise ValueError("schema-v2 fixture applicability is invalid")
         contract = fixture["objective_contract"]
-        if not isinstance(contract, dict) or set(contract) != {
-            "source_equality", "ordered_anchors"
-        }:
-            raise ValueError("schema-v2 objective contract fields are invalid")
-        equality = contract["source_equality"]
-        kinds = equality.get("kinds") if isinstance(equality, dict) else None
-        if (
-            not isinstance(equality, dict)
-            or set(equality) != {"kinds", "occurrence_count", "container"}
-            or not isinstance(kinds, list)
-            or len(kinds) != len(set(kinds))
-            or not all(kind in OBJECTIVE_SOURCE_KINDS for kind in kinds)
-            or equality.get("occurrence_count") != "exact"
-            or equality.get("container") != "exact"
-        ):
-            raise ValueError("schema-v2 objective contract source equality is invalid")
-        anchors = contract["ordered_anchors"]
-        if (
-            not isinstance(anchors, list)
-            or any(
-                not isinstance(group, list)
-                or len(group) < 2
-                or not all(isinstance(anchor, str) and anchor for anchor in group)
-                for group in anchors
-            )
-        ):
-            raise ValueError("schema-v2 objective contract ordered anchors are invalid")
-        for group in anchors:
-            cursor = -1
-            for anchor in group:
-                cursor = fixture["source"].find(anchor, cursor + 1)
-                if cursor < 0:
+        if corpus["schema_version"] == 2:
+            if not isinstance(contract, dict) or set(contract) != {
+                "source_equality", "ordered_anchors"
+            }:
+                raise ValueError("schema-v2 objective contract fields are invalid")
+            equality = contract["source_equality"]
+            kinds = equality.get("kinds") if isinstance(equality, dict) else None
+            if (
+                not isinstance(equality, dict)
+                or set(equality) != {"kinds", "occurrence_count", "container"}
+                or not isinstance(kinds, list)
+                or len(kinds) != len(set(kinds))
+                or not all(kind in OBJECTIVE_SOURCE_KINDS for kind in kinds)
+                or equality.get("occurrence_count") != "exact"
+                or equality.get("container") != "exact"
+            ):
+                raise ValueError("schema-v2 objective contract source equality is invalid")
+            anchors = contract["ordered_anchors"]
+            if (
+                not isinstance(anchors, list)
+                or any(
+                    not isinstance(group, list)
+                    or len(group) < 2
+                    or not all(isinstance(anchor, str) and anchor for anchor in group)
+                    for group in anchors
+                )
+            ):
+                raise ValueError("schema-v2 objective contract ordered anchors are invalid")
+            for group in anchors:
+                cursor = -1
+                for anchor in group:
+                    cursor = fixture["source"].find(anchor, cursor + 1)
+                    if cursor < 0:
+                        raise ValueError(
+                            "schema-v2 objective contract anchors must occur in source order"
+                        )
+        else:
+            if not isinstance(contract, dict) or set(contract) != {
+                "required_literals", "ordered_literals"
+            }:
+                raise ValueError("schema-v3 objective contract fields are invalid")
+            required = contract["required_literals"]
+            ordered = contract["ordered_literals"]
+            if not isinstance(required, list) or not isinstance(ordered, list):
+                raise ValueError("schema-v3 objective contract lists are invalid")
+            try:
+                required_keys = [literal_key(literal) for literal in required]
+            except ValueError as error:
+                raise ValueError("schema-v3 objective contract literal is invalid") from error
+            if len(required_keys) != len(set(required_keys)):
+                raise ValueError("schema-v3 objective contract literals must be unique")
+            source_occurrences = {
+                kind: extracted_occurrences(fixture["source"], kind)
+                for kind in OBJECTIVE_LITERAL_KINDS
+            }
+            source_keys = {
+                (kind, occurrence[0])
+                for kind, occurrences in source_occurrences.items()
+                for occurrence in occurrences
+            }
+            if set(required_keys) != source_keys:
+                raise ValueError(
+                    "schema-v3 required literals must cover every protected source literal"
+                )
+            if any(not isinstance(group, list) or len(group) < 2 for group in ordered):
+                raise ValueError("schema-v3 objective contract ordered literals are invalid")
+            for group in ordered:
+                try:
+                    group_keys = [literal_key(literal) for literal in group]
+                except ValueError as error:
                     raise ValueError(
-                        "schema-v2 objective contract anchors must occur in source order"
+                        "schema-v3 objective contract ordered literal is invalid"
+                    ) from error
+                if len(group_keys) != len(set(group_keys)) or not set(
+                    group_keys
+                ).issubset(required_keys):
+                    raise ValueError(
+                        "schema-v3 ordered literals must be distinct required literals"
                     )
+                cursor = -1
+                for kind, value in group_keys:
+                    occurrence = next(
+                        (
+                            item
+                            for item in source_occurrences[kind]
+                            if item[0] == value and item[1] > cursor
+                        ),
+                        None,
+                    )
+                    if occurrence is None:
+                        raise ValueError(
+                            "schema-v3 ordered literals must occur in source order"
+                        )
+                    cursor = occurrence[1]
         claims = fixture["semantic_claims"]
         if (
             not isinstance(claims, list)
@@ -144,9 +263,74 @@ def counter_records(counter):
 
 
 def score_objective_rewrite(fixture, rewrite, candidate):
+    contract = fixture["objective_contract"]
+    if "required_literals" in contract:
+        literal_failures = []
+        order_failures = []
+        occurrences = {
+            kind: extracted_occurrences(rewrite, kind)
+            for kind in OBJECTIVE_LITERAL_KINDS
+        }
+        for literal in contract["required_literals"]:
+            kind, value = literal_key(literal)
+            if value not in {item[0] for item in occurrences[kind]}:
+                literal_failures.append({
+                    "rule_id": f"required-literal.{kind}",
+                    "kind": kind,
+                    "value": literal["value"],
+                })
+        for index, literals in enumerate(contract["ordered_literals"], 1):
+            cursor = -1
+            passed = True
+            for literal in literals:
+                kind, value = literal_key(literal)
+                occurrence = next(
+                    (
+                        item
+                        for item in occurrences[kind]
+                        if item[0] == value and item[1] > cursor
+                    ),
+                    None,
+                )
+                if occurrence is None:
+                    passed = False
+                    break
+                cursor = occurrence[1]
+            if not passed:
+                order_failures.append({
+                    "rule_id": "ordered-literal",
+                    "group": index,
+                    "literals": literals,
+                })
+        return {
+            "schema_version": 3,
+            "fixture_id": fixture["id"],
+            "candidate": candidate,
+            "mode": fixture["mode"],
+            "objective_contract": {
+                "passed": not literal_failures and not order_failures,
+                "failed_rule_ids": sorted({
+                    failure["rule_id"]
+                    for failure in literal_failures + order_failures
+                }),
+                "failures": literal_failures + order_failures,
+            },
+            "objective_procedure": {
+                "applicable": bool(contract["ordered_literals"]),
+                "passed": (
+                    not order_failures if contract["ordered_literals"] else None
+                ),
+                "failed_rule_ids": sorted({
+                    failure["rule_id"] for failure in order_failures
+                }),
+                "failures": order_failures,
+            },
+            "semantic_review_applicable": fixture["semantic_review_applicable"],
+            "disclaimer": DISCLAIMER,
+        }
+
     source_failures = []
     anchor_failures = []
-    contract = fixture["objective_contract"]
     for kind in contract["source_equality"]["kinds"]:
         expected = Counter(objective_values(fixture["source"], kind))
         actual = Counter(objective_values(rewrite, kind))
@@ -197,28 +381,7 @@ def score_objective_rewrite(fixture, rewrite, candidate):
 
 
 def extracted_values(text, check_type):
-    if check_type == "inline_code":
-        return re.findall(r"(?<!`)`([^`\n]+)`(?!`)", text)
-    if check_type == "fenced_code":
-        values = []
-        pattern = re.compile(
-            r"^(?P<indent>[ \t]{0,3})```[^\n]*\n(?P<value>.*?)"
-            r"^[ \t]{0,3}```[ \t]*$",
-            re.DOTALL | re.MULTILINE,
-        )
-        for match in pattern.finditer(text):
-            indent = match.group("indent")
-            value = "\n".join(
-                line[len(indent) :] if indent and line.startswith(indent) else line
-                for line in match.group("value").splitlines()
-            )
-            values.append(value)
-        return values
-    if check_type == "markdown_link":
-        return re.findall(r"\[([^\]]+)\]\(([^)]+)\)", text)
-    if check_type == "bold_text":
-        return re.findall(r"\*\*([^*\n]+)\*\*", text)
-    raise ValueError(f"unsupported check type: {check_type}")
+    return [value for value, _start, _end in extracted_occurrences(text, check_type)]
 
 
 def check_passes(text, check):
@@ -566,6 +729,27 @@ def metric_status(metric):
 
 
 def render_text(report):
+    if "objective_contract" in report:
+        contract = report["objective_contract"]
+        procedure = report["objective_procedure"]
+        lines = [
+            f"fixture: {report['fixture_id']} ({report['mode']} mode)",
+            f"objective contract: {'PASS' if contract['passed'] else 'FAIL'}",
+        ]
+        for failure in contract["failures"]:
+            details = {
+                key: value
+                for key, value in failure.items()
+                if key != "rule_id"
+            }
+            lines.append(
+                f"  - {failure['rule_id']}: "
+                f"{json.dumps(details, sort_keys=True)}"
+            )
+        lines.append(f"objective procedure: {metric_status(procedure)}")
+        lines.append(report["disclaimer"])
+        return "\n".join(lines) + "\n"
+
     semantic = report["semantic"]
     lines = [
         f"fixture: {report['fixture_id']} ({report['mode']} mode)",
@@ -634,7 +818,12 @@ def main():
         print(json.dumps(report, indent=2))
     else:
         sys.stdout.write(render_text(report))
-    return 0 if report["semantic"]["gate_passed"] else 1
+    passed = (
+        report["objective_contract"]["passed"]
+        if "objective_contract" in report
+        else report["semantic"]["gate_passed"]
+    )
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":

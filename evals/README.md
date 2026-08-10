@@ -15,16 +15,16 @@ Evaluation stack includes:
 - Blind cross-provider quality judgment.
 - Guarded-verifier development probes.
 
-Schema v3 adds hybrid semantic evaluation without changing schema-v1/v2 evidence: objective contracts use exact protected/source checks and ordered exact anchors; existing paired blind judgments attest open semantic fidelity. Any `not_equivalent`, `uncertain`, or conflicting attestation fails. Preference stays descriptive and cannot override objective or semantic gates. New v3 matrices, schema-v2 fixture corpora, and schema-v3 judge configs must use explicit paths; archived defaults remain unchanged.
+Schema v3 adds hybrid semantic evaluation without changing schema-v1/v2 evidence. Fixture-corpus schema v3 limits objective checks to explicitly declared protected literals and their required order. It does not compare global occurrence counts or exact prose sentences. Paired blind judgments attest open semantic fidelity. Any `not_equivalent`, `uncertain`, or conflicting attestation fails. Preference stays descriptive and cannot override objective or semantic gates. Schema-v3 matrices accept historical schema-v2 or semantic-boundary schema-v3 fixture corpora through explicit paths; archived defaults remain unchanged.
 
-Development probes and archived scenarios cannot serve as unseen release evidence. The schema-v2 first-release design is frozen in [`RELEASE-CANDIDATE-PREREGISTRATION.md`](RELEASE-CANDIDATE-PREREGISTRATION.md). Commit the complete preregistration snapshot before the development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
+Development probes, `fixtures/hybrid-regressions.json`, and archived scenarios cannot serve as unseen release evidence. Both retained release candidates failed and remain frozen. Commit any future preregistration snapshot before development smoke or candidate generation. No package, runner, scorer, fixture, prompt, or judge change may retroactively change release evidence.
 
 ## Active files
 
 - `run_pi_bench.py`: generation, resume, provenance, deterministic scoring, and reports.
 - `run_quality_judge.py`: blind cross-provider judging after source gates pass.
 - `score_fixtures.py`: closed-world semantic scorer.
-- `fixtures/`: current regression fixtures.
+- `fixtures/`: current regression fixtures, including schema-v3 semantic-boundary regressions.
 - `benchmark-scenarios.json`: original scenario definitions retained for regression work.
 - `development-guard-smoke-matrix.json`: required three-call guarded smoke on known development evidence.
 - `release-candidate-matrix.json`: 153-cell schema-v2 ragged release matrix.

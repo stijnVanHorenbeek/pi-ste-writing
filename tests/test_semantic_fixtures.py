@@ -19,6 +19,12 @@ RELEASE_CANDIDATE_CORPUS_PATH = (
 HYBRID_RELEASE_CORPUS_PATH = (
     ROOT / "evals" / "fixtures" / "hybrid-release-candidate.json"
 )
+HYBRID_REGRESSION_CORPUS_PATH = (
+    ROOT / "evals" / "fixtures" / "hybrid-regressions.json"
+)
+HYBRID_RELEASE_RESULTS_PATH = (
+    ROOT / "evals" / "results" / "hybrid-release-candidate" / "raw"
+)
 
 REQUIRED_TAGS = {
     "fact",
@@ -396,6 +402,162 @@ class HybridReleaseCorpusTest(unittest.TestCase):
                     set(fixture["objective_contract"]),
                     {"source_equality", "ordered_anchors"},
                 )
+
+
+class SemanticBoundaryObjectiveFixtureTest(unittest.TestCase):
+    def fixture(self):
+        return {
+            "id": "semantic-boundary",
+            "mode": "procedure",
+            "task": "Rewrite source.",
+            "source": (
+                "Bay `B-42` is ready on 2040-01-02. "
+                "Run `inspect --bay B-42`. Then use `B-42` and run "
+                "`purge --bay B-42`."
+            ),
+            "expect_skill_loaded": True,
+            "semantic_review_applicable": True,
+            "objective_contract": {
+                "required_literals": [
+                    {"kind": "inline_code", "value": "B-42"},
+                    {"kind": "inline_code", "value": "inspect --bay B-42"},
+                    {"kind": "inline_code", "value": "purge --bay B-42"},
+                ],
+                "ordered_literals": [[
+                    {"kind": "inline_code", "value": "inspect --bay B-42"},
+                    {"kind": "inline_code", "value": "purge --bay B-42"},
+                ]],
+            },
+            "semantic_claims": [
+                {
+                    "id": "date-and-bay",
+                    "risk": "essential",
+                    "proposition": "Bay B-42 is ready on 2040-01-02.",
+                }
+            ],
+        }
+
+    def test_schema_v3_allows_rewording_deduplication_and_list_ordinals(self):
+        fixture = self.fixture()
+        score_fixtures.validate_corpus(
+            {"schema_version": 3, "fixtures": [fixture]}
+        )
+
+        rewrite = (
+            "Bay `B-42` is ready on 2040-01-02.\n\n"
+            "1. Run `inspect --bay B-42`.\n"
+            "2. Run `purge --bay B-42`."
+        )
+        report = score_fixtures.score_rewrite(fixture, rewrite)
+
+        self.assertTrue(report["objective_contract"]["passed"])
+        self.assertTrue(report["objective_procedure"]["passed"])
+        self.assertNotIn("semantic", report)
+
+    def test_schema_v3_fails_missing_or_changed_protected_literal(self):
+        fixture = self.fixture()
+        missing = (
+            "Bay `B-42` is ready. Run inspect --bay B-42. "
+            "Then run `purge --bay B-42`."
+        )
+        report = score_fixtures.score_rewrite(fixture, missing)
+
+        self.assertFalse(report["objective_contract"]["passed"])
+        self.assertIn(
+            "required-literal.inline_code",
+            report["objective_contract"]["failed_rule_ids"],
+        )
+
+    def test_schema_v3_checks_only_declared_literal_order(self):
+        fixture = self.fixture()
+        rewrite = (
+            "On 2040-01-02, bay `B-42` is ready. "
+            "Run `purge --bay B-42`, then `inspect --bay B-42`."
+        )
+        report = score_fixtures.score_rewrite(fixture, rewrite)
+
+        self.assertFalse(report["objective_procedure"]["passed"])
+        self.assertIn(
+            "ordered-literal",
+            report["objective_procedure"]["failed_rule_ids"],
+        )
+
+    def test_schema_v3_requires_every_unique_protected_source_literal(self):
+        fixture = self.fixture()
+        fixture["objective_contract"]["required_literals"] = fixture[
+            "objective_contract"
+        ]["required_literals"][1:]
+        with self.assertRaisesRegex(ValueError, "cover every protected source literal"):
+            score_fixtures.validate_corpus(
+                {"schema_version": 3, "fixtures": [fixture]}
+            )
+
+    def test_schema_v3_rejects_global_source_equality(self):
+        fixture = self.fixture()
+        fixture["objective_contract"]["source_equality"] = {
+            "kinds": ["number"],
+            "occurrence_count": "exact",
+            "container": "exact",
+        }
+        with self.assertRaisesRegex(ValueError, "objective contract"):
+            score_fixtures.validate_corpus(
+                {"schema_version": 3, "fixtures": [fixture]}
+            )
+
+    def test_hybrid_regression_corpus_uses_only_explicit_protected_literals(self):
+        corpus = json.loads(HYBRID_REGRESSION_CORPUS_PATH.read_text())
+        score_fixtures.validate_corpus(corpus)
+
+        self.assertEqual(corpus["schema_version"], 3)
+        self.assertEqual(len(corpus["fixtures"]), 5)
+        for fixture in corpus["fixtures"]:
+            with self.subTest(fixture=fixture["id"]):
+                contract = fixture["objective_contract"]
+                self.assertEqual(
+                    set(contract), {"required_literals", "ordered_literals"}
+                )
+                self.assertTrue(
+                    all(
+                        literal["kind"]
+                        in {
+                            "inline_code",
+                            "fenced_code",
+                            "markdown_link",
+                            "bold_text",
+                        }
+                        for literal in contract["required_literals"]
+                    )
+                )
+
+    def test_seen_hybrid_outputs_are_development_regressions_not_rescored_evidence(self):
+        corpus = json.loads(HYBRID_REGRESSION_CORPUS_PATH.read_text())
+        score_fixtures.validate_corpus(corpus)
+        fixtures = {fixture["id"]: fixture for fixture in corpus["fixtures"]}
+
+        cases = [
+            (
+                "lumina-threshold-causality",
+                "openai-codex_gpt-5.6-sol_high__native-skill__"
+                "lumina-threshold-causality__r01.json",
+            ),
+            (
+                "thalassa-destructive-procedure",
+                "openai-codex_gpt-5.6-sol_high__guarded__"
+                "thalassa-destructive-procedure__r01.json",
+            ),
+        ]
+        for fixture_id, filename in cases:
+            with self.subTest(fixture=fixture_id):
+                evidence = json.loads(
+                    (HYBRID_RELEASE_RESULTS_PATH / filename).read_text()
+                )
+                self.assertFalse(
+                    evidence["evaluation"]["objective_contract"]["passed"]
+                )
+                report = score_fixtures.score_rewrite(
+                    fixtures[fixture_id], evidence["response"]["text"]
+                )
+                self.assertTrue(report["objective_contract"]["passed"])
 
 
 class HybridObjectiveFixtureTest(unittest.TestCase):

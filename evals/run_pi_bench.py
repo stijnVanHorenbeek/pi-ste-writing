@@ -34,7 +34,7 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "7"
+RUNNER_VERSION = "8"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -474,12 +474,18 @@ def load_matrix(path=DEFAULT_MATRIX_PATH):
 
 def load_fixtures(path=DEFAULT_CORPUS_PATH, expected_schema_version=None):
     corpus = strict_json_loads(Path(path).read_text(encoding="utf-8"))
+    expected_versions = (
+        {expected_schema_version}
+        if isinstance(expected_schema_version, int)
+        else expected_schema_version
+    )
     if (
-        expected_schema_version is not None
-        and corpus.get("schema_version") != expected_schema_version
+        expected_versions is not None
+        and corpus.get("schema_version") not in expected_versions
     ):
+        expected = ", ".join(str(value) for value in sorted(expected_versions))
         raise ValueError(
-            f"schema-v3 matrix requires fixture corpus schema_version {expected_schema_version}"
+            f"schema-v3 matrix requires fixture corpus schema_version in {{{expected}}}"
         )
     score_fixtures.validate_corpus(corpus)
     return {fixture["id"]: fixture for fixture in corpus["fixtures"]}
@@ -536,7 +542,7 @@ def validate_scenario_applicability(matrix, scenarios):
 def load_matrix_scenarios(matrix):
     fixtures = load_fixtures(
         matrix_data_path(matrix, "corpus_path", DEFAULT_CORPUS_PATH),
-        expected_schema_version=2 if matrix["schema_version"] == 3 else None,
+        expected_schema_version={2, 3} if matrix["schema_version"] == 3 else None,
     )
     scenarios = load_scenarios(
         fixtures,
@@ -2753,7 +2759,10 @@ def semantic_axis_passed(evaluation):
 def scenario_procedure_applicable(scenario):
     fixture = scenario.get("fixture", scenario)
     if "objective_contract" in fixture:
-        return bool(fixture["objective_contract"]["ordered_anchors"])
+        contract = fixture["objective_contract"]
+        return bool(
+            contract.get("ordered_literals", contract.get("ordered_anchors", []))
+        )
     return scenario.get("mode") == "procedure" or any(
         invariant.get("category") == "procedure"
         for invariant in scenario.get("invariants", [])

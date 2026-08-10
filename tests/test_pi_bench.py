@@ -3380,7 +3380,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "7")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "8")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -3558,7 +3558,7 @@ class HybridSchemaV3Test(unittest.TestCase):
     def test_v3_matrix_accepts_hybrid_contract_and_rejects_open_regex(self):
         matrix = schema_v3_matrix()
         run_pi_bench.validate_matrix(matrix)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "7")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "8")
         self.assertEqual(run_pi_bench.evidence_schema_version(matrix), 2)
 
         invalid = json.loads(json.dumps(matrix))
@@ -3572,12 +3572,18 @@ class HybridSchemaV3Test(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "semantic_review"):
             run_pi_bench.validate_matrix(invalid)
 
-    def test_v3_requires_fixture_corpus_schema_v2(self):
-        with self.assertRaisesRegex(ValueError, "schema-v3.*corpus schema_version 2"):
+    def test_v3_accepts_semantic_boundary_corpora_and_rejects_schema_v1(self):
+        with self.assertRaisesRegex(ValueError, "schema-v3.*corpus schema_version"):
             run_pi_bench.load_fixtures(
                 RELEASE_CANDIDATE_CORPUS_PATH,
-                expected_schema_version=2,
+                expected_schema_version={2, 3},
             )
+
+        fixtures = run_pi_bench.load_fixtures(
+            ROOT / "evals" / "fixtures" / "hybrid-regressions.json",
+            expected_schema_version={2, 3},
+        )
+        self.assertEqual(len(fixtures), 5)
 
     def test_fixture_skill_expectation_is_not_hardcoded(self):
         fixtures = {
