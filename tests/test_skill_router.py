@@ -86,6 +86,8 @@ class SkillRouterTest(unittest.TestCase):
         self.assertRegex(normalized, r"Strict STE.*explicit")
         self.assertIn("conditions before commands", normalized)
         self.assertIn("warnings before dangerous actions", normalized)
+        self.assertIn("preserve source block structure", normalized.lower())
+        self.assertIn("do not add headings", normalized.lower())
         self.assertIn("official Issue 9 dictionary", normalized)
 
     def test_protected_content_covers_semantic_and_literal_boundaries(self):

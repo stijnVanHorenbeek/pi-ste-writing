@@ -34,10 +34,10 @@ rewrite is proven.
 
 - **Clear (default):** Use concise, complete prose and active voice for known actors.
   Remove fact-free filler. Do not apply strict vocabulary or sentence limits.
-- **Procedure:** Use imperative instructions where appropriate. Put action-controlling
-  conditions before commands, warnings before dangerous actions, and required actions
-  before possible consequences. Keep one action per numbered step unless actions must
-  occur together. Target 20 words or fewer only when meaning and safe order remain intact.
+- **Procedure:** Use imperatives where appropriate. Put action-controlling conditions
+  before commands, warnings before dangerous actions, and required actions before possible
+  consequences. Preserve source block structure when content is protected; do not add
+  headings or move inline content to fences. Keep one action per numbered step.
 - **Strict STE:** Use only after an explicit STE, ASD-STE100, or compliance-audit request.
   Apply 20-word procedural and 25-word descriptive limits only after higher priorities
   pass. Preserve domain terms. Full vocabulary review requires the official Issue 9
