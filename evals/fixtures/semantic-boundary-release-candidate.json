@@ -1,0 +1,324 @@
+{
+  "schema_version": 3,
+  "description": "Preregistered schema-v3 semantic boundary release candidate corpus. Required literals preserve unique protected container values at least once; ordered literals cover only immutable procedure tokens. Open prose meaning requires source-relative semantic review.",
+  "fixtures": [
+    {
+      "id": "phoenix-telemetry-diagnostics",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "Phoenix Station transmitter #7 broadcast 204 messages on 2042-06-22 with signal power averaging 18.4 dBm. Frequency analysis identified oscillator instability as the cause of 91 message failures. The cause of the remaining 113 failures is unknown. The analysis does not establish network congestion as the cause of those failures, nor does it rule out congestion. During the broadcast window, packet jitter increased from 4 ms to 19 ms. Hardware faults were excluded as a contributing factor.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "phoenix.oscillator",
+          "risk": "essential",
+          "proposition": "Oscillator instability was identified as the cause of 91 message failures."
+        },
+        {
+          "id": "phoenix.remainder",
+          "risk": "essential",
+          "proposition": "The cause of the remaining 113 failures is unknown."
+        },
+        {
+          "id": "phoenix.congestion",
+          "risk": "essential",
+          "proposition": "Network congestion is neither established as the cause of the remaining 113 failures nor ruled out."
+        },
+        {
+          "id": "phoenix.hardware",
+          "risk": "essential",
+          "proposition": "Hardware faults were excluded as a contributing factor to the failures."
+        },
+        {
+          "id": "phoenix.broadcast",
+          "risk": "essential",
+          "proposition": "Phoenix Station transmitter #7 broadcast 204 messages on 2042-06-22 with signal power averaging 18.4 dBm."
+        },
+        {
+          "id": "phoenix.jitter",
+          "risk": "essential",
+          "proposition": "During the broadcast window, packet jitter increased from 4 ms to 19 ms."
+        }
+      ]
+    },
+    {
+      "id": "meridian-device-calibration",
+      "mode": "strict",
+      "task": "Rewrite following source in strict mode. Return only rewritten text.",
+      "source": "Technicians must calibrate the Meridian pulse oximeter every 90 days. They should verify sensor linearity before each patient session. Operators can adjust alarm thresholds via the Settings panel. Adjustment may interrupt the current measurement cycle. Stabilization might require up to 45 seconds. With firmware `v8.2.1`, older probes could produce SpO₂ readings without recalibration.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "v8.2.1"
+          }
+        ],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "meridian.calibration",
+          "risk": "essential",
+          "proposition": "Calibration of the Meridian pulse oximeter every 90 days is mandatory for technicians."
+        },
+        {
+          "id": "meridian.linearity",
+          "risk": "essential",
+          "proposition": "Verification of sensor linearity before each patient session is recommended, not mandatory."
+        },
+        {
+          "id": "meridian.threshold",
+          "risk": "essential",
+          "proposition": "Operators have the capability to adjust alarm thresholds via the Settings panel."
+        },
+        {
+          "id": "meridian.interruption",
+          "risk": "essential",
+          "proposition": "Threshold adjustment may interrupt the current measurement cycle, not certain."
+        },
+        {
+          "id": "meridian.stabilization",
+          "risk": "essential",
+          "proposition": "Stabilization might require up to 45 seconds, with uncertainty retained."
+        },
+        {
+          "id": "meridian.firmware",
+          "risk": "essential",
+          "proposition": "With firmware v8.2.1, older probes could produce SpO₂ readings without recalibration as a conditional possibility."
+        }
+      ]
+    },
+    {
+      "id": "hyperion-refuel-sequence",
+      "mode": "procedure",
+      "task": "Rewrite following source in procedure mode. Return only rewritten text.",
+      "source": "This loads fresh fuel into reactor cell `RX-3A`. It does not affect backup cell `RX-3B`. Verify that license `NRC-8801` is current, cell `RX-3A` coolant flow shows **Normal**, and control rods indicate `full-insertion`. Execute `hyperctl status RX-3A`. Continue only if output shows `temp=ambient pressure=nominal`. WARNING: The following step initiates irreversible fuel loading into cell `RX-3A`. Emergency shutdown after loading requires regulatory approval. Execute `hyperctl load-fuel RX-3A --license NRC-8801`. After loading completes, run `hyperctl verify RX-3A` and confirm output is `fuel=loaded rods=inserted`.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "RX-3A"
+          },
+          {
+            "kind": "inline_code",
+            "value": "RX-3B"
+          },
+          {
+            "kind": "inline_code",
+            "value": "NRC-8801"
+          },
+          {
+            "kind": "bold_text",
+            "value": "Normal"
+          },
+          {
+            "kind": "inline_code",
+            "value": "full-insertion"
+          },
+          {
+            "kind": "inline_code",
+            "value": "hyperctl status RX-3A"
+          },
+          {
+            "kind": "inline_code",
+            "value": "temp=ambient pressure=nominal"
+          },
+          {
+            "kind": "inline_code",
+            "value": "hyperctl load-fuel RX-3A --license NRC-8801"
+          },
+          {
+            "kind": "inline_code",
+            "value": "hyperctl verify RX-3A"
+          },
+          {
+            "kind": "inline_code",
+            "value": "fuel=loaded rods=inserted"
+          }
+        ],
+        "ordered_literals": [
+          [
+            {
+              "kind": "inline_code",
+              "value": "hyperctl status RX-3A"
+            },
+            {
+              "kind": "inline_code",
+              "value": "temp=ambient pressure=nominal"
+            },
+            {
+              "kind": "inline_code",
+              "value": "hyperctl load-fuel RX-3A --license NRC-8801"
+            },
+            {
+              "kind": "inline_code",
+              "value": "hyperctl verify RX-3A"
+            },
+            {
+              "kind": "inline_code",
+              "value": "fuel=loaded rods=inserted"
+            }
+          ]
+        ]
+      },
+      "semantic_claims": [
+        {
+          "id": "hyperion.scope",
+          "risk": "essential",
+          "proposition": "The fuel loading procedure affects reactor cell RX-3A but does not affect backup cell RX-3B."
+        },
+        {
+          "id": "hyperion.preconditions",
+          "risk": "essential",
+          "proposition": "Before loading, verify license NRC-8801 is current, cell RX-3A coolant flow shows Normal, control rods indicate full-insertion, and hyperctl status RX-3A shows temp=ambient pressure=nominal."
+        },
+        {
+          "id": "hyperion.warning",
+          "risk": "essential",
+          "proposition": "The loading step initiates irreversible fuel loading into cell RX-3A and emergency shutdown after loading requires regulatory approval."
+        },
+        {
+          "id": "hyperion.verification",
+          "risk": "essential",
+          "proposition": "After loading, running hyperctl verify RX-3A must confirm output is fuel=loaded rods=inserted."
+        }
+      ]
+    },
+    {
+      "id": "nexus-protocol-state",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "In the Nexus protocol stack, `handshake` designates the initial connection phase, `streaming` designates active data transfer, and `teardown` designates graceful disconnection. The `SessionManager` transitions from `handshake` to `streaming` when callback `onReady()` returns `ACK_RECEIVED`. It transitions from `streaming` to `teardown` when `close()` is invoked via `connection.terminate()`. Protocol specification is at [Nexus Protocol v2](https://spec.nexus.invalid/v2) under **State Transitions**. Error handling is at [Error Codes](https://spec.nexus.invalid/errors) under **Recovery Procedures**. The system must preserve diagnostic `ERR_NEXUS invalid state transition handshake->teardown`.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [
+          {
+            "kind": "inline_code",
+            "value": "handshake"
+          },
+          {
+            "kind": "inline_code",
+            "value": "streaming"
+          },
+          {
+            "kind": "inline_code",
+            "value": "teardown"
+          },
+          {
+            "kind": "inline_code",
+            "value": "SessionManager"
+          },
+          {
+            "kind": "inline_code",
+            "value": "onReady()"
+          },
+          {
+            "kind": "inline_code",
+            "value": "ACK_RECEIVED"
+          },
+          {
+            "kind": "inline_code",
+            "value": "close()"
+          },
+          {
+            "kind": "inline_code",
+            "value": "connection.terminate()"
+          },
+          {
+            "kind": "markdown_link",
+            "value": [
+              "Nexus Protocol v2",
+              "https://spec.nexus.invalid/v2"
+            ]
+          },
+          {
+            "kind": "bold_text",
+            "value": "State Transitions"
+          },
+          {
+            "kind": "markdown_link",
+            "value": [
+              "Error Codes",
+              "https://spec.nexus.invalid/errors"
+            ]
+          },
+          {
+            "kind": "bold_text",
+            "value": "Recovery Procedures"
+          },
+          {
+            "kind": "inline_code",
+            "value": "ERR_NEXUS invalid state transition handshake->teardown"
+          }
+        ],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "nexus.terms",
+          "risk": "essential",
+          "proposition": "In the Nexus protocol, handshake designates initial connection phase, streaming designates active data transfer, and teardown designates graceful disconnection."
+        },
+        {
+          "id": "nexus.transitions",
+          "risk": "essential",
+          "proposition": "SessionManager transitions from handshake to streaming when onReady() returns ACK_RECEIVED, and from streaming to teardown when close() is invoked via connection.terminate()."
+        },
+        {
+          "id": "nexus.specs",
+          "risk": "essential",
+          "proposition": "Protocol specification is at https://spec.nexus.invalid/v2 under State Transitions and error handling is at https://spec.nexus.invalid/errors under Recovery Procedures."
+        },
+        {
+          "id": "nexus.diagnostic",
+          "risk": "essential",
+          "proposition": "The system must preserve the diagnostic ERR_NEXUS invalid state transition handshake->teardown."
+        }
+      ]
+    },
+    {
+      "id": "quartz-sensor-correlation",
+      "mode": "clear",
+      "task": "Rewrite following source in clear mode. Return only rewritten text.",
+      "source": "During a 22-minute maintenance window on 2043-01-08, Quartz drill sensor array reported azimuth drift increasing from 0.3° to 1.8°. The timing coincides with hydraulic pressure adjustment, but this establishes correlation only; evidence does not confirm the pressure adjustment caused the drift. Root cause analysis remains incomplete. Temperature fluctuations were ruled out as a factor.",
+      "expect_skill_loaded": true,
+      "semantic_review_applicable": true,
+      "objective_contract": {
+        "required_literals": [],
+        "ordered_literals": []
+      },
+      "semantic_claims": [
+        {
+          "id": "quartz.observation",
+          "risk": "essential",
+          "proposition": "Quartz drill sensor array reported azimuth drift increasing from 0.3° to 1.8° during a 22-minute maintenance window on 2043-01-08."
+        },
+        {
+          "id": "quartz.correlation",
+          "risk": "essential",
+          "proposition": "The timing coincides with hydraulic pressure adjustment, establishing correlation only, but evidence does not confirm the pressure adjustment caused the drift."
+        },
+        {
+          "id": "quartz.root_cause",
+          "risk": "essential",
+          "proposition": "Root cause analysis remains incomplete."
+        },
+        {
+          "id": "quartz.temperature",
+          "risk": "essential",
+          "proposition": "Temperature fluctuations were ruled out as a factor."
+        }
+      ]
+    }
+  ]
+}

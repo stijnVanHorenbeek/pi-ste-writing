@@ -24,6 +24,8 @@ RELEASE_CANDIDATE_CONFIG_PATH = EVALS / "release-candidate-quality-judge.json"
 RELEASE_CANDIDATE_MATRIX_PATH = EVALS / "release-candidate-matrix.json"
 HYBRID_RELEASE_CONFIG_PATH = EVALS / "hybrid-release-candidate-quality-judge.json"
 HYBRID_RELEASE_MATRIX_PATH = EVALS / "hybrid-release-candidate-matrix.json"
+SEMANTIC_BOUNDARY_CONFIG_PATH = EVALS / "semantic-boundary-release-candidate-quality-judge.json"
+SEMANTIC_BOUNDARY_MATRIX_PATH = EVALS / "semantic-boundary-release-candidate-matrix.json"
 sys.path.insert(0, str(EVALS))
 
 import run_quality_judge
@@ -1630,6 +1632,59 @@ class HybridSemanticJudgeTest(unittest.TestCase):
         self.assertEqual(semantic["uncertain_observations"], 1)
         self.assertEqual(semantic["conflicts"], 1)
         self.assertFalse(semantic["accepted"])
+
+
+class SemanticBoundaryJudgeTest(unittest.TestCase):
+    def test_semantic_boundary_judge_config_matches_matrix(self):
+        matrix = run_quality_judge.run_pi_bench.load_matrix(SEMANTIC_BOUNDARY_MATRIX_PATH)
+        config = run_quality_judge.load_judge_config(SEMANTIC_BOUNDARY_CONFIG_PATH)
+        run_quality_judge.validate_judge_matrix(config, matrix)
+
+        self.assertEqual(config["schema_version"], 3)
+        self.assertEqual(config["version"], 1)
+        self.assertEqual(config["source_matrix_id"], "semantic-boundary-release-candidate")
+        self.assertEqual(matrix["matrix_id"], "semantic-boundary-release-candidate")
+        self.assertEqual(config["source_repetitions_minimum"], 3)
+        self.assertEqual(matrix["repetitions"], 3)
+        self.assertEqual(len(config["comparisons"]), 2)
+
+        self.assertEqual(
+            config["judges_by_source_provider"],
+            {
+                "openai-codex": {
+                    "provider": "github-copilot",
+                    "model": "gemini-3.6-flash",
+                    "thinking": "medium",
+                },
+                "github-copilot": {
+                    "provider": "openai-codex",
+                    "model": "gpt-5.6-sol",
+                    "thinking": "high",
+                },
+            },
+        )
+        self.assertEqual(
+            config["acceptance_thresholds"]["maximum_not_equivalent"], 0
+        )
+        self.assertEqual(
+            config["acceptance_thresholds"]["maximum_uncertain"], 0
+        )
+        self.assertEqual(
+            config["acceptance_thresholds"]["maximum_conflicts"], 0
+        )
+
+    def test_semantic_boundary_judge_cells_count(self):
+        matrix = run_quality_judge.run_pi_bench.load_matrix(SEMANTIC_BOUNDARY_MATRIX_PATH)
+        config = run_quality_judge.load_judge_config(SEMANTIC_BOUNDARY_CONFIG_PATH)
+        _fixtures, scenarios = run_quality_judge.run_pi_bench.load_matrix_scenarios(matrix)
+        cells = list(
+            run_quality_judge.iter_judge_cells(matrix, config, scenarios)
+        )
+        self.assertEqual(len(cells), 90)
+
+        for cell in cells:
+            with self.subTest(cell=cell):
+                self.assertIn(cell["comparison_id"], ["baseline-vs-native", "native-vs-guarded"])
 
 
 if __name__ == "__main__":

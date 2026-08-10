@@ -22,6 +22,12 @@ CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 RELEASE_CANDIDATE_CORPUS_PATH = ROOT / "evals" / "fixtures" / "release-candidate.json"
 RELEASE_CANDIDATE_SCENARIOS_PATH = ROOT / "evals" / "release-candidate-scenarios.json"
 HYBRID_RELEASE_SCENARIOS_PATH = ROOT / "evals" / "hybrid-release-candidate-scenarios.json"
+SEMANTIC_BOUNDARY_MATRIX_PATH = ROOT / "evals" / "semantic-boundary-release-candidate-matrix.json"
+SEMANTIC_BOUNDARY_CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-boundary-release-candidate.json"
+SEMANTIC_BOUNDARY_SCENARIOS_PATH = ROOT / "evals" / "semantic-boundary-release-candidate-scenarios.json"
+SEMANTIC_BOUNDARY_PREREGISTRATION_PATH = (
+    ROOT / "evals" / "SEMANTIC-BOUNDARY-RELEASE-CANDIDATE-PREREGISTRATION.md"
+)
 BENCHMARK_SCENARIOS_PATH = ROOT / "evals" / "benchmark-scenarios.json"
 EVALS_DIR = ROOT / "evals"
 sys.path.insert(0, str(EVALS_DIR))
@@ -3767,6 +3773,87 @@ class HybridSchemaV3Test(unittest.TestCase):
             "guard_integrity": {"accepted": True},
         }
         self.assertTrue(run_pi_bench.benchmark_accepted(results))
+
+
+class SemanticBoundaryMatrixTest(unittest.TestCase):
+    def test_preregisters_semantic_boundary_matrix_and_expected_cells(self):
+        matrix = run_pi_bench.load_matrix(SEMANTIC_BOUNDARY_MATRIX_PATH)
+        fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
+        cells = list(run_pi_bench.iter_cells(matrix, scenarios))
+
+        self.assertEqual(matrix["schema_version"], 3)
+        self.assertEqual(matrix["version"], 1)
+        self.assertEqual(matrix["matrix_id"], "semantic-boundary-release-candidate")
+        self.assertEqual(len(fixtures), 5)
+        self.assertEqual(len(matrix["scenario_ids"]), 6)
+        self.assertEqual(len(cells), 153)
+        self.assertEqual(sum(cell["condition"] == "guarded" for cell in cells), 45)
+        self.assertEqual(sum(cell["condition"] == "native-skill" for cell in cells), 54)
+        self.assertEqual(sum(cell["condition"] == "baseline" for cell in cells), 54)
+        self.assertEqual(matrix["max_parallel_calls"], 3)
+        self.assertEqual(
+            matrix["max_parallel_calls_by_provider"],
+            {"openai-codex": 1, "github-copilot": 2},
+        )
+        self.assertEqual(
+            matrix["models"],
+            [
+                {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "high"},
+                {"provider": "github-copilot", "model": "claude-sonnet-5", "thinking": "low"},
+                {"provider": "github-copilot", "model": "gemini-3.6-flash", "thinking": "medium"},
+            ],
+        )
+
+        fixture_ids = set(fixtures)
+        external_ids = set(matrix["scenario_ids"]) - fixture_ids
+        self.assertEqual(len(external_ids), 1)
+        external_id = next(iter(external_ids))
+        self.assertEqual(
+            matrix["conditions_by_scenario"][external_id],
+            ["baseline", "native-skill"],
+        )
+        self.assertFalse(scenarios[external_id]["expect_skill_loaded"])
+        self.assertFalse(scenarios[external_id].get("output_contract_gate", True))
+
+        gated_output_contract_cells = sum(
+            1
+            for cell in cells
+            if cell["condition"] in ["native-skill", "guarded"]
+            and cell["scenario_id"] in fixtures
+        )
+        self.assertEqual(gated_output_contract_cells, 90)
+
+        diagnostic_cells = sum(
+            1
+            for cell in cells
+            if cell["scenario_id"] == external_id
+            and cell["condition"] == "native-skill"
+        )
+        self.assertEqual(diagnostic_cells, 9)
+
+        preregistration = SEMANTIC_BOUNDARY_PREREGISTRATION_PATH.read_text()
+        self.assertIn(
+            "--results-dir evals/results/semantic-boundary-release-candidate-judge",
+            preregistration,
+        )
+        self.assertNotIn("--judge-results-dir", preregistration)
+        self.assertIn(
+            "--results-dir evals/results/semantic-boundary-development-guard-smoke",
+            preregistration,
+        )
+
+        serialized = json.dumps(matrix)
+        for forbidden in (
+            "Lumina",
+            "Aethel",
+            "Valerius",
+            "Ciphera",
+            "Thalassa",
+            "Morrowglass",
+            "Sablefen",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, serialized)
 
 
 if __name__ == "__main__":

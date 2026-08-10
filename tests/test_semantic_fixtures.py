@@ -25,6 +25,9 @@ HYBRID_REGRESSION_CORPUS_PATH = (
 HYBRID_RELEASE_RESULTS_PATH = (
     ROOT / "evals" / "results" / "hybrid-release-candidate" / "raw"
 )
+SEMANTIC_BOUNDARY_CORPUS_PATH = (
+    ROOT / "evals" / "fixtures" / "semantic-boundary-release-candidate.json"
+)
 
 REQUIRED_TAGS = {
     "fact",
@@ -672,6 +675,52 @@ class HybridObjectiveFixtureTest(unittest.TestCase):
         report = score_fixtures.score_rewrite(fixture, changed_container)
         self.assertFalse(report["objective_contract"]["passed"])
         self.assertIn("source-equality.inline_code", report["objective_contract"]["failed_rule_ids"])
+
+
+class SemanticBoundaryReleaseCorpusTest(unittest.TestCase):
+    def test_semantic_boundary_corpus_is_new_schema_v3_evidence(self):
+        corpus = json.loads(SEMANTIC_BOUNDARY_CORPUS_PATH.read_text())
+        score_fixtures.validate_corpus(corpus)
+        self.assertEqual(corpus["schema_version"], 3)
+        self.assertEqual(len(corpus["fixtures"]), 5)
+
+        hybrid = json.loads(HYBRID_RELEASE_CORPUS_PATH.read_text())
+        hybrid_ids = {fixture["id"] for fixture in hybrid["fixtures"]}
+        release = json.loads(RELEASE_CANDIDATE_CORPUS_PATH.read_text())
+        release_ids = {fixture["id"] for fixture in release["fixtures"]}
+        fixture_ids = {fixture["id"] for fixture in corpus["fixtures"]}
+        self.assertTrue(fixture_ids.isdisjoint(hybrid_ids))
+        self.assertTrue(fixture_ids.isdisjoint(release_ids))
+
+        serialized = json.dumps(corpus)
+        for forbidden in (
+            "Lumina",
+            "Aethel",
+            "Valerius",
+            "Ciphera",
+            "Thalassa",
+            "Morrowglass",
+            "Sablefen",
+            "Calder",
+            "Brineglass",
+            "Mireglass",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, serialized)
+
+        for fixture in corpus["fixtures"]:
+            with self.subTest(fixture=fixture["id"]):
+                self.assertEqual(
+                    fixture["task"],
+                    f"Rewrite following source in {fixture['mode']} mode. "
+                    "Return only rewritten text.",
+                )
+                self.assertTrue(fixture["expect_skill_loaded"])
+                self.assertTrue(fixture["semantic_review_applicable"])
+                self.assertTrue(fixture["semantic_claims"])
+                self.assertIn("objective_contract", fixture)
+                self.assertIn("required_literals", fixture["objective_contract"])
+                self.assertIn("ordered_literals", fixture["objective_contract"])
 
 
 if __name__ == "__main__":
