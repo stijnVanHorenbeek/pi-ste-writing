@@ -1,0 +1,170 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "thinking": "low",
+    "condition": "guarded",
+    "scenario_id": "hyperion-refuel-sequence",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "11",
+    "matrix_sha256": "288710e5ebac9b992408464bc7c2fc998f08adda8ebf4aad58479be74b9400bc",
+    "package_commit": "0c369f25053a4890ade4a8e8d236b845472e5170",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "9f0e4bfe4b99555b332b29af93c06757261bce00280e31c8f7eaec018d0abcfe",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426"
+  },
+  "prompt_sha256": "3f9c9c8ad752426159997c12c77723f9452011ef008690a29a873e35aac8afaa",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T13:46:28.993229+00:00",
+      "status": "success",
+      "duration_ms": 12162
+    }
+  ],
+  "updated_at": "2026-08-10T13:46:41.157565+00:00",
+  "duration_ms": 12162,
+  "response": {
+    "text": "This procedure loads fresh fuel into reactor cell `RX-3A`. It does not affect backup cell `RX-3B`.\n\n1. Verify that license `NRC-8801` is current, cell `RX-3A` coolant flow shows **Normal**, and control rods indicate `full-insertion`.\n2. Run `hyperctl status RX-3A`.\n3. Continue only if the output shows `temp=ambient pressure=nominal`.\n4. WARNING: The next step initiates irreversible fuel loading into cell `RX-3A`. Emergency shutdown after loading requires regulatory approval.\n5. Run `hyperctl load-fuel RX-3A --license NRC-8801`.\n6. After loading completes, run `hyperctl verify RX-3A` and confirm the output is `fuel=loaded rods=inserted`.",
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "response_model": null,
+    "stop_reason": "toolUse",
+    "usage": {
+      "input_tokens": {
+        "value": 4,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 864,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 105,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 759,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 6518,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 7047,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 14433,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.0275691,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 2,
+      "non_read_tool_calls": 2,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    },
+    "guard": {
+      "observed": true,
+      "max_submissions": 3,
+      "submissions": [
+        {
+          "sequence": 1,
+          "tool_call_id_sha256": "8aa616da2eefeeca9d4af149823ecc6739bc8b2ebe9615ae99e8666daeb04b23",
+          "job_id_sha256": "44604bada98816e8ef7b7d1670c5a1498ba78f01e97b2fb5d094a39ad9821b71",
+          "draft_sha256": "821a9797f3b86bb0962e3ed4f00e8d561f78e3acb54300041aa485701878d3e6",
+          "draft_bytes": 663,
+          "result_status": "retry",
+          "result_attempt": 1,
+          "unchanged_draft": false,
+          "result_draft_sha256": null,
+          "result_text_sha256": "2e92c29569ecadf74f5129581a7235f9194cf3df879d7c492ef154db52c75b7c",
+          "is_error": false,
+          "submission_message_valid": true
+        },
+        {
+          "sequence": 2,
+          "tool_call_id_sha256": "69411fcde206121c5562190d97d06d2fe2d579f4015e16b63a6a73b460f3f0d4",
+          "job_id_sha256": "44604bada98816e8ef7b7d1670c5a1498ba78f01e97b2fb5d094a39ad9821b71",
+          "draft_sha256": "d1faa6909c016160baa9b514d55e78e027e24890b2a0d21d35ff960b92f7005f",
+          "draft_bytes": 644,
+          "result_status": "accepted",
+          "result_attempt": 2,
+          "result_draft_sha256": "d1faa6909c016160baa9b514d55e78e027e24890b2a0d21d35ff960b92f7005f",
+          "result_text_sha256": "d1faa6909c016160baa9b514d55e78e027e24890b2a0d21d35ff960b92f7005f",
+          "is_error": false,
+          "submission_message_valid": true
+        }
+      ],
+      "accepted_submission": 2,
+      "accepted_draft_sha256": "d1faa6909c016160baa9b514d55e78e027e24890b2a0d21d35ff960b92f7005f",
+      "final_text_sha256": "d1faa6909c016160baa9b514d55e78e027e24890b2a0d21d35ff960b92f7005f",
+      "exact_accepted_output": true,
+      "malformed_submission_messages": 0,
+      "direct_output_messages": 0,
+      "unauthorized_tool_calls": 0,
+      "unmatched_tool_events": 0,
+      "ambient_resources_disabled": true,
+      "terminal_artifact_valid": true,
+      "same_job_id": true,
+      "attempts_contiguous": true,
+      "passed": true,
+      "unchanged_draft_submissions": 0
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": true,
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "text",
+      "gated": true,
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

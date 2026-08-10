@@ -1,0 +1,123 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "thinking": "low",
+    "condition": "native-skill",
+    "scenario_id": "nexus-protocol-state",
+    "repetition": 3
+  },
+  "provenance": {
+    "runner_version": "11",
+    "matrix_sha256": "288710e5ebac9b992408464bc7c2fc998f08adda8ebf4aad58479be74b9400bc",
+    "package_commit": "0c369f25053a4890ade4a8e8d236b845472e5170",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "9f0e4bfe4b99555b332b29af93c06757261bce00280e31c8f7eaec018d0abcfe",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426"
+  },
+  "prompt_sha256": "e96e43af2570b8feebd40b7750545bfd1530d1355e17af66898477306b844f9b",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T13:48:07.477957+00:00",
+      "status": "success",
+      "duration_ms": 4773
+    }
+  ],
+  "updated_at": "2026-08-10T13:48:12.252278+00:00",
+  "duration_ms": 4773,
+  "response": {
+    "text": "In the Nexus protocol stack, `handshake` is the initial connection phase, `streaming` is active data transfer, and `teardown` is graceful disconnection.\n\nThe `SessionManager` moves from `handshake` to `streaming` when the `onReady()` callback returns `ACK_RECEIVED`. It moves from `streaming` to `teardown` when `close()` is called via `connection.terminate()`.\n\nFor details, see:\n- [Nexus Protocol v2](https://spec.nexus.invalid/v2), under **State Transitions**, for the protocol specification.\n- [Error Codes](https://spec.nexus.invalid/errors), under **Recovery Procedures**, for error handling.\n\nThe system must preserve the diagnostic `ERR_NEXUS invalid state transition handshake->teardown`.",
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 2,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 300,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 32,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 268,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 1427,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 1729,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.0065715,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": true,
+    "skill_loading_passed": false,
+    "passed": false
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": false,
+      "passed": null,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "text",
+      "gated": true,
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}
