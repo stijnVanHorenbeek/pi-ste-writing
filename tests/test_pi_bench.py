@@ -3380,7 +3380,7 @@ class ArchivedMatrixContractTest(unittest.TestCase):
         self.assertEqual(matrix["schema_version"], 1)
         self.assertEqual(matrix["matrix_id"], "v1")
         self.assertEqual(matrix["version"], 6)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "8")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "9")
         self.assertEqual(
             matrix["conditions"],
             ["baseline", "native-skill", "direct-prompt"],
@@ -3558,7 +3558,7 @@ class HybridSchemaV3Test(unittest.TestCase):
     def test_v3_matrix_accepts_hybrid_contract_and_rejects_open_regex(self):
         matrix = schema_v3_matrix()
         run_pi_bench.validate_matrix(matrix)
-        self.assertEqual(run_pi_bench.RUNNER_VERSION, "8")
+        self.assertEqual(run_pi_bench.RUNNER_VERSION, "9")
         self.assertEqual(run_pi_bench.evidence_schema_version(matrix), 2)
 
         invalid = json.loads(json.dumps(matrix))
@@ -3584,6 +3584,104 @@ class HybridSchemaV3Test(unittest.TestCase):
             expected_schema_version={2, 3},
         )
         self.assertEqual(len(fixtures), 5)
+
+    def test_schema_v3_fixture_corpus_runs_through_objective_evaluation(self):
+        fixtures = run_pi_bench.load_fixtures(
+            ROOT / "evals" / "fixtures" / "hybrid-regressions.json",
+            expected_schema_version={2, 3},
+        )
+        fixture = fixtures["thalassa-destructive-procedure"]
+        evaluation = run_pi_bench.evaluate_scenario(
+            {"fixture": fixture},
+            fixture["source"],
+            {"type": "text", "forbidden_patterns": []},
+            "candidate.json",
+            objective_mode=True,
+        )
+
+        self.assertTrue(evaluation["objective_contract"]["passed"])
+        self.assertTrue(evaluation["objective_procedure"]["passed"])
+
+    def test_diagnostic_output_contract_does_not_fail_objective_gate(self):
+        scenario = {
+            "id": "routing-negative",
+            "mode": "structured",
+            "task": "Return one JSON array.",
+            "source": "Identifiers are X and Y.",
+            "expect_skill_loaded": False,
+            "output_contract_gate": False,
+            "output_contract": {
+                "type": "exact_text",
+                "value": '["X","Y"]',
+                "allow_terminal_newline": True,
+            },
+        }
+        evaluation = run_pi_bench.evaluate_scenario(
+            scenario,
+            "not exact",
+            {"type": "text", "forbidden_patterns": []},
+            "candidate.json",
+            objective_mode=True,
+        )
+
+        self.assertTrue(evaluation["objective_contract"]["passed"])
+        self.assertTrue(evaluation["objective_gate_passed"])
+        self.assertFalse(evaluation["output_contract"]["passed"])
+        self.assertFalse(evaluation["output_contract"]["gated"])
+        self.assertIsNone(run_pi_bench.evaluation_error(evaluation))
+
+    def test_output_contract_acceptance_excludes_diagnostic_routing_control(self):
+        matrix = run_pi_bench.load_matrix(HYBRID_RELEASE_MATRIX_PATH)
+        fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
+        structured = next(
+            scenario
+            for scenario in scenarios.values()
+            if not scenario["expect_skill_loaded"]
+        )
+        structured["output_contract_gate"] = False
+
+        with tempfile.TemporaryDirectory() as directory:
+            results = run_pi_bench.aggregate_results(
+                matrix,
+                scenarios,
+                {"matrix_sha256": "hash"},
+                Path(directory),
+            )
+
+        self.assertEqual(results["objective_acceptance"]["expected_samples"], 99)
+        self.assertEqual(
+            results["output_contract_acceptance"]["expected_samples"], 90
+        )
+        self.assertEqual(
+            results["output_contract_acceptance"]["diagnostic_expected_samples"],
+            9,
+        )
+
+    def test_diagnostic_output_contract_is_limited_to_structured_negative(self):
+        scenario = {
+            "id": "routing-negative",
+            "mode": "structured",
+            "task": "Return one JSON array.",
+            "source": "Identifiers are X and Y.",
+            "expect_skill_loaded": False,
+            "output_contract_gate": False,
+            "output_contract": {
+                "type": "exact_text",
+                "value": '["X","Y"]',
+                "allow_terminal_newline": True,
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scenarios.json"
+            path.write_text(json.dumps({"schema_version": 1, "scenarios": [scenario]}))
+            loaded = run_pi_bench.load_scenarios({}, path)
+            self.assertFalse(loaded["routing-negative"]["output_contract_gate"])
+
+            invalid = json.loads(json.dumps(scenario))
+            invalid["expect_skill_loaded"] = True
+            path.write_text(json.dumps({"schema_version": 1, "scenarios": [invalid]}))
+            with self.assertRaisesRegex(ValueError, "structured negative"):
+                run_pi_bench.load_scenarios({}, path)
 
     def test_fixture_skill_expectation_is_not_hardcoded(self):
         fixtures = {

@@ -27,7 +27,7 @@ Schema v3 narrows objective checks to declared protected literals:
 - `required_literals` requires each unique inline-code, fenced-code, Markdown-link, or bold value at least once in its original container.
 - `ordered_literals` checks order only between declared immutable literals, such as exact commands and machine-return tokens.
 - Repetition count, ordinary numbers, dates, units, identifiers outside protected containers, sentence wording, actor roles, modality, causality, warnings, and safety gates require source-relative semantic review.
-- Exact external serialization stays in scenario-level output contracts.
+- Exact external serialization stays in scenario-level output contracts. Structured negative routing controls can mark serialization diagnostic; skill nonactivation remains the gate.
 
 Supporting rationale from official ASD-STE100 Issue 9:
 

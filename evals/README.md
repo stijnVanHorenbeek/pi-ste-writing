@@ -119,9 +119,9 @@ Each successful raw cell records provider/model identity, usage metadata, cost, 
 
 ## Reports and gates
 
-Reports place semantic and exact output-contract results before style. Semantic failures remain authoritative; style or judge preference cannot override them.
+Reports place semantic and output-contract results before style. Semantic failures remain authoritative; style or judge preference cannot override them. A structured negative routing control can mark exact serialization diagnostic with `output_contract_gate: false`; its no-load activation result remains authoritative, while formatting quality cannot fail package acceptance.
 
-Positive automatic activation requires at least two loads across three repetitions. The structured-output negative requires zero loads. Applicable-cell completeness, model identity, routing safety, native and guarded semantics, applicable procedures, output contracts, and guard integrity each require 100%. Exact thresholds are machine-validated from the preregistered matrix.
+Positive automatic activation requires at least two loads across three repetitions. The structured-output negative requires zero loads. Applicable-cell completeness, model identity, routing safety, native and guarded semantics, applicable procedures, gated output contracts, and guard integrity each require 100%. Diagnostic routing-control serialization is reported separately. Exact thresholds are machine-validated from the preregistered matrix.
 
 `failures.json` retains missing, stale, malformed, routing-invalid, and otherwise rejected cells. Incomplete matrix blocks aggregate claims.
 

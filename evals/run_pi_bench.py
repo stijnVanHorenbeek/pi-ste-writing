@@ -34,7 +34,7 @@ DEFAULT_MATRIX_PATH = PRE_RELEASE_ARCHIVE / "config" / "initial-skill-matrix.jso
 DEFAULT_CORPUS_PATH = HERE / "fixtures" / "semantic-preservation.json"
 DEFAULT_BENCHMARK_SCENARIOS_PATH = HERE / "benchmark-scenarios.json"
 DEFAULT_RESULTS_DIR = HERE / "results" / "current-run"
-RUNNER_VERSION = "8"
+RUNNER_VERSION = "9"
 SUPPORTED_CONDITIONS = {"baseline", "native-skill", "direct-prompt", "guarded"}
 THINKING_LEVELS = {"off", "minimal", "low", "medium", "high", "xhigh", "max"}
 SKILL_DIR = ROOT / "skills" / "clear-technical-writing"
@@ -586,6 +586,17 @@ def load_scenarios(
             raise ValueError(f"duplicate benchmark scenario: {scenario['id']}")
         if not isinstance(scenario.get("expect_skill_loaded"), bool):
             raise ValueError("benchmark scenario skill expectation is invalid")
+        output_contract_gate = scenario.get("output_contract_gate", True)
+        if not isinstance(output_contract_gate, bool) or (
+            output_contract_gate is False
+            and (
+                scenario["expect_skill_loaded"] is not False
+                or scenario["mode"] != "structured"
+            )
+        ):
+            raise ValueError(
+                "diagnostic output contracts require a structured negative routing scenario"
+            )
         validate_output_contract(
             scenario.get("output_contract"),
             context=f"scenario {scenario['id']}",
@@ -1159,7 +1170,7 @@ def strict_json_loads(text):
     )
 
 
-def evaluate_output_contract(text, contract):
+def evaluate_output_contract(text, contract, gated=True):
     contract_type = contract["type"]
     violations = []
     if contract_type == "text":
@@ -1249,6 +1260,7 @@ def evaluate_output_contract(text, contract):
         raise ValueError(f"unsupported output contract: {contract_type}")
     return {
         "type": contract_type,
+        "gated": gated,
         "passed": not violations,
         "violations": violations,
     }
@@ -1257,7 +1269,7 @@ def evaluate_output_contract(text, contract):
 def evaluate_candidate(fixture, text, output_contract, candidate):
     score = score_fixtures.score_rewrite(fixture, text, candidate)
     contract = evaluate_output_contract(text, output_contract)
-    if score["schema_version"] == 2:
+    if score["schema_version"] in {2, 3}:
         return {
             "objective_contract": score["objective_contract"],
             "objective_procedure": score["objective_procedure"],
@@ -1308,16 +1320,23 @@ def evaluate_scenario(
         "modality_and_certainty_preservation",
         "repository_term_preservation",
     )
-    output_contract = evaluate_output_contract(text, contract)
+    output_contract_gated = scenario.get("output_contract_gate", True)
+    output_contract = evaluate_output_contract(
+        text,
+        contract,
+        gated=output_contract_gated,
+    )
     if objective_mode:
-        failures = [] if output_contract["passed"] else list(
-            output_contract["violations"]
+        failures = (
+            []
+            if output_contract["passed"] or not output_contract_gated
+            else list(output_contract["violations"])
         )
         return {
             "objective_contract": {
-                "passed": output_contract["passed"],
+                "passed": not failures,
                 "failed_rule_ids": (
-                    [] if output_contract["passed"] else ["output-contract"]
+                    [] if not failures else ["output-contract"]
                 ),
                 "failures": failures,
             },
@@ -1328,7 +1347,7 @@ def evaluate_scenario(
                 "failures": [],
             },
             "output_contract": output_contract,
-            "objective_gate_passed": output_contract["passed"],
+            "objective_gate_passed": not failures,
             "style": {
                 "advisory": True,
                 "warning_count": 0,
@@ -1602,9 +1621,13 @@ def evaluation_error(evaluation):
             or not isinstance(procedure.get("failed_rule_ids"), list)
             or not isinstance(procedure.get("failures"), list)
             or not isinstance(contract, dict)
+            or not isinstance(contract.get("gated"), bool)
             or not isinstance(contract.get("passed"), bool)
             or evaluation["objective_gate_passed"]
-            != (objective["passed"] and contract["passed"])
+            != (
+                objective["passed"]
+                and (contract["passed"] or not contract["gated"])
+            )
         ):
             return "objective evaluation is invalid"
         return None
@@ -1655,6 +1678,7 @@ def evaluation_error(evaluation):
     if (
         not isinstance(contract, dict)
         or not isinstance(contract.get("type"), str)
+        or not isinstance(contract.get("gated"), bool)
         or not isinstance(contract.get("passed"), bool)
         or not isinstance(contract.get("violations"), list)
     ):
@@ -2967,20 +2991,50 @@ def aggregate_results(
             and procedure_failed_samples == 0
         ),
     }
+    output_contract_gate_rows = [
+        row
+        for row in gate_rows
+        if row["evaluation"]["output_contract"].get("gated", True)
+    ]
+    diagnostic_output_rows = [
+        row
+        for row in gate_rows
+        if not row["evaluation"]["output_contract"].get("gated", True)
+    ]
+    expected_output_contract_samples = sum(
+        cell["condition"] in gate_conditions
+        and fixtures[cell["scenario_id"]].get("output_contract_gate", True)
+        for cell in cells
+    )
+    expected_diagnostic_output_samples = (
+        expected_gate_samples - expected_output_contract_samples
+    )
     output_contract_passed_samples = sum(
-        row["evaluation"]["output_contract"]["passed"] for row in gate_rows
+        row["evaluation"]["output_contract"]["passed"]
+        for row in output_contract_gate_rows
     )
     output_contract_failed_samples = sum(
-        not row["evaluation"]["output_contract"]["passed"] for row in gate_rows
+        not row["evaluation"]["output_contract"]["passed"]
+        for row in output_contract_gate_rows
     )
     output_contract_acceptance = {
         "conditions": gate_conditions,
-        "expected_samples": expected_gate_samples,
-        "successful_samples": len(gate_rows),
+        "expected_samples": expected_output_contract_samples,
+        "successful_samples": len(output_contract_gate_rows),
         "passed_samples": output_contract_passed_samples,
         "failed_samples": output_contract_failed_samples,
+        "diagnostic_expected_samples": expected_diagnostic_output_samples,
+        "diagnostic_successful_samples": len(diagnostic_output_rows),
+        "diagnostic_passed_samples": sum(
+            row["evaluation"]["output_contract"]["passed"]
+            for row in diagnostic_output_rows
+        ),
+        "diagnostic_failed_samples": sum(
+            not row["evaluation"]["output_contract"]["passed"]
+            for row in diagnostic_output_rows
+        ),
         "accepted": (
-            len(gate_rows) == expected_gate_samples
+            len(output_contract_gate_rows) == expected_output_contract_samples
             and output_contract_failed_samples == 0
         ),
     }
