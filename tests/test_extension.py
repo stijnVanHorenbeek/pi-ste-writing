@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXTENSION = ROOT / "extensions" / "clear-writing-guard.ts"
 GUARD_CONTRACT = ROOT / "docs" / "guarded-verifier-contract.md"
+PUBLISH_WORKFLOW = ROOT / ".github" / "workflows" / "publish.yml"
 
 
 class ProtectedContentNodeTests(unittest.TestCase):
@@ -54,6 +55,17 @@ class PackageManifestTests(unittest.TestCase):
             },
         )
 
+
+    def test_publish_workflow_uses_oidc_without_npm_token(self):
+        workflow = PUBLISH_WORKFLOW.read_text()
+
+        self.assertIn("id-token: write", workflow)
+        self.assertIn("contents: read", workflow)
+        self.assertIn("npm@11.6.2", workflow)
+        self.assertIn("npm publish --tag next --access public", workflow)
+        self.assertIn('test "$TAG_VERSION" = "$PACKAGE_VERSION"', workflow)
+        self.assertNotIn("NODE_AUTH_TOKEN", workflow)
+        self.assertNotIn("registry-url", workflow)
 
     def test_package_dry_run_includes_guard_without_bundled_dependencies(self):
         result = subprocess.run(
