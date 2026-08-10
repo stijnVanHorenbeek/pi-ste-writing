@@ -86,3 +86,16 @@ Guarded count/container enforcement passed 3/3 model families with no repair tur
 Existing semantic scorer remains separate and authoritative only for its declared fixture patterns. Claude `linter.step-numbering` is a previously adjudicated false-positive class. Sol findings require adjudication before any semantic conclusion; this development run does not rewrite scorer or historical evidence.
 
 V2 release remains blocked on a new preregistered, genuinely unseen benchmark and explicit publication approval.
+
+## Post-probe scorer disposition
+
+Source-relative review classified all Sol and Claude findings above as evaluator false positives:
+
+- `purge.scope` omitted the safe synonym `never affects`.
+- `purge.forbidden-snapshot-impact` matched `affects` inside `never affects`.
+- `purge.warning` accepted `restoring` but not the equivalent noun `restoration`.
+- `linter.step-numbering` treated a colon-ended lead-in to numbered substeps as an unnumbered step.
+
+Future development scoring now covers these safe forms and nearby unsafe siblings. Independent corrective review cost `$0.483337`; it caught an initially broad colon-lead-in exemption. Final logic exempts only recognized confirmation/check list lead-ins and retains a negative regression for executable colon-ended actions.
+
+This post-output correction does not change the table, original probe result, or any historical benchmark. The corrected scenario remains development evidence and cannot serve as unseen release evidence.

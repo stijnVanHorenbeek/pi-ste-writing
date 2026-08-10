@@ -204,6 +204,16 @@ def step_numbering_findings(text, source, linter):
         original_line = text[match.start() : match.end()]
         if re.match(r"\s*\d+\.\s+", original_line):
             continue
+        if re.search(
+            r"(?i)\b(?:confirm|check|verify|ensure)\s+"
+            r"(?:both|these|the following)\s+"
+            r"(?:conditions|checks|requirements|items|steps):\s*$",
+            original_line,
+        ) and re.match(
+            r"(?:[ \t]*\r?\n)+[ \t]*\d+\.\s+",
+            text[match.end() :],
+        ):
+            continue
         findings.append(
             linter.make_finding(
                 "step-numbering",

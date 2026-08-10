@@ -244,13 +244,13 @@
         {"id": "purge-verify", "description": "The exact describe command verifies the result after deletion."}
       ],
       "forbidden_claims": [
-        {"id": "purge.forbidden-snapshot-impact", "description": "The purge may affect active snapshots.", "patterns": ["(?i)(purge job|operation|command).{0,50}(may touch|can touch|also touches|deletes|affects) active ledger snapshots"]},
+        {"id": "purge.forbidden-snapshot-impact", "description": "The purge may affect active snapshots.", "patterns": ["(?i)(purge job|operation|command).{0,50}(may touch|can touch|also touches|deletes|(?<!never )affects) active ledger snapshots"]},
         {"id": "purge.forbidden-incomplete-export", "description": "The procedure continues with an incomplete export.", "patterns": ["(?i)export `?export-2027-02-18`? (is|was) incomplete"]},
         {"id": "purge.forbidden-before-approval", "description": "Approval is waived or deletion is allowed before approval.", "patterns": ["(?is)(do not need|does not require|without).{0,40}`?OPS-6634`?.{0,30}approval", "(?is)(run|execute|delete).{0,70}(even if|before).{0,40}`?OPS-6634`?.{0,30}(not been approved|approval)"]},
-        {"id": "purge.forbidden-recovery", "description": "Cold-storage recovery is denied.", "patterns": ["(?i)recovery (does not|doesn't) require restoring from cold storage"]}
+        {"id": "purge.forbidden-recovery", "description": "Cold-storage recovery is denied.", "patterns": ["(?i)recovery (does not|doesn't) require restor(ing|ation) from cold storage"]}
       ],
       "invariants": [
-        {"id": "purge.scope", "category": "fact", "description": "Preserve purge scope and active-snapshot exclusion.", "checks": [{"type": "regex", "pattern": "(?i)(removes|deletes).{0,20}(only )?expired ledger exports"}, {"type": "regex", "pattern": "(?i)((never touches|does not touch|doesn't touch) active ledger snapshots|leaves active ledger snapshots untouched)"}]},
+        {"id": "purge.scope", "category": "fact", "description": "Preserve purge scope and active-snapshot exclusion.", "checks": [{"type": "regex", "pattern": "(?i)(removes|deletes).{0,20}(only )?expired ledger exports"}, {"type": "regex", "pattern": "(?i)((never (touches|affects)|does not (touch|affect)|doesn't (touch|affect)) active ledger snapshots|leaves active ledger snapshots untouched)"}]},
         {"id": "purge.export-check", "category": "procedure", "description": "Require the exact export confirmation before deletion.", "checks": [
           {"type": "inline_code", "value": "export-2027-02-18", "count": 1},
           {"type": "regex", "pattern": "(?is)((confirm|verify).{0,60}(export )?`export-2027-02-18`.{0,35}(is complete|complete|completed successfully)|`export-2027-02-18`.{0,35}must be confirmed complete)"},
@@ -258,7 +258,7 @@
         ]},
         {"id": "purge.warning", "category": "procedure", "description": "Keep WARNING, permanence, and cold-storage recovery before deletion.", "checks": [
           {"type": "regex", "pattern": "(?is)WARNING:.{0,180}permanently (destroys|deletes|removes).{0,40}(bucket )?`ledger-archive-legacy`"},
-          {"type": "regex", "pattern": "(?i)(recovery.{0,35}(means|requires).{0,30}restoring from cold storage|recovering.{0,35}requires restoring from cold storage)"},
+          {"type": "regex", "pattern": "(?i)(recovery.{0,35}(means|requires).{0,30}restor(ing|ation) from cold storage|recovering.{0,35}requires restor(ing|ation) from cold storage)"},
           {"type": "precedes_regex", "before_pattern": "(?is)WARNING:.{0,180}permanently (destroys|deletes|removes).{0,40}(bucket )?`ledger-archive-legacy`", "after_pattern": "vaultctl delete bucket ledger-archive-legacy --confirm"}
         ]},
         {"id": "purge.approval", "category": "procedure", "description": "Require exact ticket approval before deletion.", "checks": [
@@ -269,7 +269,9 @@
         {"id": "purge.verify-command", "category": "protected_span", "description": "Preserve exact inline verification after deletion.", "checks": [{"type": "inline_code", "value": "vaultctl describe bucket ledger-archive-legacy", "count": 1}, {"type": "precedes_regex", "before_pattern": "vaultctl delete bucket ledger-archive-legacy --confirm", "after_pattern": "vaultctl describe bucket ledger-archive-legacy"}]}
       ],
       "passing_rewrites": [
-        {"id": "purge-valid-gated-procedure", "rewrite": "The archive purge job removes only expired ledger exports and leaves active ledger snapshots untouched.\n\nWARNING: the command below permanently deletes bucket `ledger-archive-legacy`; recovering afterward requires restoring from cold storage.\n\n1. Confirm that export `export-2027-02-18` is complete.\n2. Confirm that change ticket `OPS-6634` has been approved.\n3. Run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\n4. Check `vaultctl describe bucket ledger-archive-legacy` to confirm the bucket status."}
+        {"id": "purge-valid-gated-procedure", "rewrite": "The archive purge job removes only expired ledger exports and leaves active ledger snapshots untouched.\n\nWARNING: the command below permanently deletes bucket `ledger-archive-legacy`; recovering afterward requires restoring from cold storage.\n\n1. Confirm that export `export-2027-02-18` is complete.\n2. Confirm that change ticket `OPS-6634` has been approved.\n3. Run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\n4. Check `vaultctl describe bucket ledger-archive-legacy` to confirm the bucket status."},
+        {"id": "purge-safe-never-affects-restoration", "rewrite": "Scope: The archive purge job removes expired ledger exports. It never affects active ledger snapshots.\n\nWARNING: The deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery requires restoration from cold storage.\n\n1. Confirm that export `export-2027-02-18` is complete.\n2. Confirm that change ticket `OPS-6634` has approval.\n3. After both conditions are satisfied, run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\n4. Confirm the outcome by running `vaultctl describe bucket ledger-archive-legacy`."},
+        {"id": "purge-safe-numbered-substep-leadin", "rewrite": "Scope: the archive purge job removes expired ledger exports. It never touches active ledger snapshots.\n\nWARNING: running the deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery afterward means restoring from cold storage.\n\nBefore running the command, confirm both conditions:\n\n1. Confirm that export `export-2027-02-18` is complete.\n2. Confirm that change ticket `OPS-6634` carries approval.\n\nOnce both conditions are satisfied, run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\nAfterward, confirm the outcome by running `vaultctl describe bucket ledger-archive-legacy`."}
       ],
       "failing_baselines": [
         {
@@ -277,6 +279,16 @@
           "rewrite": "The archive purge job removes expired ledger exports and may touch active ledger snapshots.\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\nNote: deleting bucket `ledger-archive-legacy` is done above. You do not need `OPS-6634` approval before running this. Confirm export `export-2027-02-18` is complete whenever convenient. Recovery does not require restoring from cold storage.",
           "expected_violations": ["purge.scope", "purge.export-check", "purge.warning", "purge.approval", "purge.verify-command", "purge.forbidden-snapshot-impact", "purge.forbidden-before-approval", "purge.forbidden-recovery"],
           "expected_full_scorer_violations": ["purge.scope", "purge.export-check", "purge.warning", "purge.approval", "purge.verify-command", "purge.forbidden-snapshot-impact", "purge.forbidden-before-approval", "purge.forbidden-recovery", "protected.source-equality"]
+        },
+        {
+          "id": "purge-unsafe-positive-affect",
+          "rewrite": "Scope: The archive purge job removes expired ledger exports. It affects active ledger snapshots.\n\nWARNING: The deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery requires restoration from cold storage.\n\n1. Confirm that export `export-2027-02-18` is complete.\n2. Confirm that change ticket `OPS-6634` has approval.\n3. After both conditions are satisfied, run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\n4. Confirm the outcome by running `vaultctl describe bucket ledger-archive-legacy`.",
+          "expected_violations": ["purge.scope", "purge.forbidden-snapshot-impact"]
+        },
+        {
+          "id": "purge-unsafe-restoration-denied",
+          "rewrite": "Scope: The archive purge job removes expired ledger exports. It never affects active ledger snapshots.\n\nWARNING: The deletion command permanently destroys bucket `ledger-archive-legacy`. Recovery does not require restoration from cold storage.\n\n1. Confirm that export `export-2027-02-18` is complete.\n2. Confirm that change ticket `OPS-6634` has approval.\n3. After both conditions are satisfied, run:\n\n```bash\nvaultctl delete bucket ledger-archive-legacy --confirm\n```\n\n4. Confirm the outcome by running `vaultctl describe bucket ledger-archive-legacy`.",
+          "expected_violations": ["purge.warning", "purge.forbidden-recovery"]
         }
       ]
     }

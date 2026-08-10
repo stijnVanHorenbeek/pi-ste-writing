@@ -34,6 +34,13 @@ def fixture_by_id(fixture_id):
     )
 
 
+def independent_fixture_by_id(fixture_id):
+    corpus = json.loads(INDEPENDENT_CORPUS_PATH.read_text(encoding="utf-8"))
+    return next(
+        fixture for fixture in corpus["fixtures"] if fixture["id"] == fixture_id
+    )
+
+
 def candidate_by_id(fixture, candidate_id):
     return next(
         candidate
@@ -51,6 +58,111 @@ def run_cli(fixture_id, rewrite, *args):
         capture_output=True,
         check=False,
     )
+
+
+class SemanticParaphraseRegressionTest(unittest.TestCase):
+    def test_scope_invariant_accepts_never_affects(self):
+        fixture = independent_fixture_by_id(
+            "ledger-archive-purge-destructive-procedure"
+        )
+        rewrite = fixture["passing_rewrites"][0]["rewrite"].replace(
+            "leaves active ledger snapshots untouched",
+            "never affects active ledger snapshots",
+        )
+
+        metric = score_fixtures.metric_from_invariants(fixture, rewrite, {"fact"})
+
+        self.assertTrue(metric["passed"])
+
+    def test_forbidden_snapshot_pattern_respects_explicit_negation(self):
+        fixture = independent_fixture_by_id(
+            "ledger-archive-purge-destructive-procedure"
+        )
+
+        metric = score_fixtures.forbidden_claim_metric(
+            fixture,
+            "The archive purge job never affects active ledger snapshots.",
+        )
+
+        self.assertTrue(metric["passed"])
+
+    def test_colon_ended_action_before_numbered_step_still_requires_number(self):
+        text = "Delete the archive:\n1. Confirm that deletion succeeded."
+
+        findings = score_fixtures.step_numbering_findings(
+            text,
+            "candidate",
+            score_fixtures.load_linter(),
+        )
+
+        self.assertEqual(
+            [finding["rule"] for finding in findings],
+            ["step-numbering"],
+        )
+
+    def test_numbered_substep_lead_in_does_not_require_own_number(self):
+        text = (
+            "Before running the command, confirm both conditions:\n\n"
+            "1. Confirm that the export is complete.\n"
+            "2. Confirm that the ticket has approval."
+        )
+
+        findings = score_fixtures.step_numbering_findings(
+            text,
+            "candidate",
+            score_fixtures.load_linter(),
+        )
+
+        self.assertEqual(findings, [])
+
+    def test_warning_invariant_accepts_restoration_noun(self):
+        fixture = independent_fixture_by_id(
+            "ledger-archive-purge-destructive-procedure"
+        )
+        rewrite = fixture["passing_rewrites"][0]["rewrite"].replace(
+            "recovering afterward requires restoring from cold storage",
+            "recovery requires restoration from cold storage",
+        )
+
+        metric = score_fixtures.metric_from_invariants(
+            fixture,
+            rewrite,
+            {"procedure"},
+        )
+
+        self.assertTrue(metric["passed"])
+
+    def test_forbidden_recovery_pattern_rejects_restoration_noun(self):
+        fixture = independent_fixture_by_id(
+            "ledger-archive-purge-destructive-procedure"
+        )
+
+        metric = score_fixtures.forbidden_claim_metric(
+            fixture,
+            "Recovery does not require restoration from cold storage.",
+        )
+
+        self.assertFalse(metric["passed"])
+        self.assertEqual(
+            [failure["rule_id"] for failure in metric["failures"]],
+            ["purge.forbidden-recovery"],
+        )
+
+    def test_forbidden_snapshot_pattern_rejects_positive_affect(self):
+        fixture = independent_fixture_by_id(
+            "ledger-archive-purge-destructive-procedure"
+        )
+
+        metric = score_fixtures.forbidden_claim_metric(
+            fixture,
+            "The archive purge job affects active ledger snapshots.",
+        )
+
+        self.assertFalse(metric["passed"])
+        self.assertEqual(
+            [failure["rule_id"] for failure in metric["failures"]],
+            ["purge.forbidden-snapshot-impact"],
+        )
 
 
 class PassingScoreContractTest(unittest.TestCase):
