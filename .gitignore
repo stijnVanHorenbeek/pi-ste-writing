@@ -1,4 +1,6 @@
 .DS_Store
+.local-archive/
+.pi-subagents/
 node_modules/
 __pycache__/
 *.py[cod]

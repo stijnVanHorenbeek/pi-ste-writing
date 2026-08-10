@@ -34,7 +34,12 @@ class GuardContractTests(unittest.TestCase):
 class PackageManifestTests(unittest.TestCase):
     def test_package_exposes_extension_and_runtime_files(self):
         manifest = json.loads((ROOT / "package.json").read_text())
-        self.assertEqual(manifest["version"], "0.1.0-rc.1")
+        self.assertEqual(manifest["version"], "0.0.1")
+        self.assertNotIn("private", manifest)
+        self.assertEqual(
+            manifest["publishConfig"],
+            {"access": "public", "tag": "next"},
+        )
         self.assertEqual(
             manifest["pi"]["extensions"],
             ["./extensions/clear-writing-guard.ts"],

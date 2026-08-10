@@ -1,9 +1,8 @@
 {
   "name": "pi-ste-writing",
-  "version": "0.1.0-rc.1",
+  "version": "0.0.1",
   "type": "module",
-  "private": true,
-  "description": "Semantic-safe technical writing skill and guarded verifier for Pi",
+  "description": "Semantics-first technical writing skill and guarded verifier for Pi",
   "keywords": [
     "pi-package",
     "pi-skill",
@@ -20,6 +19,13 @@
     "url": "https://github.com/stijnVanHorenbeek/pi-ste-writing/issues"
   },
   "homepage": "https://github.com/stijnVanHorenbeek/pi-ste-writing#readme",
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  },
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py' && node --test tests/guard-session.test.ts"
+  },
   "files": [
     "docs",
     "extensions",

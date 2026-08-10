@@ -1,16 +1,16 @@
 # Guarded protected-content verifier contract
 
-Status: release candidate, experimental, unpublished, and not release evidence.
+Status: experimental prerelease.
 
-Candidate package version: `0.1.0-rc.1`
+Package version: `0.0.1`
 
 This contract defines current package shape: progressively loaded writing skill plus opt-in Pi extension. It supersedes skill-only experimental package shape without rewriting archived pre-release contracts or failed benchmark evidence.
 
 ## Purpose
 
-Model instructions alone did not reliably preserve protected occurrence counts and Markdown containers. Guarded rewrite path accepts draft only after deterministic protected-content verification of those properties.
+Model instructions alone did not reliably preserve protected occurrence counts and Markdown containers. The guarded rewrite path accepts a draft only after deterministic verification of those properties.
 
-Skill semantic-safety contract remains in force. Verifier acceptance does not prove arbitrary semantic equivalence, factual completeness, causal correctness, procedure safety, or ASD-STE100 compliance.
+The skill's semantic-preservation contract remains in force. Verifier acceptance does not prove arbitrary semantic equivalence, factual completeness, causal correctness, procedure safety, or ASD-STE100 compliance.
 
 ## Invocation
 
@@ -80,24 +80,19 @@ These remain skill, scorer, review, and benchmark responsibilities. High-risk ou
 
 ## Packaging and security
 
-Candidate package manifest exposes:
+Package manifest exposes:
 
 - `./skills`
 - `./extensions/clear-writing-guard.ts`
 
-Extension has full Pi process permissions, reads package-owned guidance, creates private temporary source/draft files, invokes package-owned verifier with `python3` without shell interpolation, and removes temporary files in `finally`.
+The extension has full Pi process permissions. It reads package-owned guidance, creates private temporary source and draft files, invokes the package-owned verifier with `python3` without shell interpolation, and removes temporary files in `finally`.
 
-Users can disable extension separately with Pi package filters while retaining skill. Review extension source before installation.
+Users can disable the extension with Pi package filters while retaining the skill. Review the extension source before installation.
 
-## Release gate
+## Maturity and evidence
 
-Candidate remains experimental until all conditions pass from clean immutable commit:
+Version `0.0.1` is intentionally experimental. Unit, integration, packaging, real-Pi, and known-case guarded probes passed before publication. Maintainer approved this prerelease based on that bounded evidence.
 
-1. Unit and integration tests pass.
-2. Package dry run includes intended skill, extension, helper modules, and verifier; no bundled dependency.
-3. Real Pi probes pass in TUI-equivalent JSON/RPC and print modes.
-4. Protected count/container development probes pass across target model families.
-5. New preregistered, genuinely unseen release benchmark passes source gates.
-6. User explicitly approves publication.
+A planned new held-out benchmark and blind judge did not complete. Historical candidate runs remain failed, and known development scenarios are not unseen release evidence. This release therefore makes no claim of arbitrary semantic equivalence, population reliability, procedure safety, or ASD-STE100 compliance.
 
-Archived pre-release scenarios are development tests only. They cannot become unseen release evidence.
+Use guarded mode for protected-content enforcement. Review high-risk output against its source. See the README evaluation summary for bounded observed results.
