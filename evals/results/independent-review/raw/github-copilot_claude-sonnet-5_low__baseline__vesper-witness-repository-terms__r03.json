@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "thinking": "low",
+    "condition": "baseline",
+    "scenario_id": "vesper-witness-repository-terms",
+    "repetition": 3
+  },
+  "provenance": {
+    "runner_version": "4",
+    "matrix_sha256": "6cc06e4d17dd5e5f4bece86e40d4269d029152ddc0e97436a788b6b15381c4d8",
+    "package_commit": "b7cd7540a05176269bc14315863db4ffc7d97ec1",
+    "package_dirty": false,
+    "skill_sha256": "072f9a0178034f55b1b81e9d95b715366759c6b85db9dab0a278e2239459475b",
+    "pi_version": "0.84.1"
+  },
+  "prompt_sha256": "7aab03f3e132225d3c8078f6cbe9ec6a3a1e22b45058b9f9f7958301c4aa1c88",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-09T23:50:26.523317+00:00",
+      "status": "success",
+      "duration_ms": 4843
+    }
+  ],
+  "updated_at": "2026-08-09T23:50:31.367861+00:00",
+  "duration_ms": 4843,
+  "response": {
+    "text": "## Repository Terminology\n\nThis repository defines three terms that must stay distinct:\n\n- `chronicle` \u2014 append-only signed artifact histories\n- `sandpit` \u2014 local checkout state\n- `blueprint` \u2014 build-specific transformation rules\n\n## Preparing to Call ForgeProof\n\nBefore calling `ForgeProof`, supply API field `proof.thresholdSlots`. Full background lives at the [witness anchor guide](https://handbook.vesper.invalid/witness/anchors?revision=83#matrix) \u2014 once there, choose **Witness Matrix**.\n\nBoth the reader and the writer rely on the same path: the reader path is `/var/lib/vesper/anchor.ron`, and the writer uses that identical path, `/var/lib/vesper/anchor.ron`.\n\n## Running the Attestation\n\nExecute the following:\n\n```bash\nvesperctl chronicle attest --anchor /var/lib/vesper/anchor.ron --slots 83\n```\n\nLeave the snippet below exactly as written:\n\n```go\nproof := ForgeProof(chronicle, blueprint)\n```\n\n## Diagnostics to Preserve\n\nThese three diagnostics must carry over untouched:\n\n- Error: `witness slot 83 unavailable for proof`\n- Log: `time=2044-02-23T16:52:08Z unit=attestor trace=b7e29c phase=waiting`\n- Test: `FAILED spec::anchor_rejects_hollow_witness in 0.137s`",
+    "provider": "github-copilot",
+    "model": "claude-sonnet-5",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 642,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 484,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 484,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 1126,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.006124,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": true,
+      "failed_rule_ids": [],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 11,
+          "rules_passed": 11,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "required_fact_retention": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 2,
+          "rules_passed": 2,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "repository_term_preservation": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 1,
+          "rules_passed": 1,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

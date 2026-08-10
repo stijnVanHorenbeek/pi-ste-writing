@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "direct-prompt",
+    "scenario_id": "vesper-witness-repository-terms",
+    "repetition": 2
+  },
+  "provenance": {
+    "runner_version": "4",
+    "matrix_sha256": "6cc06e4d17dd5e5f4bece86e40d4269d029152ddc0e97436a788b6b15381c4d8",
+    "package_commit": "b7cd7540a05176269bc14315863db4ffc7d97ec1",
+    "package_dirty": false,
+    "skill_sha256": "072f9a0178034f55b1b81e9d95b715366759c6b85db9dab0a278e2239459475b",
+    "pi_version": "0.84.1"
+  },
+  "prompt_sha256": "3080213e0b1632706c0dbe089729861b2b2567abeeb1e173579acc19ed0369ea",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-09T23:47:41.415090+00:00",
+      "status": "success",
+      "duration_ms": 9066
+    }
+  ],
+  "updated_at": "2026-08-09T23:47:50.482977+00:00",
+  "duration_ms": 9066,
+  "response": {
+    "text": "This repository defines three distinct terms:\n\n- `chronicle`: append-only signed artifact histories\n- `sandpit`: local checkout state\n- `blueprint`: build-specific transformation rules\n\nBefore you call `ForgeProof`, supply the API field `proof.thresholdSlots`.\n\nFor more information, see the [witness anchor guide](https://handbook.vesper.invalid/witness/anchors?revision=83#matrix). Then select **Witness Matrix**.\n\nThe reader and writer use the same path: `/var/lib/vesper/anchor.ron`.\n\nRun this command:\n\n```bash\nvesperctl chronicle attest --anchor /var/lib/vesper/anchor.ron --slots 83\n```\n\nLeave this snippet unchanged:\n\n```go\nproof := ForgeProof(chronicle, blueprint)\n```\n\nPreserve these diagnostics unchanged:\n\n- Error: `witness slot 83 unavailable for proof`\n- Log: `time=2044-02-23T16:52:08Z unit=attestor trace=b7e29c phase=waiting`\n- Test: `FAILED spec::anchor_rejects_hollow_witness in 0.137s`",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 1296,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 257,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 14,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 243,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 1553,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.01419,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": false,
+      "failed_rule_ids": [
+        "protected.source-equality",
+        "vesper.protected-repeated-path"
+      ],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 11,
+          "rules_passed": 9,
+          "rules_failed": 2,
+          "pass_rate": 0.818182,
+          "failures": [
+            {
+              "rule_id": "vesper.protected-repeated-path",
+              "description": "Preserve two inline occurrences of the shared path.",
+              "failed_checks": [
+                {
+                  "type": "inline_code",
+                  "value": "/var/lib/vesper/anchor.ron",
+                  "count": 2
+                }
+              ]
+            },
+            {
+              "rule_id": "protected.source-equality",
+              "description": "Preserve nonnumeric protected values and occurrence counts by container.",
+              "changed_kinds": [
+                "inline-code",
+                "path"
+              ],
+              "findings": [
+                {
+                  "rule": "protected-span",
+                  "category": "semantic",
+                  "severity": "warning",
+                  "source": "openai-codex_gpt-5.6-sol_high__direct-prompt__vesper-witness-repository-terms__r02.json",
+                  "line": 1,
+                  "column": 1,
+                  "text": "missing /var/lib/vesper/anchor.ron",
+                  "message": "Protected inline-code values differ from source.",
+                  "protected_kind": "inline-code"
+                },
+                {
+                  "rule": "protected-span",
+                  "category": "semantic",
+                  "severity": "warning",
+                  "source": "openai-codex_gpt-5.6-sol_high__direct-prompt__vesper-witness-repository-terms__r02.json",
+                  "line": 1,
+                  "column": 1,
+                  "text": "missing /var/lib/vesper/anchor.ron",
+                  "message": "Protected path values differ from source.",
+                  "protected_kind": "path"
+                }
+              ]
+            }
+          ]
+        },
+        "required_fact_retention": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 2,
+          "rules_passed": 2,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "repository_term_preservation": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 1,
+          "rules_passed": 1,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": false,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}

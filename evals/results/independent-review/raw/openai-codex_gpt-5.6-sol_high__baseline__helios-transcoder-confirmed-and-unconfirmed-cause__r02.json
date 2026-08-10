@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "high",
+    "condition": "baseline",
+    "scenario_id": "helios-transcoder-confirmed-and-unconfirmed-cause",
+    "repetition": 2
+  },
+  "provenance": {
+    "runner_version": "4",
+    "matrix_sha256": "6cc06e4d17dd5e5f4bece86e40d4269d029152ddc0e97436a788b6b15381c4d8",
+    "package_commit": "b7cd7540a05176269bc14315863db4ffc7d97ec1",
+    "package_dirty": false,
+    "skill_sha256": "072f9a0178034f55b1b81e9d95b715366759c6b85db9dab0a278e2239459475b",
+    "pi_version": "0.84.1"
+  },
+  "prompt_sha256": "1c513cf56e1349f8215e47a53c4afbd965b22ab9aafac94ac42bef8508fb87a7",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-09T23:37:44.253900+00:00",
+      "status": "success",
+      "duration_ms": 6591
+    }
+  ],
+  "updated_at": "2026-08-09T23:37:50.845977+00:00",
+  "duration_ms": 6591,
+  "response": {
+    "text": "During a v4.1.0 render run of 91,340 video segments on 2027-11-09, log-based diagnostics confirmed that expired GPU leases caused 61% of the 540 failed segments. Around the same time, the worker pool increased from 4 nodes to 12, followed by a decline in the segment failure rate from 3.8% to 1.1%; this sequence alone does not prove that the resize caused the decline. The cause of the remaining failed segments has not been confirmed. Regardless, the supported render-timeout range remains 200-800 ms.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "stop",
+    "usage": {
+      "input_tokens": {
+        "value": 257,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 127,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 127,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 384,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.005095,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 0,
+      "non_read_tool_calls": 0,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "semantic": {
+      "gate_passed": false,
+      "failed_rule_ids": [
+        "helios.failure-rate",
+        "helios.unknown-cause",
+        "helios.worker-sequence"
+      ],
+      "metrics": {
+        "protected_span_equality": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        },
+        "required_fact_retention": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 3,
+          "rules_passed": 2,
+          "rules_failed": 1,
+          "pass_rate": 0.666667,
+          "failures": [
+            {
+              "rule_id": "helios.failure-rate",
+              "description": "Preserve the downward 3.8%-to-1.1% change.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?i)(fell|dropped|decreased|fall|drop|decrease) from 3\\.8% to 1\\.1%"
+                }
+              ]
+            }
+          ]
+        },
+        "forbidden_fact_invention": {
+          "applicable": true,
+          "passed": true,
+          "rules_total": 3,
+          "rules_passed": 3,
+          "rules_failed": 0,
+          "pass_rate": 1.0,
+          "failures": []
+        },
+        "modality_and_certainty_preservation": {
+          "applicable": true,
+          "passed": false,
+          "rules_total": 3,
+          "rules_passed": 1,
+          "rules_failed": 2,
+          "pass_rate": 0.333333,
+          "failures": [
+            {
+              "rule_id": "helios.worker-sequence",
+              "description": "Preserve worker-pool values and explicitly keep the relationship non-causal.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?is)(worker pool( size)?|node count).{0,40}(grew|changed|increased).{0,25}4 nodes.{0,25}12 nodes"
+                }
+              ]
+            },
+            {
+              "rule_id": "helios.unknown-cause",
+              "description": "Keep the cause of the remaining failures unconfirmed.",
+              "failed_checks": [
+                {
+                  "type": "regex",
+                  "pattern": "(?i)(no confirmed (cause|explanation).{0,30}(remaining|rest)|cause.{0,30}(remaining|rest).{0,20}(unknown|not confirmed))"
+                }
+              ]
+            }
+          ]
+        },
+        "repository_term_preservation": {
+          "applicable": false,
+          "passed": null,
+          "rules_total": 0,
+          "rules_passed": 0,
+          "rules_failed": 0,
+          "pass_rate": null,
+          "failures": []
+        }
+      }
+    },
+    "procedure": {
+      "applicable": false,
+      "passed": null,
+      "required_rules": {
+        "applicable": false,
+        "passed": null,
+        "rules_total": 0,
+        "rules_passed": 0,
+        "rules_failed": 0,
+        "pass_rate": null,
+        "failures": []
+      },
+      "warning_count": 0,
+      "warnings": []
+    },
+    "output_contract": {
+      "type": "text",
+      "passed": true,
+      "violations": []
+    },
+    "semantic_gate_passed": false,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}
