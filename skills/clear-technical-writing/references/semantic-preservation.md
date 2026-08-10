@@ -113,6 +113,9 @@ Exact preservation includes value, occurrence count, container, and semantic rol
 command copied into prose does not compensate for changing its fenced block. An old URL
 added elsewhere does not compensate for changing a link destination.
 
+If the source has an inline command, keep each occurrence inline. Do not fence it. Do not
+repeat it in a heading, summary, prerequisite list, or procedure step.
+
 Preserve delimiters, whitespace, line breaks, ordering, and formatting when tools or
 output contracts can depend on them. Reformat only when the request permits it and
 references, parsers, copy-paste behavior, and meaning remain intact.

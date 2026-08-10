@@ -114,13 +114,16 @@ class SkillRouterTest(unittest.TestCase):
         protected = " ".join(
             section(SKILL.read_text(), "Protected content").lower().split()
         )
-        reference = SEMANTIC_REFERENCE.read_text().lower()
+        reference = " ".join(SEMANTIC_REFERENCE.read_text().lower().split())
 
         self.assertIn("one-to-one", protected)
         self.assertIn("headings", protected)
         self.assertIn("inline code to a fence", protected)
         self.assertIn("value, count, container, and role", reference)
         self.assertIn("added, removed, duplicated, or moved", reference)
+        self.assertIn("inline command", reference)
+        self.assertIn("do not fence", reference)
+        self.assertIn("do not repeat", reference)
 
     def test_workflow_does_not_convert_sequence_into_causation(self):
         workflow = section(SKILL.read_text(), "Workflow").lower()
