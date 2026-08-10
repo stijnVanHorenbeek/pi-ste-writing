@@ -1,0 +1,155 @@
+{
+  "schema_version": 2,
+  "status": "success",
+  "cell": {
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "thinking": "low",
+    "condition": "guarded",
+    "scenario_id": "hyperion-refuel-sequence",
+    "repetition": 1
+  },
+  "provenance": {
+    "runner_version": "12",
+    "matrix_sha256": "be2775288fe846efadc3063a9399180bc8ba9d63f9de739bc1b55b87c596eef5",
+    "package_commit": "875e29b8fecf9e7df015c0a154cb55b8eaca5e7f",
+    "package_dirty": false,
+    "skill_sha256": "5f5ac56c60572bec6f68d33601af0533303518759f0149dd9d82b6224c2d7e5a",
+    "pi_version": "0.84.1",
+    "extension_sha256": "68fc423974251e228463b3e28d8385e2fdd6f936dbeac3068ceb9e6b5030defa",
+    "runner_sha256": "16f0dad75d19744e4dd49f3b507f3d416a0701a32b8d7107c59101cb1efa1cec",
+    "scorer_sha256": "43ce5f73226afbd392ec0d7450dfc348bd6757a608134bbcf73872cdbbdc4c86",
+    "corpus_sha256": "06fb9773b313e07c8bf8ef7950baf20e446105bc8c89a53a479b9e044585c2c9",
+    "scenario_sha256": "38039d7a7d0d39656a99c3538aa0e38726e9db6f9e803939ac94fbd4c37ec426"
+  },
+  "prompt_sha256": "3f9c9c8ad752426159997c12c77723f9452011ef008690a29a873e35aac8afaa",
+  "attempts": [
+    {
+      "number": 1,
+      "started_at": "2026-08-10T16:49:36.146332+00:00",
+      "status": "success",
+      "duration_ms": 15774
+    }
+  ],
+  "updated_at": "2026-08-10T16:49:51.922926+00:00",
+  "duration_ms": 15774,
+  "response": {
+    "text": "Use this procedure to load fresh fuel into reactor cell `RX-3A`. This procedure does not affect backup cell `RX-3B`.\n\n1. Verify that license `NRC-8801` is current.\n2. Confirm that cell `RX-3A` coolant flow shows **Normal**.\n3. Confirm that the control rods indicate `full-insertion`.\n4. Execute `hyperctl status RX-3A`.\n5. Continue only if the output shows `temp=ambient pressure=nominal`.\n\nWARNING: The next step initiates irreversible fuel loading into cell `RX-3A`. Emergency shutdown after loading requires regulatory approval.\n\n6. Execute `hyperctl load-fuel RX-3A --license NRC-8801`.\n7. After loading completes, run `hyperctl verify RX-3A`.\n8. Confirm that the output is `fuel=loaded rods=inserted`.",
+    "provider": "openai-codex",
+    "model": "gpt-5.6-sol",
+    "response_model": null,
+    "stop_reason": "toolUse",
+    "usage": {
+      "input_tokens": {
+        "value": 3633,
+        "available": true
+      },
+      "output_tokens": {
+        "value": 540,
+        "available": true,
+        "includes_reasoning": true
+      },
+      "reasoning_tokens": {
+        "value": 288,
+        "available": true
+      },
+      "visible_output_tokens": {
+        "value": 252,
+        "available": true,
+        "derived": true
+      },
+      "cache_read_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "cache_write_tokens": {
+        "value": 0,
+        "available": true
+      },
+      "total_tokens": {
+        "value": 4173,
+        "available": true
+      }
+    },
+    "cost_usd": {
+      "value": 0.034365,
+      "available": true
+    },
+    "routing": {
+      "tool_calls": 1,
+      "non_read_tool_calls": 1,
+      "read_calls": 0,
+      "successful_read_calls": 0,
+      "failed_read_calls": 0,
+      "skill_entrypoint_read_calls": 0,
+      "skill_tree_read_calls": 0,
+      "outside_skill_read_calls": 0,
+      "skill_loaded": false
+    },
+    "guard": {
+      "observed": true,
+      "max_submissions": 3,
+      "submissions": [
+        {
+          "sequence": 1,
+          "tool_call_id_sha256": "a59d3f05e34f2a6dbe8bc36265e286cd69605f7e70384d0aa3e26af79f4ea385",
+          "job_id_sha256": "8b9469e1a260109ea342d7e85d785e6ba146aa9dd0c393e108acdbe027272b3b",
+          "draft_sha256": "8336de9840c8816f86c59e7a04f7ec480ab416493445b6b1c52ac552df51b7a5",
+          "draft_bytes": 706,
+          "result_status": "accepted",
+          "result_attempt": 1,
+          "result_draft_sha256": "8336de9840c8816f86c59e7a04f7ec480ab416493445b6b1c52ac552df51b7a5",
+          "result_text_sha256": "8336de9840c8816f86c59e7a04f7ec480ab416493445b6b1c52ac552df51b7a5",
+          "is_error": false,
+          "submission_message_valid": true
+        }
+      ],
+      "accepted_submission": 1,
+      "accepted_draft_sha256": "8336de9840c8816f86c59e7a04f7ec480ab416493445b6b1c52ac552df51b7a5",
+      "final_text_sha256": "8336de9840c8816f86c59e7a04f7ec480ab416493445b6b1c52ac552df51b7a5",
+      "exact_accepted_output": true,
+      "malformed_submission_messages": 0,
+      "direct_output_messages": 0,
+      "unauthorized_tool_calls": 0,
+      "unmatched_tool_events": 0,
+      "ambient_resources_disabled": true,
+      "terminal_artifact_valid": true,
+      "same_job_id": true,
+      "attempts_contiguous": true,
+      "passed": true
+    }
+  },
+  "condition_integrity": {
+    "model_identity_passed": true,
+    "expected_skill_loaded": false,
+    "skill_loading_passed": true,
+    "passed": true
+  },
+  "evaluation": {
+    "objective_contract": {
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "objective_procedure": {
+      "applicable": true,
+      "passed": true,
+      "failed_rule_ids": [],
+      "failures": []
+    },
+    "output_contract": {
+      "type": "text",
+      "gated": true,
+      "passed": true,
+      "violations": []
+    },
+    "objective_gate_passed": true,
+    "style": {
+      "advisory": true,
+      "warning_count": 0,
+      "warnings_by_rule": {},
+      "findings": []
+    },
+    "disclaimer": "Deterministic checks cover only enumerated fixture rules; they do not prove full semantic equivalence or certify ASD-STE100 compliance."
+  }
+}
