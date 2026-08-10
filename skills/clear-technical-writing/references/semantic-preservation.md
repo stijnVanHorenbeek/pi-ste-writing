@@ -136,11 +136,11 @@ Ask before proceeding if the change creates a contradiction or unsafe procedure.
 ## Safe rewrite workflow
 
 1. Identify requested mode, audience, and output contract.
-2. Mark content that is out of scope or protected.
+2. Inventory protected content as value, count, container, and role.
 3. Build the semantic ledger.
 4. Classify each passage as descriptive, procedural, quoted, code, or structured data.
 5. Rewrite only eligible prose.
-6. Compare the rewrite with the ledger and protected containers.
+6. Compare the inventory one-to-one; reject any protected occurrence that was added, removed, duplicated, or moved.
 7. Check for added claims, lost qualifiers, changed relationships, and new implications.
 8. Report unresolved conflicts or unknowns instead of hiding them with fluent prose.
 

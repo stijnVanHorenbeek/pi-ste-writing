@@ -12,6 +12,13 @@ STRICT_REFERENCE = (
     / "references"
     / "ste-rules.md"
 )
+SEMANTIC_REFERENCE = (
+    ROOT
+    / "skills"
+    / "clear-technical-writing"
+    / "references"
+    / "semantic-preservation.md"
+)
 
 
 def section(text, heading):
@@ -53,8 +60,14 @@ class SkillRouterTest(unittest.TestCase):
         for routing_term in (
             "documentation",
             "runbooks",
-            "incident findings",
+            "incident reports",
+            "root-cause",
+            "correlation findings",
+            "main task",
             "code review",
+            "raw tool output",
+            "logs",
+            "quoted diagnostics",
             "schema-constrained output",
             "source or generated code",
         ):
@@ -94,6 +107,18 @@ class SkillRouterTest(unittest.TestCase):
         ):
             with self.subTest(boundary=boundary):
                 self.assertIn(boundary, protected.lower())
+
+    def test_protected_occurrences_map_one_to_one_without_container_moves(self):
+        protected = " ".join(
+            section(SKILL.read_text(), "Protected content").lower().split()
+        )
+        reference = SEMANTIC_REFERENCE.read_text().lower()
+
+        self.assertIn("one-to-one", protected)
+        self.assertIn("headings", protected)
+        self.assertIn("inline code to a fence", protected)
+        self.assertIn("value, count, container, and role", reference)
+        self.assertIn("added, removed, duplicated, or moved", reference)
 
     def test_workflow_does_not_convert_sequence_into_causation(self):
         workflow = section(SKILL.read_text(), "Workflow").lower()

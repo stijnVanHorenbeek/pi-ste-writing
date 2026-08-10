@@ -1,15 +1,13 @@
 ---
 name: clear-technical-writing
 description: >-
-  Write, rewrite, or audit semantic-safe technical prose. Use for
-  documentation and READMEs, API guides, setup procedures and runbooks,
-  user-facing error messages and CLI help, incident findings and postmortems,
-  release notes and changelogs, translation-ready prose, or explicit STE,
-  ASD-STE100, or STE-compliance audits.
-  Do not auto-use for code review, debugging, architecture analysis or design tradeoffs,
-  test-result interpretation, patch summaries without a writing-pass request, raw tool
-  output, logs, and quoted diagnostics, JSON, XML, YAML, CSV, or schema-constrained
-  output, source or generated code, marketing, brand, or editorial voice.
+  Rewrite or audit technical prose without changing meaning. Auto-use for
+  documentation, READMEs, API docs, runbooks, errors/CLI help,
+  incident reports, root-cause/correlation findings, release notes/changelogs,
+  and STE/ASD-STE100 audits. Do not auto-use when main task is code review,
+  debugging, architecture, test-result interpretation, patch summaries without
+  writing request, raw tool output, logs, quoted diagnostics, schema-constrained
+  output, source or generated code, marketing/brand/editorial voice.
 license: MIT
 compatibility: Pi; Python 3 optional for linter.
 ---
@@ -62,8 +60,9 @@ Preserve these unless the user targets them:
 - Markdown link destinations, reference IDs, and anchors.
 - Machine-readable structures and schemas.
 
-Keep count, container, and semantic role. Never add formatting or rewrite raw output.
-Only targets become editable.
+Map source occurrences one-to-one by container and semantic role. Do not repeat them in headings,
+summaries, prerequisites, or steps. Never move inline code to a fence or fenced code
+inline. Do not add formatting or rewrite raw output. Only targets are editable.
 
 ## Workflow
 
