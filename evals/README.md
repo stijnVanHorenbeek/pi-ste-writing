@@ -30,6 +30,7 @@ Prospective runner support now defines a guarded-core release contract; it does 
 - `benchmark-scenarios.json`: original scenario definitions retained for regression work.
 - `development-guard-smoke-matrix.json`: required three-call guarded smoke on known development evidence.
 - `development-hardening-reliability-matrix.json`: 18-cell, three-repetition probe over known guard and routing regressions; never release evidence.
+- `development-gpt-tier-screen-matrix.json`: 18-cell, one-repetition guarded screen across selected OpenAI GPT tiers and thinking levels; directional development evidence only.
 - `release-candidate-matrix.json`: 153-cell schema-v2 ragged release matrix.
 - `fixtures/release-candidate.json`: five unseen prose fixtures.
 - `release-candidate-scenarios.json`: unseen exact-CSV routing control.

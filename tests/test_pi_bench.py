@@ -21,6 +21,9 @@ DEVELOPMENT_SMOKE_MATRIX_PATH = (
 HARDENING_RELIABILITY_MATRIX_PATH = (
     ROOT / "evals" / "development-hardening-reliability-matrix.json"
 )
+GPT_TIER_SCREEN_MATRIX_PATH = (
+    ROOT / "evals" / "development-gpt-tier-screen-matrix.json"
+)
 CORPUS_PATH = ROOT / "evals" / "fixtures" / "semantic-preservation.json"
 RELEASE_CANDIDATE_CORPUS_PATH = ROOT / "evals" / "fixtures" / "release-candidate.json"
 RELEASE_CANDIDATE_SCENARIOS_PATH = ROOT / "evals" / "release-candidate-scenarios.json"
@@ -505,6 +508,47 @@ class MatrixLoadingTest(unittest.TestCase):
         self.assertEqual(
             matrix["max_parallel_calls_by_provider"],
             {"openai-codex": 1, "github-copilot": 2},
+        )
+
+    def test_development_gpt_tier_screen_has_18_guarded_cells(self):
+        matrix = run_pi_bench.load_matrix(GPT_TIER_SCREEN_MATRIX_PATH)
+        fixtures, scenarios = run_pi_bench.load_matrix_scenarios(matrix)
+        cells = list(run_pi_bench.iter_cells(matrix, scenarios))
+
+        self.assertEqual(matrix["schema_version"], 3)
+        self.assertEqual(matrix["run_kind"], "development-smoke")
+        self.assertEqual(matrix["repetitions"], 1)
+        self.assertEqual(len(cells), 18)
+        self.assertEqual(len(matrix["scenario_ids"]), 3)
+        self.assertTrue(set(matrix["scenario_ids"]).issubset(fixtures))
+        self.assertEqual(
+            set(tuple(value) for value in matrix["conditions_by_scenario"].values()),
+            {("guarded",)},
+        )
+        self.assertEqual(
+            matrix["models"],
+            [
+                {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "high"},
+                {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "medium"},
+                {"provider": "openai-codex", "model": "gpt-5.6-sol", "thinking": "low"},
+                {"provider": "openai-codex", "model": "gpt-5.5", "thinking": "high"},
+                {"provider": "openai-codex", "model": "gpt-5.4", "thinking": "high"},
+                {"provider": "openai-codex", "model": "gpt-5.4-mini", "thinking": "high"},
+            ],
+        )
+        self.assertEqual(
+            matrix["objective_gate_conditions"],
+            ["native-skill", "guarded"],
+        )
+        self.assertIsNone(matrix["semantic_review"]["config_path"])
+        self.assertTrue(matrix["evidence_policy"]["development_only"])
+        self.assertTrue(
+            matrix["evidence_policy"]["must_not_count_as_release_evidence"]
+        )
+        self.assertEqual(matrix["max_parallel_calls"], 1)
+        self.assertEqual(
+            matrix["max_parallel_calls_by_provider"],
+            {"openai-codex": 1},
         )
 
     def test_development_probe_requires_fail_closed_evidence_policy(self):
