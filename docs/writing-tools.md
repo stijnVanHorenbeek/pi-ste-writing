@@ -4,7 +4,7 @@ Package version: `0.1.0`
 
 ## User command
 
-`/ste_doc <path>` starts one repository-file rewrite with bundled clear-writing and semantic-preservation guidance.
+`/ste_doc <path>` starts one repository-file rewrite with a compact built-in preservation checklist.
 
 Command:
 
@@ -13,9 +13,10 @@ Command:
 - Rejects empty, multiline, NUL-containing, or overly long paths.
 - Keeps ambient repository and third-party tools active.
 - Activates model-facing writing tools.
-- Sends one task asking Pi to read, baseline, edit, check, and repair target file only.
+- Injects one hidden task asking Pi to read, baseline, edit, check, and repair target file only.
+- Does not embed full skill or reference files in that task.
 
-Command does not read, edit, or validate target itself. Pi performs repository work through normal tools.
+Task remains in model context and session history but is hidden from default chat view. Command does not read, edit, or validate target itself. Pi performs repository work through normal tools.
 
 ## `writing_begin`
 
@@ -58,18 +59,16 @@ Visible statuses:
 - `invalid-utf8`: current file is not valid UTF-8.
 - `analysis-error`: file or analysis work exceeds bound.
 
-Visible `needs-review` result contains:
+Visible `needs-review` result is one line. It contains:
 
-- Protected kind.
-- Removed source values and added current values.
-- Occurrence count, container, line, and column.
-- At most 20 distinct protected changes across report, balanced between removed and added values when both exist.
-- Counts of additional hidden removed and added groups when result is truncated.
-- At most 20 introduced writing findings.
-- Count of current findings that also existed in baseline.
-- Repair and rerun instruction.
+- Up to three affected source and current locations, grouped by line.
+- Count of additional affected lines when more exist.
+- Introduced finding count and up to three rule locations.
+- Diff-review, repair, and rerun instruction.
 
-Protected values longer than 160 characters are truncated. Tool-result details retain hashes and same bounded summary, not full verifier inventories.
+Overlapping detectors often identify same edit as link, identifier, or numeric drift. Line grouping keeps those details out of visible output and model context.
+
+Tool-result details retain exact structured deltas for provenance and branch restoration. Details include protected kind, removed and added values, occurrence count, container, line, and column. They hold at most 20 distinct protected changes, balanced between removed and added values. They also retain hidden-item counts, up to 20 introduced findings, pre-existing finding count, and hashes. Pi does not send details to model. Protected values longer than 160 characters are truncated.
 
 Findings are baseline-aware. Comparison uses finding rule, offending text, message, and protected kind while ignoring location shifts. Duplicate findings use occurrence counts. Existing warnings do not occupy visible introduced-finding budget.
 

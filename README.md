@@ -23,12 +23,9 @@ Paths with spaces can be quoted:
 /ste_doc "docs/installation guide.md"
 ```
 
-`/ste_doc` starts a normal Pi task. Pi keeps `read`, `edit`, `write`, `bash`, and third-party tools available, loads clear-writing guidance, edits only target file, and checks its changes before returning.
+`/ste_doc` starts a normal Pi task. Pi keeps `read`, `edit`, `write`, `bash`, and third-party tools available, injects a compact preservation checklist, edits only target file, and checks its changes before returning. Generated task stays hidden in chat transcript and does not embed full skill or reference files.
 
 No other package-specific command is required.
-
-> [!NOTE]
-> Version `0.1.0` replaces older `/clear-write` supplied-text workflow with `/ste_doc <path>`. Repository edits now use normal tools plus advisory model-facing checks.
 
 ## Automatic use
 
@@ -45,7 +42,7 @@ Automatic routing is model-dependent. `/ste_doc <path>` gives deterministic file
 
 ## Model workflow
 
-After skill loads, extension adds two model-facing tools. Users do not need to call them.
+When writing workflow activates, extension adds two model-facing tools. Users do not need to call them.
 
 1. Pi reads target and repository guidance.
 2. `writing_begin` captures baseline before first mutation.
@@ -67,17 +64,14 @@ Visible result stays compact. Source and hashes remain in session details. Tool 
 
 ### `writing_check`
 
-Returns model-actionable output:
+Returns one compact visible line:
 
 - `clean`, `unchanged`, or `needs-review` status.
-- Exact bounded protected values removed and added.
-- Source and current locations for each visible delta.
-- Hidden removed and added group counts when bounded output is truncated.
-- Newly introduced writing findings first.
-- Count of pre-existing findings without repeating them.
-- Direct repair and rerun instruction.
+- Up to three affected source and current locations, grouped by line so overlapping detectors do not repeat one edit.
+- Introduced finding count and up to three rule locations.
+- Direct diff-review, repair, and rerun instruction.
 
-Session details retain hashes and same bounded result for provenance. They do not duplicate unbounded verifier inventories. Visible output omits hashes and repeated disclaimers.
+Session details retain hashes and bounded structured deltas for provenance and branch restoration. Pi does not send these details to model. Visible output omits protected values, hashes, repeated detector results, and disclaimers.
 
 Tool never blocks, rewrites, or reverts file. Protected change can be intentional when request targets version, command, URL, label, identifier, requirement level, or other protected value. Pi must judge each delta against user request.
 

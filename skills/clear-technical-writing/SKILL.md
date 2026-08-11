@@ -70,7 +70,7 @@ inline. Do not add formatting or rewrite raw output. Only targets are editable.
 4. Preserve the source modal when equivalence is uncertain.
 5. Keep factual claims factual; keep separate causal thresholds separate.
 6. Compare negation, scope, conditions, roles, values, counts, and containers.
-7. After a repository edit, call `writing_check`; inspect exact protected deltas and introduced findings in context.
+7. After a repository edit, call `writing_check`; inspect the diff at reported protected and finding locations.
 8. Before return, match each source actor and claim to the draft.
 9. If fidelity is uncertain, retain the source clause.
 
@@ -82,7 +82,7 @@ Explicit invocation overrides routing exclusions, not semantic or safety boundar
 
 ## Progressive references
 
-- Load `references/semantic-preservation.md` for every source rewrite or audit.
+- Load `references/semantic-preservation.md` for claim-dense or causality-sensitive rewrites, high-risk procedures, audits, or uncertain equivalence.
 - Load `references/use-cases.md` only for routing or coding-focused examples.
 - Load `references/checklist.md` only for strict audits or high-risk procedures.
 - Load `references/ste-rules.md` only in strict mode.
