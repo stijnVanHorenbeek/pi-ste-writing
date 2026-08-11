@@ -1,6 +1,6 @@
 {
   "name": "pi-ste-writing",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Clear technical writing skill for Pi that rewrites documentation, READMEs, and runbooks while preserving technical meaning",
   "keywords": [
