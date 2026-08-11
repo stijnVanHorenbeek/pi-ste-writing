@@ -1,383 +1,210 @@
 # pi-ste-writing
 
-Semantics-first technical-writing skill for [Pi](https://pi.dev). It rewrites or audits human-facing technical prose while keeping technical correctness, source facts, safety, modality, terminology, and exact values ahead of style.
+Technical-writing support for [Pi](https://pi.dev). Package helps Pi rewrite repository documentation while preserving commands, values, links, identifiers, requirement levels, and technical meaning.
+
+Pi package gallery lists [`pi-ste-writing`](https://pi.dev/packages/pi-ste-writing). Installed skill name is `clear-technical-writing`.
 
 > [!WARNING]
-> `0.0.1` is an experimental prerelease. Use guarded mode when protected-content enforcement matters, and review high-risk output against its source. This package does not prove semantic equivalence or certify ASD-STE100 compliance.
+> Pi packages run with full user permissions. Model-facing `writing_begin` stores source text in session tool-result details so checks survive session restore and branching. Saved sessions and trusted extensions or RPC consumers can access that text. Do not use it on secrets. Checks are advisory and do not prove semantic equivalence or certify ASD-STE100 compliance.
 
-## What it provides
+Package is experimental pre-1.0 software.
 
-Package provides:
+## Use
 
-- Progressively loaded `clear-technical-writing` skill.
-- Opt-in `/clear-write` Pi extension for guarded rewrites.
-- **Clear:** concise technical prose without strict STE vocabulary or sentence limits.
-- **Procedure:** actionable instructions with conditions and warnings in safe order.
-- **Strict STE:** explicit STE-oriented review after semantic checks pass.
-- Advisory Python linter for writing checks.
-- Deterministic Python verifier for protected occurrence counts and containers.
+Rewrite one repository document:
 
-Package does not load prompt template, theme, output style, global instruction, or persistent writing mode. Extension stays idle until `/clear-write` invocation.
+```text
+/ste_doc README.md
+```
+
+Paths with spaces can be quoted:
+
+```text
+/ste_doc "docs/installation guide.md"
+```
+
+`/ste_doc` starts a normal Pi task. Pi keeps `read`, `edit`, `write`, `bash`, and third-party tools available, loads clear-writing guidance, edits only target file, and checks its changes before returning.
+
+No other package-specific command is required.
+
+> [!NOTE]
+> Version `0.1.0` replaces older `/clear-write` supplied-text workflow with `/ste_doc <path>`. Repository edits now use normal tools plus advisory model-facing checks.
+
+## Automatic use
+
+Skill can also load automatically when request asks Pi to create, write, edit, improve, rewrite, or audit technical prose such as:
+
+- READMEs and documentation.
+- API and CLI help.
+- Runbooks and procedures.
+- Incident reports and root-cause analyses.
+- Error explanations and release notes.
+- Explicit STE audits.
+
+Automatic routing is model-dependent. `/ste_doc <path>` gives deterministic file-rewrite entry point. Pi's standard `/skill:clear-technical-writing` command remains available for custom prompts.
+
+## Model workflow
+
+After skill loads, extension adds two model-facing tools. Users do not need to call them.
+
+1. Pi reads target and repository guidance.
+2. `writing_begin` captures baseline before first mutation.
+3. Pi edits with normal repository tools.
+4. `writing_check` compares current file with baseline.
+5. Pi repairs unintended changes and reruns check.
+
+### `writing_begin`
+
+Captures:
+
+- Canonical target path.
+- Clear, procedure, or strict mode.
+- Existing-file or new-file state.
+- Raw-byte SHA-256.
+- Strict UTF-8 source text.
+
+Visible result stays compact. Source and hashes remain in session details. Tool rejects non-UTF-8 files and files larger than 2 MiB.
+
+### `writing_check`
+
+Returns model-actionable output:
+
+- `clean`, `unchanged`, or `needs-review` status.
+- Exact bounded protected values removed and added.
+- Source and current locations for each visible delta.
+- Hidden removed and added group counts when bounded output is truncated.
+- Newly introduced writing findings first.
+- Count of pre-existing findings without repeating them.
+- Direct repair and rerun instruction.
+
+Session details retain hashes and same bounded result for provenance. They do not duplicate unbounded verifier inventories. Visible output omits hashes and repeated disclaimers.
+
+Tool never blocks, rewrites, or reverts file. Protected change can be intentional when request targets version, command, URL, label, identifier, requirement level, or other protected value. Pi must judge each delta against user request.
+
+`writing_check` never guesses baseline from Git or current text. Missing baseline returns `no-snapshot`.
+
+## What checks cover
+
+Protected-content comparison recognizes occurrence counts and Markdown containers for:
+
+- Fenced, indented, and inline code.
+- Link destinations and labels.
+- Quoted diagnostics and bare URLs.
+- Numbers, versions, times, percentages, units, and ranges.
+- Paths, CLI flags, environment variables, and JSON keys.
+- Recognized identifiers and bold labels.
+- Modal phrases such as `must`, `must not`, `should`, `can`, `cannot`, `may`, `might`, and `could`.
+
+Writing findings include bounded procedure and strict-mode heuristics. Baseline comparison separates introduced findings from existing warnings.
+
+Checks do not prove preserved causality, factual completeness, actor roles, arbitrary semantic equivalence, procedure safety, or complete terminology fidelity. Pi still compares source and result claim by claim.
+
+## Modes
+
+### Clear
+
+Default. Concise, complete prose and active voice for known actors. No hard vocabulary or sentence limits.
+
+### Procedure
+
+Conditions before controlled actions, warnings before dangerous actions, and verification after actions. Detected instructions use a 20-word target.
+
+### Strict STE
+
+Only for explicit STE or compliance-audit requests. Adds STE-oriented sentence and style checks. Complete vocabulary review requires official ASD-STE100 Issue 9 dictionary, which package does not include.
 
 ## Install
 
-Pi packages can execute arbitrary code. This package extension creates temporary files and runs package-owned Python verifier. Review package source before installation. Python 3 is required for guarded rewrites.
+Review package source before installation.
 
-### npm installation
-
-Install pinned experimental version for all Pi projects:
+From npm:
 
 ```bash
-pi install npm:pi-ste-writing@0.0.1
+pi install npm:pi-ste-writing@0.1.0
 ```
 
-### Git installation
-
-Install from GitHub:
+From pinned Git tag after publication:
 
 ```bash
-pi install git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.0.1
+pi install git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.1.0
 ```
 
-Pin any tag or commit for reproducibility:
+Install project-local package by adding `-l`:
 
 ```bash
-pi install git:github.com/stijnVanHorenbeek/pi-ste-writing@<tag-or-commit>
+pi install git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.1.0 -l
 ```
 
-Inspect installed packages:
+Try published tag for one Pi run:
 
 ```bash
-pi list
+pi -e git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.1.0
 ```
 
-### Project-local installation
-
-From the project root, install the pinned version into `.pi/settings.json`:
-
-```bash
-pi install git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.0.1 -l
-```
-
-Review and trust project-local files before loading them. Pi installs missing project packages after project trust is granted. If Pi reports that project is untrusted, review files first, then approve that command explicitly:
-
-```bash
-pi install git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.0.1 -l --approve
-```
-
-### Temporary use
-
-Load the pinned package for one Pi run without changing settings:
-
-```bash
-pi -e git:github.com/stijnVanHorenbeek/pi-ste-writing@v0.0.1
-```
-
-For local development, replace Git source with package checkout path:
+For local development:
 
 ```bash
 pi install /absolute/path/to/pi-ste-writing
 ```
 
-## Use
-
-### Automatic activation
-
-Pi always sees the short skill name and description. The model loads full `SKILL.md` only when the request matches. Automatic activation targets requests to create, rewrite, or audit:
-
-- Documentation and READMEs.
-- API guides.
-- Setup procedures and runbooks.
-- User-facing errors and CLI help.
-- Incident reports and postmortems.
-- Release notes and changelogs.
-- Translation-ready technical prose.
-
-Automatic activation is model-dependent. Use explicit command when activation must be deterministic.
-
-### Explicit activation
-
-In interactive Pi:
-
-```text
-/skill:clear-technical-writing Rewrite this API guide for clarity. Preserve commands, identifiers, links, values, and requirement levels.
-```
-
-Arguments after command become skill task. Explicit invocation can request writing work in normally excluded contexts, but cannot authorize semantic drift, unsafe action ordering, or unrequested protected-content changes.
-
-### Guarded rewrite
-
-Use the verifier when protected occurrence counts and containers must be gated:
-
-```text
-/clear-write --mode procedure
-Before maintenance, run `kubectl drain node-17 --ignore-daemonsets`.
-Record ticket `OPS-6634` once.
-```
-
-Modes: `clear`, `procedure`, and `strict`; default is `clear`. Source can follow mode on same line. With no source argument in interactive Pi, command opens editor.
-
-The extension owns the source snapshot. The model submits the job ID and draft to the terminating `submit_clear_rewrite` tool. The verifier rejects protected-content drift and permits up to three submissions. An invalid draft is never accepted output.
-
-Guard checks recognized literal occurrence counts and structural Markdown containers for code, links, bold text, quoted diagnostics, URLs, numeric values, paths, flags, environment variables, JSON keys, and recognized identifiers. Ordered-list markers are structural, not protected numeric facts. Guard does not verify semantic role or relationship between preserved values.
-
-Guard acceptance is not proof of full semantic equivalence. It cannot mechanically verify every fact, modality, causal statement, unknown-root-cause statement, procedure ordering, or domain term. Review high-risk output against source.
-
-TUI, JSON, and RPC expose accepted draft as tool result. Print mode emits accepted draft as final assistant text. Provider streaming can show unverified deltas before finalized direct output is blocked; only accepted artifact carries verifier result.
-
-### Clear mode
-
-Clear mode is default:
-
-```text
-Rewrite this release note for clarity. Preserve every fact, qualifier, number, and degree of certainty.
-
-Source:
-The deployment may reduce latency, but tests have not confirmed the effect.
-```
-
-Clear mode does not enforce full STE vocabulary or hard sentence limits.
-
-### Procedure mode
-
-Ask for procedure or runbook rewrite:
-
-```text
-Rewrite this setup procedure. Put warnings before dangerous commands, action-controlling conditions before commands, and verification after each action. Preserve commands exactly.
-
-Source:
-...
-```
-
-Procedure mode prefers one action per numbered step. It targets 20 words or fewer only when shorter text preserves meaning and safe order.
-
-Standalone destructive-operation or security-warning text does not auto-activate. Invoke skill explicitly for that work.
-
-### Strict STE mode
-
-Strict mode requires explicit STE, ASD-STE100, or compliance-audit request:
-
-```text
-/skill:clear-technical-writing Audit this maintenance procedure in strict STE mode. Preserve technical meaning and report unresolved conflicts.
-```
-
-Strict mode loads local rule map and checklist. Complete vocabulary review still requires official ASD-STE100 Issue 9 dictionary, which package does not include. Compliance-oriented audits must include no-certification disclaimer.
-
-## Semantic-preservation contract
-
-Skill applies this priority order:
-
-1. Technical correctness.
-2. Source facts and meaning.
-3. Safety and risk level.
-4. User intent and exact output contract.
-5. Certainty, permission, recommendation, and obligation.
-6. Repository and product terminology.
-7. Clarity and structure.
-8. Mode-specific style.
-
-Unless user requests targeted change, skill preserves code, identifiers, commands, flags, paths, URLs, environment variables, product terms, quoted output, numbers, dates, versions, units, ranges, link destinations, reference IDs, anchors, and machine-readable schemas. Protected values retain occurrence count, container, and semantic role.
-
-These safeguards reduce known failure modes; they do not prove arbitrary prose equivalence. Review high-risk or open-ended model output against source. Deterministic fixtures cover declared properties only. Guarded path adds mechanical enforcement for recognized protected occurrences; it does not weaken or replace this semantic contract.
-
-## Default exclusions
-
-Skill does not auto-activate for:
-
-- Code review findings or debugging hypotheses.
-- Architecture analysis or design tradeoffs.
-- Test-result interpretation or patch summaries without writing-pass request.
-- Raw tool output, logs, or quoted diagnostics.
-- JSON, XML, YAML, CSV, or schema-constrained output.
-- Source or generated code.
-- Marketing, brand, or editorial voice.
-
-Complete technical reasoning first. Apply skill only to requested human-facing prose.
-
-## Protected-content verifier
-
-Guarded extension runs verifier automatically. Direct CLI use:
-
-```bash
-python3 skills/clear-technical-writing/scripts/protected_verify.py \
-  --source source.md \
-  draft.md
-```
-
-Exit 0 means recognized protected occurrence counts and containers match. Exit 1 means mismatch. Other failures indicate verifier infrastructure error. JSON report is written to stdout. Verifier imports bundled `ste_lint.py`; no third-party Python package is required.
-
-Mechanical success does not prove arbitrary semantic equivalence or ASD-STE100 compliance.
-
-## Advisory linter
-
-Python 3 linter has no third-party dependencies. Run from repository checkout:
-
-```bash
-python3 skills/clear-technical-writing/scripts/ste_lint.py \
-  --mode clear \
-  --source source.md \
-  draft.md
-```
-
-Modes: `clear`, `procedure`, `strict`. Output formats: `text` and `json`.
-
-```bash
-python3 skills/clear-technical-writing/scripts/ste_lint.py \
-  --mode procedure \
-  --format json \
-  --source source.md \
-  draft.md
-```
-
-Findings are advisory and normally exit 0. Use `--strict-gate` only when any finding must produce exit 1:
-
-```bash
-python3 skills/clear-technical-writing/scripts/ste_lint.py \
-  --mode strict \
-  --strict-gate \
-  draft.md
-```
-
-Zero warnings do not prove semantic correctness or ASD-STE100 compliance.
-
-## Context and cost
-
-Progressive loading limits normal prompt cost:
-
-1. Short skill description is available at Pi startup.
-2. `SKILL.md` loads only after activation.
-3. Semantic reference loads for source-based rewrites and audits.
-4. Use-case, checklist, and strict-rule references load only when needed.
-
-Activated work consumes additional input tokens. Strict audits and high-risk procedures load the most context. Explicit skill invocation improves routing reliability with the same loaded-context cost. Guarded invocation loads the skill and semantic-preservation guidance. Repairs can add model turns and cost. The local linter and verifier make no provider calls.
-
-## Disable, remove, and update
-
-Disable all discovered skills for one run:
-
-```bash
-pi --no-skills
-```
-
-`--no-skills` disables discovery; explicit `--skill <path>` still loads named path.
-
-Use `pi config` to disable installed skill globally. Use project-local view for project overrides:
-
-```bash
-pi config
-pi config -l
-```
-
-Disabling `clear-technical-writing` stops automatic and explicit skill use but does not disable `/clear-write`. Package filters can disable resources independently. Example keeps skill and disables extension:
-
-```json
-{
-  "packages": [
-    {
-      "source": "git:github.com/stijnVanHorenbeek/pi-ste-writing",
-      "extensions": []
-    }
-  ]
-}
-```
-
-Remove an npm installation:
+Inspect installed packages with `pi list`. Use `pi config` or `pi config -l` to disable package resources. Remove npm installation with:
 
 ```bash
 pi remove npm:pi-ste-writing
 ```
 
-Remove a Git installation:
-
-```bash
-pi remove git:github.com/stijnVanHorenbeek/pi-ste-writing
-```
-
-Remove a project-local Git installation:
-
-```bash
-pi remove git:github.com/stijnVanHorenbeek/pi-ste-writing -l
-```
-
-For an untrusted project, append `--approve` only after reviewing project-local files.
-
-Update an unpinned package:
-
-```bash
-pi update --extensions
-```
-
-Pinned npm versions and Git refs do not move during update. Install the new version or ref explicitly.
-
 ## Troubleshooting
 
-### Skill command is missing
+### `/ste_doc` is missing
 
-- Run `pi list` and confirm package source.
-- Confirm skill commands are enabled in Pi settings (`enableSkillCommands`).
-- Check startup warnings for duplicate skill name; Pi keeps first discovered skill.
-- For project install, confirm project is trusted and command runs inside project scope.
+- Confirm package extension is enabled.
+- Run `pi list` and inspect package source.
+- Check startup diagnostics for extension errors.
 
-### Automatic activation did not occur
+### Writing tools are missing during automatic use
 
-Automatic routing is probabilistic. Use:
+- Confirm skill loaded in current session.
+- Use `/ste_doc <path>` for deterministic file work.
+- Use Pi's standard `/skill:clear-technical-writing <task>` for custom tasks.
 
-```text
-/skill:clear-technical-writing <task>
+### `writing_check` reports `no-snapshot`
+
+Pi must call `writing_begin` after reading and before mutation. Tool does not reconstruct source from Git.
+
+### `writing_check` reports `needs-review`
+
+Pi should inspect exact removed and added values. Requested changes can be intentional. Unrequested changes should be repaired before delivery.
+
+## Development
+
+Requires Node.js `>=22.19.0`, npm, and Git.
+
+```bash
+npm install --ignore-scripts
+npm run typecheck
+npm test
+npm run check
+npm pack --dry-run --json
 ```
 
-### Skill activates in unwanted work
-
-- Start Pi with `--no-skills` for one run.
-- Disable skill with `pi config` or `pi config -l`.
-- Remove package from correct global or project scope.
-
-### Guarded rewrite fails
-
-- Confirm Python 3 is available as `python3`.
-- Check extension is enabled in package filters.
-- Keep source in same `/clear-write` invocation; guarded jobs are one-shot and not restored across reload/session changes.
-- Treat blocked or verifier-error result as no accepted rewrite.
-
-### Linter command fails
-
-- Confirm Python 3 is available.
-- Run command from repository checkout or resolve script relative to installed skill directory.
-- Pass `-` or omit path to read draft from standard input.
-- Remember `--source` expects source file path, not inline text.
-
-## Evaluation summary
-
-Before `0.0.1`, full development repository validation passed 266 Python tests, eight Node tests, Python compilation, package dry run, and diff checks. Benchmark machinery and raw evidence were then removed from release tree and retained in ignored local archive; tracked history through commit `a4c6758` preserves prior evidence.
-
-Latest broader guarded probe used five known prose scenarios, three repetitions, and three OpenAI configurations:
-
-| Configuration | Cells | Accepted on first verifier submission | Reported cost | Mean latency |
-|---|---:|---:|---:|---:|
-| `gpt-5.6-sol:high` | 15/15 | 14/15 | $0.476795 | 15.58 s |
-| `gpt-5.6-sol:low` | 15/15 | 15/15 | $0.367700 | 9.78 s |
-| `gpt-5.4-mini:high` | 15/15 | 14/15 | $0.103020 | 18.61 s |
-
-Across all 45 cells, objective protected contracts, output contracts, correlated guard integrity, model identity, and routing safety passed 45/45. Procedure contracts passed 9/9. Every call succeeded on its first provider-level attempt. Two drafts required one bounded verifier repair; neither repeated unchanged rejected text.
-
-Limits: the scenarios were known development regressions, not held-out evidence. Historical release candidates remain failed. Planned final held-out generation and blind semantic judging did not complete after non-candidate author and reviewer capacity became unavailable. These results support experimental guarded-path use only. They do not establish arbitrary semantic equivalence, population reliability, or certification.
+Product checks cover TypeScript analysis, model-visible tool output, dynamic activation, session restoration, real Pi SDK activation, isolated command discovery, and package contents.
 
 ## Package layout
 
 ```text
-extensions/                      Opt-in guarded-rewrite Pi extension
-skills/clear-technical-writing/  Pi skill, references, linter, and verifier
-tests/                           product-focused deterministic regressions
-docs/                            Guarded-verifier contract
+extensions/writing-advisor.ts      `/ste_doc` and model-facing session tools
+extensions/writing-analysis.ts     TypeScript linter and protected verifier
+extensions/writing-snapshots.ts    UTF-8 snapshots and session restoration
+skills/clear-technical-writing/    Writing guidance and references
+docs/writing-tools.md              Tool contracts and limitations
+tests/                             Product-focused TypeScript tests
 ```
 
-See [`docs/guarded-verifier-contract.md`](docs/guarded-verifier-contract.md). Historical benchmark material is omitted from release tree.
-
-## Upstream, trademark, and limits
+## Provenance, trademark, and limits
 
 Project adapts [AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish) at commit [`59bf670`](https://github.com/AminBlg/SimpleEnglish/commit/59bf6702197a5aadc96d197ea17f290d8d50dcd3), licensed under MIT License.
 
-ASD-STE100 is a registered trademark of ASD. Project is not affiliated with ASD, STEMG, or AminBlg. None of those organizations endorses it. Package does not include official ASD-STE100 dictionary and cannot certify ASD-STE100 compliance.
+ASD-STE100 is registered trademark of ASD. Project is not affiliated with ASD, STEMG, or AminBlg. None of those organizations endorses it. Package does not include official ASD-STE100 dictionary and cannot certify ASD-STE100 compliance.
 
 ## License
 

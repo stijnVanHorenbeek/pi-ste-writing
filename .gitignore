@@ -5,6 +5,3 @@ node_modules/
 __pycache__/
 *.py[cod]
 .venv/
-evals/results/
-archive/pre-release/local-untracked-evidence/
-archive/pre-release/evals/evidence/**/*.log

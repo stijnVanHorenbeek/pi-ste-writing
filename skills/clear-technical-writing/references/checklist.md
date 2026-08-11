@@ -72,15 +72,10 @@ Check fenced and indented code, inline code, commands, flags, paths, URLs, ident
 API fields, UI labels, diagnostics, numbers, dates, versions, Markdown links, reference
 IDs, and structured data.
 
-From the skill directory, run the advisory comparison when source and draft files exist:
-
-```bash
-python3 scripts/ste_lint.py --mode MODE --format json --source SOURCE DRAFT
-```
-
-Replace `MODE` with `clear`, `procedure`, or `strict`. Inspect every `protected-span`
-finding. The linter compares implemented containers and literal classes; it does not
-prove complete semantic or formatting equality.
+For repository files, call `writing_begin` with `clear`, `procedure`, or `strict` mode
+before mutation. Call `writing_check` after edit and inspect each protected violation and
+advisory finding. Session tools compare implemented containers and literal classes; they
+do not prove complete semantic or formatting equality.
 
 Also inspect a source-to-draft diff. Confirm that:
 
@@ -201,7 +196,7 @@ Judgment checks:
 
 The linter provides bounded heuristics:
 
-- Clear mode can compare implemented protected spans when `--source` is supplied.
+- Clear mode compares implemented protected spans when `writing_check` has an existing-file baseline.
 - Procedure mode adds detected-instruction length and trailing-condition warnings.
 - Strict mode adds modal, contraction, Latin-abbreviation, and classified sentence-length
   warnings.
@@ -211,9 +206,8 @@ semantic equivalence, output-schema validity, or every procedural verb. It also 
 apply Rule 5.4 to strict-mode mixed passages; review those passages manually. The linter
 does not implement the `would` modal candidate or the `unless` condition candidate.
 
-Zero linter warnings do not prove semantic correctness or compliance. The
-`--strict-gate` option changes the process exit code when warnings exist; it does not
-turn advisory findings into certification.
+Zero linter warnings do not prove semantic correctness or compliance. `writing_check`
+reports newly introduced findings first; existing findings remain advisory context.
 
 ## 7. Strict STE rules when requested
 
